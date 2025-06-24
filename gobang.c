@@ -1,4 +1,7 @@
+
 #include "gobang.h"
+#include <sys/stat.h> // 用于目录创建
+#include <time.h>     // 用于时间戳
 
 // 全局变量定义
 int BOARD_SIZE = 15;                                           // 实际使用的棋盘尺寸(默认15)
@@ -459,13 +462,25 @@ void ai_move(int depth)
 }
 
 /**
- * @brief 复盘游戏过程，逐步重现所有落子步骤
- * @note 实现逻辑：
- * 1. 创建临时棋盘用于复盘展示
+ * @brief 复盘游戏全过程并展示评分
+ * @note 实现流程:
+ * 1. 初始化临时复盘棋盘
  * 2. 按步数顺序逐步重现每个落子
- * 3. 每步显示当前棋盘状态和落子信息
+ * 3. 每步显示:
+ *    - 当前步数/总步数
+ *    - 落子方(玩家/AI)
+ *    - 落子位置(1-based坐标)
+ *    - 当前棋盘状态
  * 4. 通过用户按Enter键控制步骤前进
- * 5. 显示1-based坐标方便用户查看
+ * 5. 复盘结束后自动进入评分环节:
+ *    - 评估双方表现
+ *    - 显示得分
+ *    - 评选MVP
+ * @note 技术细节:
+ * - 使用独立临时棋盘避免影响主游戏状态
+ * - 坐标显示转换为1-based方便用户理解
+ * - 包含输入缓冲区清理防止意外输入
+ * - 评分环节调用evaluate_performance()函数
  */
 void review_process()
 {
@@ -521,6 +536,270 @@ void review_process()
                 ; // 等待回车
         }
     }
-    printf("\n复盘结束！按Enter返回...");
+    printf("\n复盘结束！按Enter查看评分...");
     getchar(); // 等待用户按键
+
+    // 评估双方表现
+    printf("\n===== 对局评分 =====\n");
+    int player_score = evaluate_performance(PLAYER);
+    int ai_score = evaluate_performance(AI);
+
+    double sum_score = (long double)player_score + (long double)ai_score;
+
+    if (sum_score > 0)
+    {
+        printf("玩家得分: %d, 占比: %.2f%%\n",
+               player_score, (double)player_score * 100.0 / sum_score);
+        printf("AI得分: %d, 占比: %.2f%%\n",
+               ai_score, (double)ai_score * 100.0 / sum_score);
+    }
+    else
+    {
+        printf("玩家得分: %d\n", player_score);
+        printf("AI得分: %d\n", ai_score);
+        printf("注: 双方得分均为0，无法计算占比\n");
+    }
+
+    // 评选MVP
+    if (player_score > ai_score)
+    {
+        printf("\nMVP: 玩家 (领先 %d 分)\n", player_score - ai_score);
+    }
+    else if (ai_score > player_score)
+    {
+        printf("\nMVP: AI (领先 %d 分)\n", ai_score - player_score);
+    }
+    else
+    {
+        printf("\n双方势均力敌！\n");
+    }
+
+    printf("\n按Enter键退出...");
+    getchar();
+}
+
+/**
+ * @brief 悔棋功能实现
+ * @return true 悔棋成功
+ * @return false 悔棋失败(步数不足)
+ * @note 会撤销玩家和AI的最后一步操作
+ */
+bool return_move()
+{
+    if (step_count < 2)
+        return false;
+
+    Step ai_step = steps[--step_count];
+    board[ai_step.x][ai_step.y] = EMPTY;
+
+    Step player_step = steps[--step_count];
+    board[player_step.x][player_step.y] = EMPTY;
+
+    return true;
+}
+
+/**
+ * @brief 复盘游戏过程，逐步重现所有落子步骤
+ * @note 实现逻辑：
+ * 1. 创建临时棋盘用于复盘展示
+ * 2. 按步数顺序逐步重现每个落子
+ * 3. 每步显示当前棋盘状态和落子信息
+ * 4. 通过用户按Enter键控制步骤前进
+ * 5. 显示1-based坐标方便用户查看
+ */
+/**
+ * @brief 评估玩家在整盘棋局中的表现
+ * @param player 要评估的玩家(PLAYER/AI)
+ * @return int 总分(已考虑方向重复计算)
+ * @note 评分标准:
+ * - 五连:1000000
+ * - 活四:100000 冲四:10000 死四:500
+ * - 活三:5000 眠三:1000 死三:50
+ * - 活二:500 眠二:100 死二:10
+ * - 开放单子:50 半开放单子:10 封闭单子:1
+ * @note 实现细节:
+ * 1. 遍历棋盘所有位置
+ * 2. 对每个棋子检查四个方向
+ * 3. 统计所有连子情况并评分
+ * 4. 最终分数除以4(消除方向重复计算影响)
+ */
+int evaluate_performance(int player)
+{
+    int total_score = 0;
+
+    // 遍历棋盘所有位置
+    for (int i = 0; i < BOARD_SIZE; i++)
+    {
+        for (int j = 0; j < BOARD_SIZE; j++)
+        {
+            if (board[i][j] != player)
+                continue;
+
+            // 检查四个方向
+            for (int k = 0; k < 4; k++)
+            {
+                DirInfo info = count_specific_direction(i, j, direction[k][0], direction[k][1], player);
+
+                // 根据连子数评分
+                switch (info.continuous_chess)
+                {
+                case 5:
+                    total_score += 1000;
+                    break; // 五连
+                case 4:
+                    if (info.check_start && info.check_end)
+                        total_score += 1000; // 活四
+                    else if (info.check_start || info.check_end)
+                        total_score += 500; // 冲四
+                    else
+                        total_score += 200; // 死四
+                    break;
+                case 3:
+                    if (info.check_start && info.check_end)
+                        total_score += 200; // 活三
+                    else if (info.check_start || info.check_end)
+                        total_score += 100; // 眠三
+                    else
+                        total_score += 20; // 死三
+                    break;
+                case 2:
+                    if (info.check_start && info.check_end)
+                        total_score += 100; // 活二
+                    else if (info.check_start || info.check_end)
+                        total_score += 50; // 眠二
+                    else
+                        total_score += 10; // 死二
+                    break;
+                case 1:
+                    if (info.check_start && info.check_end)
+                        total_score += 20; // 开放单子
+                    else if (info.check_start || info.check_end)
+                        total_score += 10; // 半开放单子
+                    else
+                        total_score += 1; // 封闭单子
+                    break;
+                }
+            }
+        }
+    }
+    return total_score / 4; // 每个方向都计算了，需要除以4
+}
+
+/**
+ * @brief 将当前游戏记录保存到文件
+ * @param filename 要保存的文件名
+ * @return int 错误码:
+ *   0: 成功
+ *   1: 目录创建失败
+ *   2: 文件打开失败
+ *   3: 文件写入失败
+ */
+int save_game_to_file(const char *filename)
+{
+    // 创建records目录(如果不存在)
+    struct stat st = {0};
+    if (stat("records", &st) == -1)
+    {
+        if (mkdir("records") != 0)
+        {
+            // 检查是否目录已存在(多线程情况下可能被其他线程创建)
+            if (stat("records", &st) == -1)
+            {
+#ifdef _WIN32
+                printf("错误：无法创建records目录\n");
+                printf("可能原因：\n");
+                printf("1. 没有写入权限 - 请尝试以管理员身份运行\n");
+                printf("2. 防病毒软件阻止 - 请检查安全软件设置\n");
+                printf("3. 路径无效 - 请检查工作目录\n");
+#else
+                perror("创建目录失败");
+#endif
+                return 1; // 目录创建失败
+            }
+        }
+    }
+
+    // 打开文件
+    char fullpath[256];
+    snprintf(fullpath, sizeof(fullpath), "records/%s", filename);
+    FILE *file = fopen(fullpath, "w");
+    if (!file)
+    {
+        return 2; // 文件打开失败
+    }
+
+    // 写入棋盘大小
+    if (fprintf(file, "%d\n", BOARD_SIZE) < 0)
+    {
+        fclose(file);
+        return 3; // 文件写入失败
+    }
+
+    // 写入所有落子步骤
+    for (int i = 0; i < step_count; i++)
+    {
+        if (fprintf(file, "%d %d %d\n", steps[i].player, steps[i].x, steps[i].y) < 0)
+        {
+            fclose(file);
+            return 3; // 文件写入失败
+        }
+    }
+
+    if (fclose(file) != 0)
+    {
+        return 3; // 文件关闭/写入失败
+    }
+
+    return 0; // 成功
+}
+
+/**
+ * @brief 从文件加载游戏记录
+ * @param filename 要加载的文件名
+ * @return true 加载成功
+ * @return false 加载失败
+ */
+bool load_game_from_file(const char *filename)
+{
+    // 打开文件
+    char fullpath[256];
+    snprintf(fullpath, sizeof(fullpath), "records/%s", filename);
+    FILE *file = fopen(fullpath, "r");
+    if (!file)
+    {
+        return false;
+    }
+
+    // 读取棋盘大小
+    int size;
+    if (fscanf(file, "%d", &size) != 1 || size < 5 || size > MAX_BOARD_SIZE)
+    {
+        fclose(file);
+        return false;
+    }
+
+    // 初始化棋盘
+    BOARD_SIZE = size;
+    empty_board();
+
+    // 读取并重放所有落子步骤
+    int player, x, y;
+    while (fscanf(file, "%d %d %d", &player, &x, &y) == 3)
+    {
+        if (player != PLAYER && player != AI)
+        {
+            fclose(file);
+            return false;
+        }
+        if (x < 0 || x >= BOARD_SIZE || y < 0 || y >= BOARD_SIZE)
+        {
+            fclose(file);
+            return false;
+        }
+        board[x][y] = player;
+        steps[step_count++] = (Step){player, x, y};
+    }
+
+    fclose(file);
+    return true;
 }
