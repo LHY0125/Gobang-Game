@@ -1,5 +1,9 @@
 #include "gobang.h"
 #include <stdio.h>
+#include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 /**
  * @brief 将指令复制到powershell
@@ -9,8 +13,30 @@
  * .\output\五子棋.exe
  */
 
-int main()
+int main(int argc, char *argv[])
 {
+#ifdef _WIN32
+    system("chcp 65001 > nul"); // 设置控制台编码为UTF-8
+    SetConsoleOutputCP(65001);  // 设置控制台输出编码
+    SetConsoleCP(65001);        // 设置控制台输入编码
+#endif
+
+    // 检查是否要加载历史记录
+    if (argc == 3 && strcmp(argv[1], "-l") == 0)
+    {
+        if (load_game_from_file(argv[2]))
+        {
+            printf("成功加载历史记录: %s\n", argv[2]);
+            review_process();
+            return 0;
+        }
+        else
+        {
+            printf("加载历史记录失败: %s\n", argv[2]);
+            return 1;
+        }
+    }
+
     // 初始化阶段：获取棋盘尺寸
     printf("===== 五子棋人机对战 =====\n");
     printf("通常棋盘大小分为休闲棋盘(13X13)、标准棋盘(15X15)和特殊棋盘(19X19)\n");
@@ -43,8 +69,28 @@ int main()
     {
         // 玩家回合
         int x, y;
-        printf("\n请输入落子坐标(行 列，1~%d):", BOARD_SIZE);
-        scanf("%d %d", &x, &y);
+        char input[10];
+        printf("\n请输入落子坐标(行 列，1~%d)，或输入R/r悔棋:", BOARD_SIZE);
+        scanf("%s", input);
+
+        // 处理悔棋
+        if (input[0] == 'r' || input[0] == 'R')
+        {
+            if (return_move())
+            {
+                printf("悔棋成功！\n");
+                print_board();
+            }
+            else
+            {
+                printf("无法悔棋！\n");
+            }
+            continue;
+        }
+
+        // 处理正常落子
+        sscanf(input, "%d", &x);
+        scanf("%d", &y);
         // 转换用户输入的1-base坐标为0-base索引
         x--;
         y--;
@@ -85,6 +131,42 @@ int main()
             printf("\n平局！\n");
             review_process(); // 展示复盘
             break;            // 退出游戏循环
+        }
+    }
+
+    // 游戏结束，保存记录
+    int save_result = 0;
+    printf("===== 游戏结束 =====\n");
+    printf("如果想保存记录，输入1");
+    scanf("%d", &save_result);
+    if (save_result)
+    {
+        time_t now = time(NULL);
+        struct tm *t = localtime(&now);
+        char filename[256];
+        strftime(filename, sizeof(filename), "records/%Y%m%d_%H%M%S.txt", t);
+
+        int save_result = save_game_to_file(filename);
+        switch (save_result)
+        {
+        case 0: // 成功
+            printf("\n游戏记录已保存到: %s\n", filename);
+            printf("可以使用以下命令复盘: .\\五子棋.exe -l %s\n", filename);
+            break;
+        case 1: // 目录创建失败
+            printf("\n游戏记录保存失败: 无法创建records目录\n");
+            printf("请检查是否有写入权限或磁盘空间是否充足\n");
+            break;
+        case 2: // 文件打开失败
+            printf("\n游戏记录保存失败: 无法创建文件 %s\n", filename);
+            printf("请检查是否有写入权限或路径是否有效\n");
+            break;
+        case 3: // 文件写入失败
+            printf("\n游戏记录保存失败: 写入文件时出错\n");
+            printf("请检查磁盘空间是否充足\n");
+            break;
+        default:
+            printf("\n游戏记录保存失败: 未知错误\n");
         }
     }
 
