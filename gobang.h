@@ -2,8 +2,8 @@
  * @file gobang.h
  * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @brief 五子棋游戏头文件
- * @version 1.0
- * @date 2025-06-20
+ * @version 2.0
+ * @date 2025-06-24
  *
  * @copyright Copyright (c) 2025
  *
@@ -165,9 +165,43 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
 void ai_move(int depth);
 
 /**
+ * @brief 悔棋功能实现
+ * @return true 悔棋成功
+ * @return false 悔棋失败(步数不足)
+ * @note 会撤销玩家和AI的最后一步操作
+ */
+bool return_move();
+
+/**
  * @brief 复盘游戏过程
  * 逐步重现游戏中的所有落子步骤
  */
 void review_process();
+
+/**
+ * @brief 评估玩家在整盘棋局中的表现
+ * @param player 要评估的玩家(PLAYER/AI)
+ * @return int 总分(已考虑方向重复计算)
+ */
+int evaluate_performance(int player);
+
+/**
+ * @brief 将当前游戏记录保存到文件
+ * @param filename 要保存的文件名
+ * @return int 错误码:
+ *   0: 成功
+ *   1: 目录创建失败
+ *   2: 文件打开失败
+ *   3: 文件写入失败
+ */
+int save_game_to_file(const char *filename);
+
+/**
+ * @brief 从文件加载游戏记录
+ * @param filename 要加载的文件名
+ * @return true 加载成功
+ * @return false 加载失败
+ */
+bool load_game_from_file(const char *filename);
 
 #endif // GO_BANG_H
