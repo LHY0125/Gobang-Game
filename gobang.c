@@ -1,7 +1,7 @@
-
 #include "gobang.h"
-#include <sys/stat.h> // 用于目录创建
-#include <time.h>     // 用于时间戳
+#include <stdio.h>
+#include <sys/stat.h>
+#include <time.h>
 
 // 全局变量定义
 int BOARD_SIZE = 15;                                           // 实际使用的棋盘尺寸(默认15)
@@ -9,6 +9,9 @@ int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE] = {0};               // 棋盘状态�
 const int direction[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}}; // 四个方向：向下、向右、右下、左下
 Step steps[MAX_STEPS];                                         // 存储所有落子步骤的数组
 int step_count = 0;                                            // 当前步数计数器
+bool use_forbidden_moves = false;                              // 默认不启用禁手规则
+int use_timer = 0;                                             // 默认不启用计时器
+int time_limit = 30;                                           // 默认时间限制为30秒
 
 /**
  * @brief 初始化棋盘为全空状态并重置步数计数器
@@ -75,22 +78,134 @@ bool have_space(int x, int y)
 }
 
 /**
+ * @brief 玩家落子操作
+ *
+ * @param player1
+ * @param player2
+ * @return int player1 or player2
+ */
+void setup_board_size()
+{
+    printf("通常棋盘大小分为休闲棋盘(13X13)、标准棋盘(15X15)和特殊棋盘(19X19)\n");
+    char prompt[100];
+    sprintf(prompt, "请输入棋盘大小(5~%d)(默认为标准棋盘):\n", MAX_BOARD_SIZE);
+    BOARD_SIZE = get_integer_input(prompt, 5, MAX_BOARD_SIZE);
+}
+
+/**
+ * @brief Set the up game options object
+ * 配置游戏选项，包括禁手规则、计时器和时间限制
+ */
+void setup_game_options()
+{
+    use_forbidden_moves = get_integer_input("是否启用禁手规则 (1-是, 0-否): ", 0, 1);
+
+    use_timer = get_integer_input("是否启用计时器 (1-是, 0-否): ", 0, 1);
+    if (use_timer)
+    {
+        time_limit = get_integer_input("请输入每回合的时间限制 (分钟): ", 1, 60) * 60;
+    }
+}
+
+/**
+ * @brief 确定先手玩家
+ *
+ * @param player1
+ * @param player2
+ * @return int player1 or player2
+ */
+int determine_first_player(int player1, int player2)
+{
+    char prompt[100];
+    sprintf(prompt, "请选择先手方 (1 for Player %d, 2 for Player %d): ", player1, player2);
+    int first_player_choice = get_integer_input(prompt, 1, 2);
+    if (first_player_choice == 1)
+    {
+        return player1;
+    }
+    else
+    {
+        return player2;
+    }
+}
+
+/**
+ * @brief 检查是否为禁手
+ *
+ * @param x
+ * @param y
+ * @param player
+ * @return true
+ * @return false
+ */
+bool is_forbidden_move(int x, int y, int player)
+{
+    if (!use_forbidden_moves)
+    {
+        return false;
+    }
+    if (player != PLAYER && player != PLAYER3)
+    {
+        return false;
+    }
+
+    board[x][y] = player;
+
+    int three_count = 0;
+    int four_count = 0;
+
+    for (int i = 0; i < 4; i++)
+    {
+        DirInfo info = count_specific_direction(x, y, direction[i][0], direction[i][1], player);
+
+        if (info.continuous_chess > 5)
+        {
+            board[x][y] = EMPTY;
+            return true; // 长连禁手
+        }
+        if (info.continuous_chess == 3 && info.check_start && info.check_end)
+        {
+            three_count++;
+        }
+        if (info.continuous_chess == 4 && (info.check_start || info.check_end))
+        {
+            four_count++;
+        }
+    }
+
+    board[x][y] = EMPTY;
+
+    if (three_count >= 2 || four_count >= 2)
+    {
+        return true; // 三三或四四禁手
+    }
+
+    return false;
+}
+
+/**
  * @brief 执行玩家落子操作
  * @param x 行坐标(0-base)
  * @param y 列坐标(0-base)
  * @return true 落子成功
  * @return false 落子失败(位置无效)
  */
-bool player_move(int x, int y)
+bool player_move(int x, int y, int player)
 {
     // 位置无效则返回false
     if (!have_space(x, y))
         return false;
 
+    if (is_forbidden_move(x, y, player))
+    {
+        printf("禁手！请选择其他位置。\n");
+        return false;
+    }
+
     // 更新棋盘状态
-    board[x][y] = PLAYER;
+    board[x][y] = player;
     // 记录落子步骤：玩家标识和坐标
-    steps[step_count++] = (Step){PLAYER, x, y};
+    steps[step_count++] = (Step){player, x, y};
     return true;
 }
 
@@ -140,15 +255,6 @@ DirInfo count_specific_direction(int x, int y, int dx, int dy, int player)
     return info;
 }
 
-/**
- * @brief 检查特定位置落子后是否形成五连珠获胜
- * @param x 行坐标(0-base)
- * @param y 列坐标(0-base)
- * @param player 玩家标识(PLAYER/AI)
- * @return true 在任意方向形成五连珠
- * @return false 未形成五连珠
- * @note 检查四个方向(水平、垂直、对角线)是否存在连续5个同色棋子
- */
 bool check_win(int x, int y, int player)
 {
     // 检查四个方向是否存在五连珠
@@ -156,7 +262,9 @@ bool check_win(int x, int y, int player)
     {
         DirInfo info = count_specific_direction(x, y, direction[i][0], direction[i][1], player);
         if (info.continuous_chess >= 5) // 连续棋子>=5即获胜
+        {
             return true;
+        }
     }
     return false; // 四个方向都没有五连珠
 }
@@ -354,6 +462,32 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
  * - 步数>10时缩小搜索范围到已有棋子附近2格
  * - 使用中心位置优先策略
  */
+int get_integer_input(const char *prompt, int min, int max)
+{
+    int value;
+    int result;
+    char ch;
+
+    while (1)
+    {
+        printf("%s", prompt);
+        result = scanf("%d", &value);
+
+        if (result == 1 && value >= min && value <= max)
+        {
+            // 清除输入缓冲区中剩余的字符
+            while ((ch = getchar()) != '\n' && ch != EOF);
+            return value;
+        }
+        else
+        {
+            // 清除无效输入
+            while ((ch = getchar()) != '\n' && ch != EOF);
+            printf("输入无效，请输入一个介于 %d 和 %d 之间的整数。\n", min, max);
+        }
+    }
+}
+
 void ai_move(int depth)
 {
     // 1. 首先检查是否需要阻止玩家的四子连棋或三子活棋
@@ -574,26 +708,70 @@ void review_process()
         printf("\n双方势均力敌！\n");
     }
 
-    printf("\n按Enter键退出...");
     getchar();
 }
 
 /**
  * @brief 悔棋功能实现
+ * @param steps_to_undo 要撤销的步数
  * @return true 悔棋成功
  * @return false 悔棋失败(步数不足)
- * @note 会撤销玩家和AI的最后一步操作
  */
-bool return_move()
+/**
+ * @brief 处理游戏结束后的记录保存
+ */
+void handle_save_record()
 {
-    if (step_count < 2)
+    int save_choice = 0;
+    printf("===== 游戏结束 =====\n");
+    printf("是否保存游戏记录? (1-是, 0-否): ");
+    scanf("%d", &save_choice);
+
+    if (save_choice == 1)
+    {
+        time_t now = time(NULL);
+        struct tm *t = localtime(&now);
+        char filename[256];
+        strftime(filename, sizeof(filename), "%Y%m%d_%H%M%S.txt", t);
+
+        int save_status = save_game_to_file(filename);
+        switch (save_status)
+        {
+        case 0: // 成功
+            printf("\n游戏记录已成功保存至: %s\n", filename);
+            printf("您可以使用以下命令进行复盘: .\\五子棋.exe -l %s\n", filename);
+            break;
+        case 1: // 目录创建失败
+            printf("\n游戏记录保存失败: 无法创建 'records' 目录。\n");
+            printf("请检查程序是否具有足够的写入权限或磁盘空间是否充足。\n");
+            break;
+        case 2: // 文件打开失败
+            printf("\n游戏记录保存失败: 无法在路径 '%s' 创建文件。\n", filename);
+            printf("请检查路径是否有效以及程序是否具有写入权限。\n");
+            break;
+        case 3: // 文件写入失败
+            printf("\n游戏记录保存失败: 写入文件时发生错误。\n");
+            printf("请检查磁盘空间是否已满。\n");
+            break;
+        default:
+            printf("\n游戏记录保存失败: 发生未知错误。\n");
+            break;
+        }
+    }
+}
+
+bool return_move(int steps_to_undo)
+{
+    if (step_count < steps_to_undo)
+    {
         return false;
+    }
 
-    Step ai_step = steps[--step_count];
-    board[ai_step.x][ai_step.y] = EMPTY;
-
-    Step player_step = steps[--step_count];
-    board[player_step.x][player_step.y] = EMPTY;
+    for (int i = 0; i < steps_to_undo; i++)
+    {
+        step_count--;
+        board[steps[step_count].x][steps[step_count].y] = EMPTY;
+    }
 
     return true;
 }

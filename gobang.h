@@ -2,8 +2,8 @@
  * @file gobang.h
  * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @brief 五子棋游戏头文件
- * @version 2.0
- * @date 2025-06-24
+ * @version 3.0
+ * @date 2025-06-26
  *
  * @copyright Copyright (c) 2025
  *
@@ -14,6 +14,8 @@
  * 3. 提供完整的游戏过程复盘功能
  * 4. 所有坐标采用0-base索引
  * 5. 使用全局变量简化状态管理
+ * 6. 实现了非阻塞的超时检测，超时后能立刻结束回合
+ * 7. 计时单位为分钟，方便用户设置
  */
 
 #ifndef GO_BANG_H
@@ -23,6 +25,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 #include <string.h>
 
 // 宏定义
@@ -36,8 +39,10 @@
  * @brief 玩家标识符
  * @note 使用1/2而非字符标识，便于扩展为多玩家游戏
  */
-#define PLAYER 1 // 玩家棋子标识符
-#define AI 2     // AI棋子标识符
+#define PLAYER 1  // 玩家棋子标识符
+#define AI 2      // AI棋子标识符
+#define PLAYER3 3 // 玩家3棋子标识符
+#define PLAYER4 4 // 玩家4棋子标识符
 
 /**
  * @brief 空位置标识符
@@ -55,6 +60,9 @@
 extern int BOARD_SIZE;                            // 实际使用的棋盘尺寸(默认15)
 extern int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE]; // 棋盘状态存储数组
 extern int step_count;                            // 当前步数计数器
+extern bool use_forbidden_moves;                  // 是否启用禁手规则
+extern int use_timer;                             // 是否启用计时器
+extern int time_limit;                            // 时间限制（秒）
 
 /**
  * @brief 落子步骤记录结构体
@@ -70,6 +78,8 @@ typedef struct
 } Step;
 
 extern Step steps[MAX_STEPS]; // 存储所有落子步骤的数组
+
+bool handle_player_turn(int current_player);
 
 /**
  * @brief 连子检测信息结构体
@@ -107,13 +117,42 @@ void print_board();
 bool have_space(int x, int y);
 
 /**
+ * @brief 设置棋盘大小
+ */
+void setup_board_size();
+
+/**
+ * @brief 设置游戏选项
+ * @note 包括禁手规则、计时器和时间限制
+ */
+void setup_game_options();
+
+/**
+ * @brief 决定先手玩家
+ * @param player1 玩家1的标识
+ * @param player2 玩家2的标识
+ * @return int 先手玩家的标识
+ */
+int determine_first_player(int player1, int player2);
+
+/**
+ * @brief 检查是否为禁手
+ * @param x 行坐标(0-base)
+ * @param y 列坐标(0-base)
+ * @param player 玩家标识
+ * @return true 是禁手
+ * @return false 不是禁手
+ */
+bool is_forbidden_move(int x, int y, int player);
+
+/**
  * @brief 玩家落子操作
  * @param x 行坐标(0-base)
  * @param y 列坐标(0-base)
  * @return true 落子成功
  * @return false 落子失败(位置无效)
  */
-bool player_move(int x, int y);
+bool player_move(int x, int y, int player);
 
 /**
  * @brief 计算特定方向上连续同色棋子数量
@@ -165,12 +204,22 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
 void ai_move(int depth);
 
 /**
+ * @brief Get the integer input object
+ * 
+ * @param prompt 提示信息
+ * @param min 最小值
+ * @param max 最大值
+ * @return int 输入的整数
+ */
+int get_integer_input(const char *prompt, int min, int max);
+
+/**
  * @brief 悔棋功能实现
  * @return true 悔棋成功
  * @return false 悔棋失败(步数不足)
  * @note 会撤销玩家和AI的最后一步操作
  */
-bool return_move();
+bool return_move(int steps_to_undo);
 
 /**
  * @brief 复盘游戏过程
@@ -195,6 +244,11 @@ int evaluate_performance(int player);
  *   3: 文件写入失败
  */
 int save_game_to_file(const char *filename);
+
+/**
+ * @brief 处理游戏结束后的记录保存
+ */
+void handle_save_record();
 
 /**
  * @brief 从文件加载游戏记录
