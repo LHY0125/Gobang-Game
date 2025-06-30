@@ -3,7 +3,7 @@
  * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @brief 五子棋游戏框架头文件
  * @version 3.0
- * @date 2025-06-26
+ * @date 2025-06-30
  *
  * @copyright Copyright (c) 2025
  *
@@ -18,9 +18,14 @@
 
 #include "gobang.h"
 
+// 特殊输入命令
+#define INPUT_UNDO -1
+#define INPUT_SAVE -2
+#define INPUT_EXIT -3
+
 /**
  * @brief 从用户获取整数输入
- * 
+ *
  * @param prompt 提示信息
  * @param min 最小值
  * @param max 最大值
@@ -30,10 +35,18 @@ int get_integer_input(const char *prompt, int min, int max);
 
 /**
  * @brief 处理玩家回合
- * 
- * @param current_player 
- * @return true 
- * @return false 
+ *
+ * @param x 玩家输入的横坐标
+ * @param y 玩家输入的纵坐标
+ * @return true 输入有效
+ * @return false 输入无效
+ */
+bool parse_player_input(int *x, int *y);
+
+/**
+ * @brief 处理AI回合
+ *
+ * @param current_player 当前玩家
  */
 bool handle_player_turn(int current_player);
 

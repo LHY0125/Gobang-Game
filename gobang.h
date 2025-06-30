@@ -3,7 +3,7 @@
  * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @brief 五子棋游戏头文件
  * @version 3.0
- * @date 2025-06-26
+ * @date 2025-06-30
  *
  * @copyright Copyright (c) 2025
  *
@@ -41,8 +41,8 @@
  */
 #define PLAYER 1  // 玩家棋子标识符
 #define AI 2      // AI棋子标识符
-#define PLAYER3 3 // 玩家3棋子标识符
-#define PLAYER4 4 // 玩家4棋子标识符
+#define PLAYER1 1 // 玩家1棋子标识符
+#define PLAYER2 2 // 玩家2棋子标识符
 
 /**
  * @brief 空位置标识符
@@ -63,6 +63,7 @@ extern int step_count;                            // 当前步数计数器
 extern bool use_forbidden_moves;                  // 是否启用禁手规则
 extern int use_timer;                             // 是否启用计时器
 extern int time_limit;                            // 时间限制（秒）
+extern const int direction[4][2];
 
 /**
  * @brief 落子步骤记录结构体
@@ -176,34 +177,6 @@ DirInfo count_specific_direction(int x, int y, int dx, int dy, int player);
 bool check_win(int x, int y, int player);
 
 /**
- * @brief 评估特定位置对当前玩家的价值
- * @param x 行坐标(0-base)
- * @param y 列坐标(0-base)
- * @param player 玩家标识(PLAYER/AI)
- * @return int 位置评估分数(越高越好)
- */
-int evaluate_pos(int x, int y, int player);
-
-/**
- * @brief 带α-β剪枝的深度优先搜索(极小极大算法)
- * @param x 当前行坐标
- * @param y 当前列坐标
- * @param player 当前玩家
- * @param depth 搜索深度
- * @param alpha α值(当前最大值)
- * @param beta β值(当前最小值)
- * @param is_maximizing 是否为极大化玩家
- * @return int 最佳评估分数
- */
-int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximizing);
-
-/**
- * @brief AI落子决策函数
- * 使用评估函数和搜索算法选择最佳落子位置
- */
-void ai_move(int depth);
-
-/**
  * @brief 悔棋功能实现
  * @return true 悔棋成功
  * @return false 悔棋失败(步数不足)
@@ -232,7 +205,6 @@ int evaluate_performance(int player);
  * @return int 一步棋的得分
  */
 int calculate_step_score(int x, int y, int player);
-
 
 /**
  * @brief 将当前游戏记录保存到文件

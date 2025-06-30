@@ -1,14 +1,16 @@
 #include "gobang.h"
 #include "game_mode.h"
+#include "ai.h"
 #include <stdio.h>
 #include <sys/stat.h>
 #include <time.h>
 
 // 全局变量定义
-int BOARD_SIZE = 15;                                           // 实际使用的棋盘尺寸(默认15)
-int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE] = {0};               // 棋盘状态存储数组(默认棋盘全空为0)
-const int direction[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}}; // 四个方向：向下、向右、右下、左下
+int BOARD_SIZE = 15;                             // 实际使用的棋盘尺寸(默认15)
+int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE] = {0}; // 棋盘状态存储数组(默认棋盘全空为0)
+
 Step steps[MAX_STEPS];                                         // 存储所有落子步骤的数组
+const int direction[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}}; // 四个方向：向下、向右、右下、左下
 int step_count = 0;                                            // 当前步数计数器
 bool use_forbidden_moves = false;                              // 默认不启用禁手规则
 int use_timer = 0;                                             // 默认不启用计时器
@@ -144,7 +146,7 @@ bool is_forbidden_move(int x, int y, int player)
     {
         return false;
     }
-    if (player != PLAYER && player != PLAYER3)
+    if (player != PLAYER && player != PLAYER1)
     {
         return false;
     }
@@ -270,306 +272,6 @@ bool check_win(int x, int y, int player)
 }
 
 /**
- * @brief 评估特定位置对当前玩家的战略价值
- * @param x 行坐标(0-base)
- * @param y 列坐标(0-base)
- * @param player 玩家标识(PLAYER/AI)
- * @return int 综合评估分数(越高表示位置越好)
- * @note 评分标准:
- * - 活四:100000 冲四:10000 死四:500
- * - 活三:5000 眠三:1000 死三:50
- * - 活二:500 眠二:100 死二:10
- * - 单子:50(开放)/10(半开放)/1(封闭)
- * - 中心位置有额外加成
- */
-int evaluate_pos(int x, int y, int player)
-{
-    // 保存原始值用于还原
-    int original = board[x][y];
-    // 模拟在该位置落子
-    board[x][y] = player;
-
-    int total_score = 0;      // 总分
-    int line_scores[4] = {0}; // 四个方向的得分
-
-    // 遍历四个方向进行评估
-    for (int i = 0; i < 4; i++)
-    {
-        int dx = direction[i][0], dy = direction[i][1];
-        // 获取当前方向上的棋型信息
-        DirInfo info = count_specific_direction(x, y, dx, dy, player);
-
-        // 直接形成五连珠为必胜
-        if (info.continuous_chess >= 5)
-        {
-            board[x][y] = original; // 还原棋盘
-            return 1000000;         // 返回最大分
-        }
-
-        // 根据连续棋子数评分
-        switch (info.continuous_chess)
-        {
-        case 4:                                     // 四连珠
-            if (info.check_start && info.check_end) // 活四(两端开放)
-                line_scores[i] = 100000;
-            else if (info.check_start || info.check_end) // 冲四(一端开放)
-                line_scores[i] = 10000;
-            else // 死四(两端封闭)
-                line_scores[i] = 500;
-            break;
-
-        case 3:                                     // 三连珠
-            if (info.check_start && info.check_end) // 活三
-                line_scores[i] = 5000;
-            else if (info.check_start || info.check_end) // 眠三
-                line_scores[i] = 1000;
-            else // 死三
-                line_scores[i] = 50;
-            break;
-
-        case 2:                                     // 二连珠
-            if (info.check_start && info.check_end) // 活二
-                line_scores[i] = 500;
-            else if (info.check_start || info.check_end) // 眠二
-                line_scores[i] = 100;
-            else // 死二
-                line_scores[i] = 10;
-            break;
-
-        case 1:                                     // 单子
-            if (info.check_start && info.check_end) // 开放位置
-                line_scores[i] = 50;
-            else if (info.check_start || info.check_end) // 半开放位置
-                line_scores[i] = 10;
-            else // 封闭位置
-                line_scores[i] = 1;
-            break;
-        }
-    }
-
-    // 计算总分（最高方向分+其他方向分加权）
-    int max_score = 0;
-    int sum_score = 0;
-    for (int i = 0; i < 4; i++)
-    {
-        if (line_scores[i] > max_score)
-            max_score = line_scores[i];
-        sum_score += line_scores[i];
-    }
-    total_score = max_score * 10 + sum_score; // 主方向权重更高
-
-    // 位置奖励：越靠近中心分数越高
-    int center_x = BOARD_SIZE / 2;
-    int center_y = BOARD_SIZE / 2;
-    int distance = abs(x - center_x) + abs(y - center_y); // 曼哈顿距离
-    int position_bonus = 50 * (BOARD_SIZE - distance);    // 距离中心越近奖励越高
-
-    board[x][y] = original;              // 还原棋盘状态
-    return total_score + position_bonus; // 返回总评估分
-}
-
-/**
- * @brief 带α-β剪枝的深度优先搜索(极小极大算法实现)
- * @param x 当前行坐标
- * @param y 当前列坐标
- * @param player 当前玩家
- * @param depth 剩余搜索深度
- * @param alpha α值(当前最大值)
- * @param beta β值(当前最小值)
- * @param is_maximizing 是否为极大化玩家(AI)
- * @return int 最佳评估分数
- * @note 算法流程:
- * 1. 检查是否获胜或达到搜索深度
- * 2. 遍历所有可能落子位置
- * 3. 递归评估每个位置的分数
- * 4. 根据is_maximizing选择最大/最小值
- * 5. 使用α-β剪枝优化搜索过程
- */
-int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximizing)
-{
-    // 检查当前落子是否获胜
-    if (check_win(x, y, player))
-    {
-        return (player == AI) ? 1000000 + depth : -1000000 - depth;
-    }
-
-    // 达到搜索深度或平局
-    if (depth == 0 || step_count >= BOARD_SIZE * BOARD_SIZE)
-    {
-        return evaluate_pos(x, y, AI) - evaluate_pos(x, y, PLAYER);
-    }
-
-    int best_score = is_maximizing ? -1000000 : 1000000;
-
-    // 遍历所有可能落子位置
-    for (int i = 0; i < BOARD_SIZE; i++)
-    {
-        for (int j = 0; j < BOARD_SIZE; j++)
-        {
-            if (board[i][j] != EMPTY)
-                continue;
-
-            // 模拟当前玩家落子
-            board[i][j] = player;
-            step_count++;
-
-            // 递归搜索(切换玩家和搜索深度)
-            int current_score = dfs(i, j, (player == AI) ? PLAYER : AI, depth - 1, alpha, beta, !is_maximizing);
-
-            // 撤销落子
-            board[i][j] = EMPTY;
-            step_count--;
-
-            // 极大值玩家(AI)逻辑
-            if (is_maximizing)
-            {
-                best_score = (current_score > best_score) ? current_score : best_score;
-                alpha = (best_score > alpha) ? best_score : alpha;
-                // α剪枝
-                if (beta <= alpha)
-                {
-                    break;
-                }
-            }
-            // 极小值玩家(人类)逻辑
-            else
-            {
-                best_score = (current_score < best_score) ? current_score : best_score;
-                beta = (best_score < beta) ? best_score : beta;
-                // β剪枝
-                if (beta <= alpha)
-                {
-                    break;
-                }
-            }
-        }
-        if ((is_maximizing && best_score >= beta) || (!is_maximizing && best_score <= alpha))
-        {
-            break; // 提前退出外层循环
-        }
-    }
-
-    return best_score;
-}
-
-/**
- * @brief AI决策主函数，使用评估函数和搜索算法选择最佳落子位置
- * @note 采用两阶段决策逻辑：
- * 1. 防御阶段：检查并阻止玩家即将获胜的位置（活四、冲四、活三）
- * 2. 进攻阶段：若无紧急防御需求，使用DFS评估选择最佳进攻位置
- * @note 实现细节：
- * - 优先处理玩家活四、冲四等危险局面
- * - 步数>10时缩小搜索范围到已有棋子附近2格
- * - 使用中心位置优先策略
- */
-void ai_move(int depth)
-{
-    // 1. 首先检查是否需要阻止玩家的四子连棋或三子活棋
-    for (int i = 0; i < BOARD_SIZE; i++)
-    {
-        for (int j = 0; j < BOARD_SIZE; j++)
-        {
-            if (board[i][j] != EMPTY)
-                continue;
-
-            // 模拟玩家在此位置落子
-            board[i][j] = PLAYER;
-            bool need_block = false;
-
-            // 检查四个方向
-            for (int k = 0; k < 4; k++)
-            {
-                DirInfo info = count_specific_direction(i, j, direction[k][0], direction[k][1], PLAYER);
-
-                // 如果玩家能形成四子连棋且至少一端开放
-                if (info.continuous_chess >= 4 && (info.check_start || info.check_end))
-                {
-                    need_block = true;
-                    break;
-                }
-
-                // 如果玩家能形成三子活棋且两端开放
-                if (info.continuous_chess == 3 && info.check_start && info.check_end)
-                {
-                    need_block = true;
-                    break;
-                }
-            }
-
-            board[i][j] = EMPTY; // 恢复棋盘
-
-            if (need_block)
-            {
-                // 必须在此位置落子阻止
-                board[i][j] = AI;
-                steps[step_count++] = (Step){AI, i, j};
-                printf("AI落子(%d, %d)\n", i + 1, j + 1);
-                return;
-            }
-        }
-    }
-
-    // 2. 如果没有需要立即阻止的情况，则正常评估
-    int best_score = -1000000;
-    int best_x = -1, best_y = -1;
-
-    // 遍历棋盘所有空位
-    for (int i = 0; i < BOARD_SIZE; i++)
-    {
-        for (int j = 0; j < BOARD_SIZE; j++)
-        {
-            if (board[i][j] != EMPTY)
-                continue;
-
-            // 只考虑已有棋子附近(2格范围内)
-            bool has_nearby_stone = false;
-            for (int di = -2; di <= 2; di++)
-            {
-                for (int dj = -2; dj <= 2; dj++)
-                {
-                    int ni = i + di;
-                    int nj = j + dj;
-                    if (ni >= 0 && ni < BOARD_SIZE &&
-                        nj >= 0 && nj < BOARD_SIZE)
-                    {
-                        if (board[ni][nj] != EMPTY)
-                        {
-                            has_nearby_stone = true;
-                            break;
-                        }
-                    }
-                }
-                if (has_nearby_stone)
-                    break;
-            }
-            if (!has_nearby_stone && step_count > 10)
-                continue;
-
-            // 模拟AI落子
-            board[i][j] = AI;
-            int current_score = dfs(i, j, PLAYER, depth, -1000000, 1000000, false);
-            board[i][j] = EMPTY;
-
-            // 更新最佳位置
-            if (current_score > best_score)
-            {
-                best_score = current_score;
-                best_x = i;
-                best_y = j;
-            }
-        }
-    }
-
-    // 执行最佳落子
-    if (best_x != -1 && best_y != -1)
-    {
-        board[best_x][best_y] = AI;
-        steps[step_count++] = (Step){AI, best_x, best_y};
-        printf("AI落子(%d, %d)\n", best_x + 1, best_y + 1);
-    }
-}
-
-/**
  * @brief 复盘游戏全过程并展示评分
  * @note 实现流程:
  * 1. 初始化临时复盘棋盘
@@ -611,7 +313,7 @@ void review_process(int game_mode)
         // 打印当前步骤信息
         // 根据游戏模式显示不同的标题和玩家信息
         if (game_mode == 1)
-        { 
+        {
             // 人机对战
             printf("\n===== 五子棋人机对战(%dX%d棋盘) =====", BOARD_SIZE, BOARD_SIZE);
             printf("\n    第%d步/%d步: %s 落子于(%d, %d)\n",
@@ -620,12 +322,12 @@ void review_process(int game_mode)
                    s.x + 1, s.y + 1);
         }
         else
-        { 
+        {
             // 双人对战
             printf("\n===== 五子棋双人对战(%dX%d棋盘) =====", BOARD_SIZE, BOARD_SIZE);
             printf("\n    第%d步/%d步: %s 落子于(%d, %d)\n",
                    i + 1, step_count,
-                   (s.player == PLAYER3) ? "玩家1(黑棋)" : "玩家2(白棋)",
+                   (s.player == PLAYER1) ? "玩家1(黑棋)" : "玩家2(白棋)",
                    s.x + 1, s.y + 1);
         }
 
@@ -640,9 +342,9 @@ void review_process(int game_mode)
             printf("%2d ", row + 1); // 行号
             for (int col = 0; col < BOARD_SIZE; col++)
             {
-                if (temp_board[row][col] == PLAYER || temp_board[row][col] == PLAYER3)
+                if (temp_board[row][col] == PLAYER || temp_board[row][col] == PLAYER1)
                     printf("x ");
-                else if (temp_board[row][col] == AI || temp_board[row][col] == PLAYER4)
+                else if (temp_board[row][col] == AI || temp_board[row][col] == PLAYER2)
                     printf("○ ");
                 else
                     printf("· ");
@@ -668,10 +370,10 @@ void review_process(int game_mode)
     // 遍历所有步数，累积每一步的得分
     for (int i = 0; i < step_count; i++)
     {
-        if (steps[i].player == PLAYER || steps[i].player == PLAYER3)
+        if (steps[i].player == PLAYER || steps[i].player == PLAYER1)
         {
             player1_score += calculate_step_score(steps[i].x, steps[i].y, steps[i].player);
-        } 
+        }
         else
         {
             player2_score += calculate_step_score(steps[i].x, steps[i].y, steps[i].player);
@@ -688,7 +390,7 @@ void review_process(int game_mode)
                    player1_score, (double)player1_score * 100.0 / sum_score);
             printf("AI得分: %d, 占比: %.2f%%\n",
                    player2_score, (double)player2_score * 100.0 / sum_score);
-        } 
+        }
         else
         {
             printf("玩家1(黑棋)得分: %d, 占比: %.2f%%\n",
@@ -703,7 +405,7 @@ void review_process(int game_mode)
         {
             printf("玩家得分: %d\n", player1_score);
             printf("AI得分: %d\n", player2_score);
-        } 
+        }
         else
         {
             printf("玩家1(黑棋)得分: %d\n", player1_score);
@@ -752,7 +454,7 @@ void handle_save_record(int game_mode)
         {
         case 0: // 成功
             printf("\n游戏记录已成功保存至: %s\n", filename);
-            printf("您可以使用以下命令进行复盘: .\\五子棋.exe -l %s\n", filename);
+            printf("您可以使用以下命令进行复盘: .\\gobang.exe -l %s\n", filename);
             break;
         case 1: // 目录创建失败
             printf("\n游戏记录保存失败: 无法创建 'records' 目录。\n");
@@ -775,7 +477,7 @@ void handle_save_record(int game_mode)
 
 /**
  * @brief 悔棋功能实现
- * 
+ *
  * @param steps_to_undo 要悔棋的步数
  * @return true 悔棋成功
  * @return false 悔棋失败(步数不足)
@@ -789,13 +491,15 @@ bool return_move(int steps_to_undo)
 
     for (int i = 0; i < steps_to_undo; i++)
     {
-        step_count--;
-        board[steps[step_count].x][steps[step_count].y] = EMPTY;
+        if (step_count > 0)
+        {
+            step_count--;
+            board[steps[step_count].x][steps[step_count].y] = EMPTY;
+        }
     }
 
     return true;
 }
-
 
 /**
  * @brief 评估玩家在整盘棋局中的表现
