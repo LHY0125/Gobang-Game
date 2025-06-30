@@ -204,16 +204,6 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
 void ai_move(int depth);
 
 /**
- * @brief Get the integer input object
- * 
- * @param prompt 提示信息
- * @param min 最小值
- * @param max 最大值
- * @return int 输入的整数
- */
-int get_integer_input(const char *prompt, int min, int max);
-
-/**
  * @brief 悔棋功能实现
  * @return true 悔棋成功
  * @return false 悔棋失败(步数不足)
@@ -225,7 +215,7 @@ bool return_move(int steps_to_undo);
  * @brief 复盘游戏过程
  * 逐步重现游戏中的所有落子步骤
  */
-void review_process();
+void review_process(int game_mode);
 
 /**
  * @brief 评估玩家在整盘棋局中的表现
@@ -233,6 +223,16 @@ void review_process();
  * @return int 总分(已考虑方向重复计算)
  */
 int evaluate_performance(int player);
+
+/**
+ * @brief 计算一步棋的得分
+ * @param x 行坐标
+ * @param y 列坐标
+ * @param player 玩家标识
+ * @return int 一步棋的得分
+ */
+int calculate_step_score(int x, int y, int player);
+
 
 /**
  * @brief 将当前游戏记录保存到文件
@@ -243,12 +243,12 @@ int evaluate_performance(int player);
  *   2: 文件打开失败
  *   3: 文件写入失败
  */
-int save_game_to_file(const char *filename);
+int save_game_to_file(const char *filename, int game_mode);
 
 /**
  * @brief 处理游戏结束后的记录保存
  */
-void handle_save_record();
+void handle_save_record(int game_mode);
 
 /**
  * @brief 从文件加载游戏记录
@@ -256,6 +256,6 @@ void handle_save_record();
  * @return true 加载成功
  * @return false 加载失败
  */
-bool load_game_from_file(const char *filename);
+int load_game_from_file(const char *filename);
 
 #endif // GO_BANG_H

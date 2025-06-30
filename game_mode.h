@@ -19,6 +19,16 @@
 #include "gobang.h"
 
 /**
+ * @brief 从用户获取整数输入
+ * 
+ * @param prompt 提示信息
+ * @param min 最小值
+ * @param max 最大值
+ * @return int 输入的整数
+ */
+int get_integer_input(const char *prompt, int min, int max);
+
+/**
  * @brief 处理玩家回合
  * 
  * @param current_player 

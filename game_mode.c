@@ -10,6 +10,42 @@
 #endif
 
 /**
+ * @brief 从用户获取整数输入
+ * 
+ * @param prompt 提示信息
+ * @param min 最小值
+ * @param max 最大值
+ * @return int 用户输入的整数
+ */
+int get_integer_input(const char *prompt, int min, int max)
+{
+    int value;
+    int result;
+    char ch;
+
+    while (1)
+    {
+        printf("%s", prompt);
+        result = scanf("%d", &value);
+
+        if (result == 1 && value >= min && value <= max)
+        {
+            // 清除输入缓冲区中剩余的字符
+            while ((ch = getchar()) != '\n' && ch != EOF)
+                ;
+            return value;
+        }
+        else
+        {
+            // 清除无效输入
+            while ((ch = getchar()) != '\n' && ch != EOF)
+                ;
+            printf("输入无效，请输入一个介于 %d 和 %d 之间的整数。\n", min, max);
+        }
+    }
+}
+
+/**
  * @brief 处理玩家回合
  * 
  * @param current_player 
@@ -190,11 +226,9 @@ void run_ai_game()
     review_choice = get_integer_input("是否要复盘本局比赛? (1-是, 0-否): ", 0, 1);
     if (review_choice == 1)
     {
-        review_process();
+        review_process(1); // 1 for AI mode
     }
-end_game:
-end_pvp_game:
-    handle_save_record();
+    handle_save_record(1); // 1 for AI mode
 }
 
 /**
@@ -235,9 +269,9 @@ void run_pvp_game()
     review_choice = get_integer_input("是否要复盘本局比赛? (1-是, 0-否): ", 0, 1);
     if (review_choice == 1)
     {
-        review_process();
+        review_process(2); // 2 for PvP mode
     }
-    handle_save_record();
+    handle_save_record(2); // 2 for PvP mode
 }
 
 /**
@@ -246,18 +280,75 @@ void run_pvp_game()
  */
 void run_review_mode()
 {
-    // 复盘模式
-    char filename[256];
-    printf("请输入复盘文件地址: ");
-    scanf("%s", filename);
-    if (load_game_from_file(filename))
+    char filename[100];
+    char record_files[100][100];
+    int file_count = 0;
+
+#ifdef _WIN32
+    WIN32_FIND_DATA ffd;
+    HANDLE hFind = FindFirstFile("records\\*", &ffd);
+    if (hFind != INVALID_HANDLE_VALUE)
     {
-        printf("成功加载历史记录: %s\n", filename);
-        review_process();
+        do
+        {
+            if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            {
+                strcpy(record_files[file_count++], ffd.cFileName);
+            }
+        } while (FindNextFile(hFind, &ffd) != 0);
+        FindClose(hFind);
+    }
+#endif
+
+    if (file_count > 0)
+    {
+        printf("发现以下复盘文件:\n");
+        for (int i = 0; i < file_count; i++)
+        {
+            printf("%d. %s\n", i + 1, record_files[i]);
+        }
+        
+        char prompt[150];
+        sprintf(prompt, "请输入复盘文件编号(1-%d)，或输入0以手动输入文件名: ", file_count);
+        int choice = get_integer_input(prompt, 0, file_count);
+
+        if (choice > 0)
+        {
+            strcpy(filename, record_files[choice - 1]);
+        }
+        else
+        {
+            printf("请输入完整文件名: ");
+            scanf("%s", filename);
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+
+            int possible_choice = atoi(filename);
+            if (possible_choice > 0 && possible_choice <= file_count)
+            {
+                strcpy(filename, record_files[possible_choice - 1]);
+            }
+        }
     }
     else
     {
-        printf("加载历史记录失败: %s\n", filename);
-        exit(1);
+        printf("未找到任何复盘文件，请输入复盘文件地址: ");
+        scanf("%s", filename);
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+    }
+
+    int game_mode = load_game_from_file(filename);
+    if (game_mode != 0)
+    {
+        if (game_mode == 1)
+        {
+            printf("加载AI对战模式复盘文件成功！\n");
+        }
+        else if (game_mode == 2)
+        {
+            printf("加载双人对战模式复盘文件成功！\n");
+        }
+        review_process(game_mode);
     }
 }
