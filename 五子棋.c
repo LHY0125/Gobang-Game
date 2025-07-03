@@ -7,7 +7,7 @@
 
 /**
  * @brief 将指令复制到powershell
- * gcc 五子棋.c gobang.c game_mode.c ai.c -o gobang.exe
+ * gcc -o gobang.exe gobang.c ai.c game_mode.c init_board.c record.c 五子棋.c
  * gcc 为编译器，五子棋.c gobang.c game_mode.c 为源文件，output/为输出目录
  * @brief 将指令复制到powershell
  * .\gobang.exe
@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
         }
         else if (mode == 4)
         {
+            printf("感谢使用五子棋游戏！\n");
             break;
         }
     }

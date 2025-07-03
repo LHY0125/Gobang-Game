@@ -1,6 +1,8 @@
 #include "game_mode.h"
+#include "init_board.h"
 #include "gobang.h"
 #include "ai.h"
+#include "record.h"
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -12,12 +14,12 @@
 #endif
 
 /**
- * @brief ????????????????
+ * @brief 从用户获取整数输入
  *
- * @param prompt ??????
- * @param min ?????
- * @param max ????
- * @return int ????????????
+ * @param prompt 提示信息
+ * @param min 最小值
+ * @param max 最大值
+ * @return int 用户输入的整数
  */
 int get_integer_input(const char *prompt, int min, int max)
 {
@@ -32,23 +34,23 @@ int get_integer_input(const char *prompt, int min, int max)
 
         if (result == 1 && value >= min && value <= max)
         {
-            // ????????????????????
+            // 清除输入缓冲区中剩余的字符
             while ((ch = getchar()) != '\n' && ch != EOF)
                 ;
             return value;
         }
         else
         {
-            // ???????????
+            // 清除无效输入
             while ((ch = getchar()) != '\n' && ch != EOF)
                 ;
-            printf("??????????????????????? %d ?? %d ??????????\n", min, max);
+            printf("输入无效，请输入一个介于 %d 和 %d 之间的整数。\n", min, max);
         }
     }
 }
 
 /**
- * @brief ?????????
+ * @brief 处理玩家回合
  *
  * @param current_player
  * @return true
@@ -65,67 +67,77 @@ bool parse_player_input(int *x, int *y)
             scanf("%s", input);
             break;
         }
-        Sleep(100);
+        Sleep(100); // 短暂延迟以防止CPU占用过高
     }
 
     if (sscanf(input, "%d", x) == 1)
     {
+        // 成功解析第一个数字，现在解析第二个
         if (scanf("%d", y) != 1)
         {
+            // 如果第二个数字不可用，则检查特殊命令
             if (*x == INPUT_UNDO)
             {
                 int steps_to_undo;
-                printf("???????????????(??????????): ");
+                printf("请输入要悔棋的步数(双方各退一步): ");
                 steps_to_undo = get_integer_input("", 1, step_count / 2);
                 if (return_move(steps_to_undo * 2))
                 {
-                    printf("??????????????? %d ????\n", steps_to_undo);
+                    printf("成功悔棋，双方各退 %d 步！\n", steps_to_undo);
                     print_board();
                 }
                 else
                 {
-                    printf("????????\n");
+                    printf("无法悔棋！\n");
                 }
-                return false;
+                return false; // 特殊命令
             }
             else if (*x == INPUT_SAVE)
             {
-                return false;
+                // ... 处理保存 ...
+                return false; // 特殊命令
             }
             else if (*x == INPUT_EXIT)
             {
-                return false;
+                // ... 处理退出 ...
+                return false; // 特殊命令
             }
-            printf("??????????????????????????");
+            printf("无效输入，请输入两个数字坐标。");
             while (getchar() != '\n')
                 ;
-            return false;
+            return false; // 无效输入
         }
     }
     else
     {
+        // sscanf失败，检查'r'或'R'
         if (input[0] == 'r' || input[0] == 'R')
         {
             int steps_to_undo;
-            printf("???????????????(??????????): ");
+            printf("请输入要悔棋的步数(双方各退一步): ");
             steps_to_undo = get_integer_input("", 1, step_count / 2);
             if (return_move(steps_to_undo * 2))
             {
-                printf("??????????????? %d ????\n", steps_to_undo);
+                printf("成功悔棋，双方各退 %d 步！\n", steps_to_undo);
                 print_board();
             }
             else
             {
-                printf("????????\n");
+                printf("无法悔棋！\n");
             }
-            return false;
+            return false; // 特殊命令
         }
-        printf("???????????????????????'r'????^");
-        return false;
+        printf("无效输入，请输入数字坐标或'r'悔棋。");
+        return false; // 无效输入
     }
-    return true;
+    return true; // 有效坐标
 }
 
+/**
+ * @brief 处理玩家回合
+ * @param current_player 当前玩家
+ * @return true
+ */
 bool handle_player_turn(int current_player)
 {
     int x, y;
@@ -135,7 +147,7 @@ bool handle_player_turn(int current_player)
         time(&start_time);
     }
 
-    printf("\n???%d, ??????????????(?? ????1~%d)????????R/r????:", current_player, BOARD_SIZE);
+    printf("\n玩家%d, 请输入落子坐标(行 列，1~%d)，或输入R/r悔棋:", current_player, BOARD_SIZE);
 
     while (1)
     {
@@ -144,17 +156,18 @@ bool handle_player_turn(int current_player)
             time(&end_time);
             if (difftime(end_time, start_time) > time_limit)
             {
-                printf("\n???%d???, ????????\n", current_player);
-                return false;
+                printf("\n玩家%d超时, 对方获胜！\n", current_player);
+                return false; // Timeout
             }
         }
 
         if (parse_player_input(&x, &y))
         {
-            break;
+            break; // 收到有效输入
         }
         else
         {
+            // 已处理特殊命令或无效输入，继续循环
             return true;
         }
     }
@@ -164,33 +177,43 @@ bool handle_player_turn(int current_player)
 
     if (!player_move(x, y, current_player))
     {
-        printf("????????????????????\n");
-        return true; // ??????????????????
+        printf("坐标无效！请重新输入。\n");
+        return true; // 坐标无效，但回合继续
     }
     print_board();
 
     if (check_win(x, y, current_player))
     {
-        printf("\n???%d?????\n", current_player);
-        return false; // ???????
+        printf("\n玩家%d获胜！\n", current_player);
+        return false; // 游戏结束
     }
 
-    return true; // ???????
+    return true; // 成功落子
 }
 
 /**
- * @brief ????AI???
- * @note ???????????????????????????
- * @param AI_DEPTH AI?????????
+ * @brief 运行AI游戏
+ * @note 从文件中加载历史记录并进行复盘
+ * @param AI_DEPTH AI的搜索深度
  */
 void run_ai_game()
 {
     setup_game_options();
 
-    // AI?????
+    // AI对战模式
     setup_board_size();
     int AI_DEPTH = 3;
-    AI_DEPTH = get_integer_input("?????AI???(1~5), ?????????????????????AI???????????):", 1, 5);
+    AI_DEPTH = get_integer_input("请选择AI难度(1~5), 数字越大越强，注意数字越大AI思考时间越长！):", 1, 5);
+
+    /**
+     * @brief AI的防守系数，系数越大越倾向于防守
+     * @note 1~1.2
+     *       2~1.3
+     *       3~1.4
+     *       4~1.5
+     *       5~1.6
+     */
+    defense_coefficient = 1.2 + (AI_DEPTH - 1) * 0.1;
 
     empty_board();
     int current_player = determine_first_player(PLAYER, AI);
@@ -203,7 +226,7 @@ void run_ai_game()
             int old_step_count = step_count;
             if (!handle_player_turn(current_player))
             {
-                break; // ??????????
+                break; // 游戏结束或超时
             }
             if (step_count > old_step_count)
             {
@@ -212,7 +235,7 @@ void run_ai_game()
         }
         else
         {
-            printf("\nAI?????...\n");
+            printf("\nAI思考中...\n");
             time_t start_time, end_time;
             if (use_timer)
             {
@@ -226,7 +249,7 @@ void run_ai_game()
                 time(&end_time);
                 if (difftime(end_time, start_time) > time_limit)
                 {
-                    printf("\nAI???, ???????\n");
+                    printf("\nAI超时, 玩家获胜！\n");
                     break;
                 }
             }
@@ -234,7 +257,7 @@ void run_ai_game()
             Step last_step = steps[step_count - 1];
             if (check_win(last_step.x, last_step.y, AI))
             {
-                printf("\nAI?????\n");
+                printf("\nAI获胜！\n");
                 break;
             }
             current_player = PLAYER;
@@ -242,29 +265,24 @@ void run_ai_game()
 
         if (step_count == BOARD_SIZE * BOARD_SIZE)
         {
-            printf("\n????\n");
+            printf("\n平局！\n");
             break;
         }
     }
-    printf("===== ??????? =====\n");
-    int review_choice;
-    review_choice = get_integer_input("??????????????? (1-??, 0-??): ", 0, 1);
-    if (review_choice == 1)
-    {
-        review_process(1); // 1 for AI mode
-    }
+    printf("===== 游戏结束 =====\n");
+    review_process(1);     // 1 for AI mode
     handle_save_record(1); // 1 for AI mode
 }
 
 /**
- * @brief ???????????
- * @note ???????????????????????????
+ * @brief 运行双人对战模式
+ * @note 从文件中加载历史记录并进行复盘
  */
 void run_pvp_game()
 {
     setup_game_options();
 
-    // ???????
+    // 双人对战模式
     setup_board_size();
     empty_board();
     int current_player = determine_first_player(PLAYER1, PLAYER2);
@@ -275,12 +293,12 @@ void run_pvp_game()
         int old_step_count = step_count;
         if (!handle_player_turn(current_player))
         {
-            break; // ??????????
+            break; // 游戏结束或超时
         }
 
         if (step_count == BOARD_SIZE * BOARD_SIZE)
         {
-            printf("\n????\n");
+            printf("\n平局！\n");
             break;
         }
 
@@ -289,19 +307,14 @@ void run_pvp_game()
             current_player = (current_player == PLAYER1) ? PLAYER2 : PLAYER1;
         }
     }
-    printf("===== ??????? =====\n");
-    int review_choice;
-    review_choice = get_integer_input("??????????????? (1-??, 0-??): ", 0, 1);
-    if (review_choice == 1)
-    {
-        review_process(2); // 2 for PvP mode
-    }
+    printf("===== 游戏结束 =====\n");
+    review_process(2);     // 2 for PvP mode
     handle_save_record(2); // 2 for PvP mode
 }
 
 /**
- * @brief ??????????
- * @note ???????????????????????????
+ * @brief 运行复盘模式
+ * @note 从文件中加载历史记录并进行复盘
  */
 void run_review_mode()
 {
@@ -327,14 +340,14 @@ void run_review_mode()
 
     if (file_count > 0)
     {
-        printf("??????????????:\n");
+        printf("发现以下复盘文件:\n");
         for (int i = 0; i < file_count; i++)
         {
             printf("%d. %s\n", i + 1, record_files[i]);
         }
 
         char prompt[150];
-        sprintf(prompt, "??????????????(1-%d)????????0??????????????: ", file_count);
+        sprintf(prompt, "请输入复盘文件编号(1-%d)，或输入0以手动输入文件名: ", file_count);
         int choice = get_integer_input(prompt, 0, file_count);
 
         if (choice > 0)
@@ -343,7 +356,7 @@ void run_review_mode()
         }
         else
         {
-            printf("???????????????: ");
+            printf("请输入完整文件名: ");
             scanf("%s", filename);
             int c;
             while ((c = getchar()) != '\n' && c != EOF)
@@ -358,7 +371,7 @@ void run_review_mode()
     }
     else
     {
-        printf("???????????????????????????????: ");
+        printf("未找到任何复盘文件，请输入复盘文件地址: ");
         scanf("%s", filename);
         int c;
         while ((c = getchar()) != '\n' && c != EOF)
@@ -370,11 +383,11 @@ void run_review_mode()
     {
         if (game_mode == 1)
         {
-            printf("????AI?????????????????\n");
+            printf("加载AI对战模式复盘文件成功！\n");
         }
         else if (game_mode == 2)
         {
-            printf("???????????????????????\n");
+            printf("加载双人对战模式复盘文件成功！\n");
         }
         review_process(game_mode);
     }
