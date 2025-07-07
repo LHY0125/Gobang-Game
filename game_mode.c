@@ -79,8 +79,7 @@ bool parse_player_input(int *x, int *y)
             if (*x == INPUT_UNDO)
             {
                 int steps_to_undo;
-                printf("请输入要悔棋的步数(双方各退一步): ");
-                steps_to_undo = get_integer_input("", 1, step_count / 2);
+                steps_to_undo = get_integer_input("请输入要悔棋的步数(双方各退步数相同): ", 1, step_count / 2);
                 if (return_move(steps_to_undo * 2))
                 {
                     printf("成功悔棋，双方各退 %d 步！\n", steps_to_undo);
@@ -110,12 +109,11 @@ bool parse_player_input(int *x, int *y)
     }
     else
     {
-        // sscanf失败，检查'r'或'R'
+        // sscanf失败，检查特殊命令
         if (input[0] == 'r' || input[0] == 'R')
         {
             int steps_to_undo;
-            printf("请输入要悔棋的步数(双方各退一步): ");
-            steps_to_undo = get_integer_input("", 1, step_count / 2);
+            steps_to_undo = get_integer_input("请输入要悔棋的步数(双方各退步数相同): ", 1, step_count / 2);
             if (return_move(steps_to_undo * 2))
             {
                 printf("成功悔棋，双方各退 %d 步！\n", steps_to_undo);
@@ -127,7 +125,22 @@ bool parse_player_input(int *x, int *y)
             }
             return false; // 特殊命令
         }
-        printf("无效输入，请输入数字坐标或'r'悔棋。");
+        else if (input[0] == 's' || input[0] == 'S')
+        {
+            *x = INPUT_SURRENDER;
+            int confirm = get_integer_input("确认认输？(1:是/0:否): ", 0, 1);
+            if (confirm)
+            {
+                printf("玩家选择认输！\n");
+                return true; // 返回认输命令
+            }
+            else
+            {
+                printf("取消认输！\n");
+                return false; // 取消认输
+            }
+        }
+        printf("无效输入，请输入数字坐标、'r'悔棋或's'认输。");
         return false; // 无效输入
     }
     return true; // 有效坐标
@@ -147,7 +160,7 @@ bool handle_player_turn(int current_player)
         time(&start_time);
     }
 
-    printf("\n玩家%d, 请输入落子坐标(行 列，1~%d)，或输入R/r悔棋:", current_player, BOARD_SIZE);
+    printf("\n玩家%d, 请输入落子坐标(行 列，1~%d)，或输入R/r悔棋，S/s认输:", current_player, BOARD_SIZE);
 
     while (1)
     {
@@ -163,6 +176,11 @@ bool handle_player_turn(int current_player)
 
         if (parse_player_input(&x, &y))
         {
+            if (x == INPUT_SURRENDER)
+            {
+                printf("\n玩家%d选择认输，对方获胜！\n", current_player);
+                return false; // 游戏结束，认输
+            }
             break; // 收到有效输入
         }
         else
