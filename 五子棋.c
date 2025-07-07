@@ -6,6 +6,15 @@
 #endif
 
 /**
+ * @file gobang.h
+ * @brief 五子棋游戏核心逻辑头文件
+ * @details 定义了游戏的核心数据结构、全局变量、宏定义和函数原型。
+ * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
+ * @date 2025-07-02
+ * @version 4.0
+ */
+
+/**
  * @brief 将指令复制到powershell
  * gcc -o gobang.exe gobang.c ai.c game_mode.c init_board.c record.c 五子棋.c
  * gcc 为编译器，五子棋.c gobang.c game_mode.c 为源文件，output/为输出目录
