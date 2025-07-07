@@ -2,8 +2,8 @@
  * @file game_mode.h
  * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @brief 五子棋游戏框架头文件
- * @version 4.0
- * @date 2025-07-02
+ * @version 4.1
+ * @date 2025-07-07
  *
  * @copyright Copyright (c) 2025
  *
