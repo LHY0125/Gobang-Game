@@ -3,31 +3,36 @@
 
 #include "gobang.h"
 
-// --- å¤ç›˜ä¸è®°å½• ---
+// È«¾Ö±äÁ¿£¬ÓÃÓÚ´æ´¢¶Ô¾ÖÆÀ·Ö£¬È·±£¶ÔÕ½½áÊøºÍ¸´ÅÌÄ£Ê½Ê¹ÓÃÏàÍ¬µÄÆÀ·Ö
+extern int player1_final_score;
+extern int player2_final_score;
+extern int scores_calculated;
+
+// --- ¸´ÅÌÓë¼ÇÂ¼ ---
 /**
- * @brief è¿›å…¥å¤ç›˜æµç¨‹ï¼Œå›é¡¾æ•´å±€æ¸¸æˆ
- * @param game_mode æ¸¸æˆæ¨¡å¼ï¼ˆ1ä¸ºäººæœºï¼Œ2ä¸ºåŒäººï¼‰
+ * @brief ½øÈë¸´ÅÌÁ÷³Ì£¬»Ø¹ËÕû¾ÖÓÎÏ·
+ * @param game_mode ÓÎÏ·Ä£Ê½£¨1ÎªÈË»ú£¬2ÎªË«ÈË£©
  */
 void review_process(int game_mode);
 
 /**
- * @brief å°†å½“å‰å¯¹å±€è®°å½•ä¿å­˜åˆ°æ–‡ä»¶
- * @param filename è¦ä¿å­˜åˆ°çš„æ–‡ä»¶å
- * @param game_mode æ¸¸æˆæ¨¡å¼
- * @return 0è¡¨ç¤ºæˆåŠŸï¼Œé0è¡¨ç¤ºå¤±è´¥
+ * @brief ½«µ±Ç°¶Ô¾Ö¼ÇÂ¼±£´æµ½ÎÄ¼ş
+ * @param filename Òª±£´æµ½µÄÎÄ¼şÃû
+ * @param game_mode ÓÎÏ·Ä£Ê½
+ * @return 0±íÊ¾³É¹¦£¬·Ç0±íÊ¾Ê§°Ü
  */
 int save_game_to_file(const char *filename, int game_mode);
 
 /**
- * @brief å¤„ç†ä¿å­˜æ¸¸æˆè®°å½•çš„é€»è¾‘
- * @param game_mode æ¸¸æˆæ¨¡å¼
+ * @brief ´¦Àí±£´æÓÎÏ·¼ÇÂ¼µÄÂß¼­
+ * @param game_mode ÓÎÏ·Ä£Ê½
  */
 void handle_save_record(int game_mode);
 
 /**
- * @brief ä»æ–‡ä»¶åŠ è½½æ¸¸æˆè®°å½•
- * @param filename è¦åŠ è½½çš„æ–‡ä»¶å
- * @return 0è¡¨ç¤ºæˆåŠŸï¼Œé0è¡¨ç¤ºå¤±è´¥
+ * @brief ´ÓÎÄ¼ş¼ÓÔØÓÎÏ·¼ÇÂ¼
+ * @param filename Òª¼ÓÔØµÄÎÄ¼şÃû
+ * @return 0±íÊ¾³É¹¦£¬·Ç0±íÊ¾Ê§°Ü
  */
 int load_game_from_file(const char *filename);
 

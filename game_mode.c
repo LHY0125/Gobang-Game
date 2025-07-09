@@ -3,10 +3,14 @@
 #include "gobang.h"
 #include "ai.h"
 #include "record.h"
+#include "config.h"
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+
+// 引用record.h中定义的全局变量
+extern int scores_calculated;
 #ifdef _WIN32
 #include <windows.h>
 #include <direct.h>
@@ -216,6 +220,9 @@ bool handle_player_turn(int current_player)
  */
 void run_ai_game()
 {
+    // 重置评分计算标志，确保每局游戏都会重新计算评分
+    scores_calculated = 0;
+    
     setup_game_options();
 
     // AI对战模式
@@ -298,6 +305,9 @@ void run_ai_game()
  */
 void run_pvp_game()
 {
+    // 重置评分计算标志，确保每局游戏都会重新计算评分
+    scores_calculated = 0;
+    
     setup_game_options();
 
     // 双人对战模式
@@ -408,5 +418,9 @@ void run_review_mode()
             printf("加载双人对战模式复盘文件成功！\n");
         }
         review_process(game_mode);
+    }
+    else
+    {
+        printf("加载复盘文件失败！可能是旧版本文件格式或文件损坏\n");
     }
 }

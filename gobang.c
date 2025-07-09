@@ -3,19 +3,20 @@
 #include "gobang.h"
 #include "ai.h"
 #include "record.h"
+#include "config.h"
 #include <stdio.h>
 #include <sys/stat.h>
 #include <time.h>
 
 // 全局变量定义
-int BOARD_SIZE = 15;                                           // 实际使用的棋盘尺寸(默认15)
+int BOARD_SIZE = DEFAULT_BOARD_SIZE;                           // 实际使用的棋盘尺寸
 int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE] = {0};               // 棋盘状态存储数组(默认棋盘全空为0)
 Step steps[MAX_STEPS];                                         // 存储所有落子步骤的数组
 const int direction[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}}; // 四个方向：向下、向右、右下、左下
 int step_count = 0;                                            // 当前步数计数器
-bool use_forbidden_moves = false;                              // 默认不启用禁手规则
-int use_timer = 0;                                             // 默认不启用计时器
-int time_limit = 30;                                           // 默认时间限制为30秒
+bool use_forbidden_moves = DEFAULT_USE_FORBIDDEN_MOVES;        // 是否启用禁手规则
+int use_timer = DEFAULT_USE_TIMER;                             // 是否启用计时器
+int time_limit = DEFAULT_TIME_LIMIT;                           // 每回合的时间限制（秒）
 
 /**
  * @brief 检查棋盘(x, y)位置是否为空
@@ -177,10 +178,6 @@ bool check_win(int x, int y, int player)
     return false; // 四个方向都没有五连珠
 }
 
-
-
-
-
 /**
  * @brief 悔棋功能实现
  *
@@ -211,12 +208,12 @@ bool return_move(int steps_to_undo)
  * @brief 评估玩家在整盘棋局中的表现
  * @param player 要评估的玩家(PLAYER/AI)
  * @return int 总分(已考虑方向重复计算)
- * @note 评分标准:
- * - 五连:2500
- * - 活四:1000 冲四:500 死四:250
- * - 活三:250 眠三:100 死三:50
- * - 活二:50 眠二:20 死二:10
- * - 开放单子:10 半开放单子:5 封闭单子:1
+ * @note 改进后的评分标准:
+ * - 五连:5000 (提高权重，更强调获胜)
+ * - 活四:2000 冲四:1000 死四:300 (提高权重，强调进攻性)
+ * - 活三:500 眠三:200 死三:80 (提高权重，强调战略价值)
+ * - 活二:100 眠二:40 死二:15 (适当提高权重)
+ * - 开放单子:15 半开放单子:8 封闭单子:2 (适当提高权重)
  * @note 实现细节:
  * 1. 遍历棋盘所有位置
  * 2. 对每个棋子检查四个方向
@@ -234,41 +231,48 @@ int calculate_step_score(int x, int y, int player)
         switch (info.continuous_chess)
         {
         case 5:
-            step_score += 2500;
+            step_score += SCORE_FIVE;
             break; // 五连
         case 4:
             if (info.check_start && info.check_end)
-                step_score += 1000; // 活四
+                step_score += SCORE_LIVE_FOUR; // 活四
             else if (info.check_start || info.check_end)
-                step_score += 500; // 冲四
+                step_score += SCORE_RUSH_FOUR; // 冲四
             else
-                step_score += 250; // 死四
+                step_score += SCORE_DEAD_FOUR; // 死四
             break;
         case 3:
             if (info.check_start && info.check_end)
-                step_score += 250; // 活三
+                step_score += SCORE_LIVE_THREE; // 活三
             else if (info.check_start || info.check_end)
-                step_score += 100; // 眠三
+                step_score += SCORE_SLEEP_THREE; // 眠三
             else
-                step_score += 50; // 死三
+                step_score += SCORE_DEAD_THREE; // 死三
             break;
         case 2:
             if (info.check_start && info.check_end)
-                step_score += 50; // 活二
+                step_score += SCORE_LIVE_TWO; // 活二
             else if (info.check_start || info.check_end)
-                step_score += 20; // 眠二
+                step_score += SCORE_SLEEP_TWO; // 眠二
             else
-                step_score += 10; // 死二
+                step_score += SCORE_DEAD_TWO; // 死二
             break;
         case 1:
             if (info.check_start && info.check_end)
-                step_score += 10; // 开放单子
+                step_score += SCORE_LIVE_ONE; // 开放单子
             else if (info.check_start || info.check_end)
-                step_score += 5; // 半开放单子
+                step_score += SCORE_HALF_ONE; // 半开放单子
             else
-                step_score += 1; // 封闭单子
+                step_score += SCORE_DEAD_ONE; // 封闭单子
             break;
         }
     }
-    return step_score;
+    
+    // 位置奖励：越靠近中心分数越高
+    int center_x = BOARD_SIZE / 2;
+    int center_y = BOARD_SIZE / 2;
+    int distance = abs(x - center_x) + abs(y - center_y); // 曼哈顿距离
+    int position_bonus = POSITION_BONUS_FACTOR * (BOARD_SIZE - distance); // 距离中心越近奖励越高
+    
+    return step_score + position_bonus;
 }

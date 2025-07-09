@@ -1,11 +1,12 @@
 #include "gobang.h"
 #include "ai.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
 // 防守系数
-double defense_coefficient = 1.2;
+double defense_coefficient = DEFAULT_DEFENSE_COEFFICIENT;
 extern int BOARD_SIZE;
 extern int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE];
 extern int step_count;
@@ -64,7 +65,7 @@ int evaluate_pos(int x, int y, int player)
         if (info.continuous_chess >= 5)
         {
             board[x][y] = original; // 还原棋盘
-            return 1000000;         // 返回最大分
+            return SEARCH_WIN_BONUS; // 返回最大分
         }
 
         // 根据连续棋子数评分
@@ -72,38 +73,38 @@ int evaluate_pos(int x, int y, int player)
         {
         case 4:                                     // 四连珠
             if (info.check_start && info.check_end) // 活四(两端开放)
-                line_scores[i] = 100000;
+                line_scores[i] = AI_SCORE_LIVE_FOUR;
             else if (info.check_start || info.check_end) // 冲四(一端开放)
-                line_scores[i] = 10000;
+                line_scores[i] = AI_SCORE_RUSH_FOUR;
             else // 死四(两端封闭)
-                line_scores[i] = 500;
+                line_scores[i] = AI_SCORE_DEAD_FOUR;
             break;
 
         case 3:                                     // 三连珠
             if (info.check_start && info.check_end) // 活三
-                line_scores[i] = 5000;
+                line_scores[i] = AI_SCORE_LIVE_THREE;
             else if (info.check_start || info.check_end) // 眠三
-                line_scores[i] = 1000;
+                line_scores[i] = AI_SCORE_SLEEP_THREE;
             else // 死三
-                line_scores[i] = 50;
+                line_scores[i] = AI_SCORE_DEAD_THREE;
             break;
 
         case 2:                                     // 二连珠
             if (info.check_start && info.check_end) // 活二
-                line_scores[i] = 500;
+                line_scores[i] = AI_SCORE_LIVE_TWO;
             else if (info.check_start || info.check_end) // 眠二
-                line_scores[i] = 100;
+                line_scores[i] = AI_SCORE_SLEEP_TWO;
             else // 死二
-                line_scores[i] = 10;
+                line_scores[i] = AI_SCORE_DEAD_TWO;
             break;
 
         case 1:                                     // 单子
             if (info.check_start && info.check_end) // 开放位置
-                line_scores[i] = 50;
+                line_scores[i] = AI_SCORE_LIVE_ONE;
             else if (info.check_start || info.check_end) // 半开放位置
-                line_scores[i] = 10;
+                line_scores[i] = AI_SCORE_HALF_ONE;
             else // 封闭位置
-                line_scores[i] = 1;
+                line_scores[i] = AI_SCORE_DEAD_ONE;
             break;
         }
     }
@@ -125,7 +126,7 @@ int evaluate_pos(int x, int y, int player)
     int center_x = BOARD_SIZE / 2;
     int center_y = BOARD_SIZE / 2;
     int distance = abs(x - center_x) + abs(y - center_y); // 曼哈顿距离
-    int position_bonus = 50 * (BOARD_SIZE - distance);    // 距离中心越近奖励越高
+    int position_bonus = AI_POSITION_BONUS_FACTOR * (BOARD_SIZE - distance);    // 距离中心越近奖励越高
 
     board[x][y] = original;              // 还原棋盘状态
     return total_score + position_bonus; // 返回总评估分
@@ -153,7 +154,7 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
     // 检查当前落子是否获胜
     if (check_win(x, y, player))
     {
-        return (player == AI) ? 1000000 + depth : -1000000 - depth;
+        return (player == AI) ? SEARCH_WIN_BONUS + depth : -SEARCH_WIN_BONUS - depth;
     }
 
     // 达到搜索深度或平局
@@ -224,11 +225,21 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
  * 2. 进攻阶段：若无紧急防御需求，使用评估函数选择最佳进攻位置
  * @note 实现细节：
  * - 优先处理玩家活四、冲四等危险局面
- * - 步数>10时缩小搜索范围到已有棋子附近2格
+ * - 步数>AI_SEARCH_RANGE_THRESHOLD时缩小搜索范围到已有棋子附近AI_NEARBY_RANGE格
  * - 使用中心位置优先策略
  */
 void ai_move(int depth)
 {
+    // 如果是第一步，直接下在中心位置附近
+    if (step_count == 0)
+    {
+        int center = BOARD_SIZE / 2;
+        board[center][center] = AI;
+        steps[step_count++] = (Step){AI, center, center};
+        printf("AI落子(%d, %d)\n", center + 1, center + 1);
+        return;
+    }
+
     // 1. 首先检查是否需要阻止玩家的四子连棋或三子活棋
     for (int i = 0; i < BOARD_SIZE; i++)
     {
@@ -277,7 +288,7 @@ void ai_move(int depth)
     }
 
     // 2. 如果没有需要立即阻止的情况，则正常评估
-    int best_score = -1000000;
+    int best_score = -SEARCH_WIN_BONUS;
     int best_x = -1, best_y = -1;
 
     // 遍历棋盘所有空位
@@ -290,11 +301,11 @@ void ai_move(int depth)
                 continue;
             }
 
-            // 只考虑已有棋子附近(2格范围内)
+            // 只考虑已有棋子附近(AI_NEARBY_RANGE格范围内)
             bool has_nearby_stone = false;
-            for (int di = -2; di <= 2; di++)
+            for (int di = -AI_NEARBY_RANGE; di <= AI_NEARBY_RANGE; di++)
             {
-                for (int dj = -2; dj <= 2; dj++)
+                for (int dj = -AI_NEARBY_RANGE; dj <= AI_NEARBY_RANGE; dj++)
                 {
                     int ni = i + di;
                     int nj = j + dj;
@@ -312,7 +323,7 @@ void ai_move(int depth)
                     break;
                 }
             }
-            if (!has_nearby_stone && step_count > 10)
+            if (!has_nearby_stone && step_count > AI_SEARCH_RANGE_THRESHOLD)
             {
                 continue;
             }

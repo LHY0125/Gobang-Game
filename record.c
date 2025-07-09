@@ -2,6 +2,7 @@
 #include "game_mode.h"
 #include "gobang.h"
 #include "init_board.h"
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -26,11 +27,67 @@
  * - 使用独立临时棋盘避免影响主游戏状态
  * - 坐标显示转换为1-based方便用户理解
  * - 包含输入缓冲区清理防止意外输入
- * - 评分环节调用evaluate_performance()函数
+ * - 评分环节调用calculate_final_score()函数
  */
+
+// 全局变量，用于存储对局评分，确保对战结束和复盘模式使用相同的评分
+int player1_final_score = 0;
+int player2_final_score = 0;
+int scores_calculated = 0;
+
 void review_process(int game_mode)
 {
     int review_choice = get_integer_input("是否要复盘本局比赛? (1-是, 0-否): ", 0, 1);
+    
+    // 如果评分尚未计算，则计算评分
+    if (!scores_calculated)
+    {
+        // 评估双方表现
+        player1_final_score = 0;
+        player2_final_score = 0;
+
+        // 遍历所有步数，累积每一步的得分，后期步骤权重更高
+        for (int i = 0; i < step_count; i++)
+        {
+            // 计算时间权重因子：步数越靠后，权重越大
+            double time_weight = 1.0 + (double)i / step_count * TIME_WEIGHT_FACTOR; // 最后的步骤权重是开始步骤的(1+TIME_WEIGHT_FACTOR)倍
+            
+            if (steps[i].player == PLAYER || steps[i].player == PLAYER1)
+            {
+                player1_final_score += (int)(calculate_step_score(steps[i].x, steps[i].y, steps[i].player) * time_weight);
+            }
+            else
+            {
+                player2_final_score += (int)(calculate_step_score(steps[i].x, steps[i].y, steps[i].player) * time_weight);
+            }
+        }
+        
+        // 胜负加权：获胜方获得额外的评分奖励
+        if (step_count > 0)
+        {
+            Step last_step = steps[step_count - 1];
+            if (check_win(last_step.x, last_step.y, last_step.player))
+            {
+                // 获胜方获得额外奖励分数
+                if (last_step.player == PLAYER || last_step.player == PLAYER1)
+                {
+                    player1_final_score += WIN_BONUS; // 获胜奖励
+                }
+                else
+                {
+                    player2_final_score += WIN_BONUS; // 获胜奖励
+                }
+            }
+        }
+        
+        scores_calculated = 1; // 标记评分已计算
+    }
+    else
+    {
+        // 评分已从文件中加载，直接使用
+        printf("从记录文件中加载评分数据\n");
+    }
+    
     if (review_choice == 1)
     {
         printf("\n===== 复盘记录(总步数：%d) =====\n", step_count);
@@ -73,7 +130,9 @@ void review_process(int game_mode)
             // 打印当前复盘棋盘
             printf("  ");
             for (int col = 0; col < BOARD_SIZE; col++)
+            {
                 printf("%2d", col + 1); // 列号
+            }           
             printf("\n");
 
             for (int row = 0; row < BOARD_SIZE; row++)
@@ -109,65 +168,50 @@ void review_process(int game_mode)
         getchar(); // 等待用户按键
     }
 
-    // 评估双方表现
+    // 显示评分结果
     printf("\n===== 对局评分 =====\n");
-    int player1_score = 0, player2_score = 0;
-
-    // 遍历所有步数，累积每一步的得分
-    for (int i = 0; i < step_count; i++)
-    {
-        if (steps[i].player == PLAYER || steps[i].player == PLAYER1)
-        {
-            player1_score += calculate_step_score(steps[i].x, steps[i].y, steps[i].player);
-        }
-        else
-        {
-            player2_score += calculate_step_score(steps[i].x, steps[i].y, steps[i].player);
-        }
-    }
-
-    double sum_score = (long double)player1_score + (long double)player2_score;
+    double sum_score = (long double)player1_final_score + (long double)player2_final_score;
 
     if (sum_score > 0)
     {
         if (game_mode == 1)
         {
             printf("玩家得分: %d, 占比: %.2f%%\n",
-                   player1_score, (double)player1_score * 100.0 / sum_score);
+                   player1_final_score, (double)player1_final_score * 100.0 / sum_score);
             printf("AI得分: %d, 占比: %.2f%%\n",
-                   player2_score, (double)player2_score * 100.0 / sum_score);
+                   player2_final_score, (double)player2_final_score * 100.0 / sum_score);
         }
         else
         {
             printf("玩家1(黑棋)得分: %d, 占比: %.2f%%\n",
-                   player1_score, (double)player1_score * 100.0 / sum_score);
+                   player1_final_score, (double)player1_final_score * 100.0 / sum_score);
             printf("玩家2(白棋)得分: %d, 占比: %.2f%%\n",
-                   player2_score, (double)player2_score * 100.0 / sum_score);
+                   player2_final_score, (double)player2_final_score * 100.0 / sum_score);
         }
     }
     else
     {
         if (game_mode == 1)
         {
-            printf("玩家得分: %d\n", player1_score);
-            printf("AI得分: %d\n", player2_score);
+            printf("玩家得分: %d\n", player1_final_score);
+            printf("AI得分: %d\n", player2_final_score);
         }
         else
         {
-            printf("玩家1(黑棋)得分: %d\n", player1_score);
-            printf("玩家2(白棋)得分: %d\n", player2_score);
+            printf("玩家1(黑棋)得分: %d\n", player1_final_score);
+            printf("玩家2(白棋)得分: %d\n", player2_final_score);
         }
         printf("注: 双方得分均为0，无法计算占比\n");
     }
 
     // 评选MVP
-    if (player1_score > player2_score)
+    if (player1_final_score > player2_final_score)
     {
-        printf("\nMVP: %s (领先 %d 分)\n", (game_mode == 1) ? "玩家" : "玩家1(黑棋)", player1_score - player2_score);
+        printf("\nMVP: %s (领先 %d 分)\n", (game_mode == 1) ? "玩家" : "玩家1(黑棋)", player1_final_score - player2_final_score);
     }
-    else if (player2_score > player1_score)
+    else if (player2_final_score > player1_final_score)
     {
-        printf("\nMVP: %s (领先 %d 分)\n", (game_mode == 1) ? "AI" : "玩家2(白棋)", player2_score - player1_score);
+        printf("\nMVP: %s (领先 %d 分)\n", (game_mode == 1) ? "AI" : "玩家2(白棋)", player2_final_score - player1_final_score);
     }
     else
     {
@@ -193,14 +237,15 @@ void handle_save_record(int game_mode)
         time_t now = time(NULL);
         struct tm *t = localtime(&now);
         char filename[256];
-        strftime(filename, sizeof(filename), "%Y%m%d_%H%M%S.txt", t);
+        strftime(filename, sizeof(filename), "%Y%m%d_%H%M%S.csv", t);
 
         int save_status = save_game_to_file(filename, game_mode);
         switch (save_status)
         {
         case 0: // 成功
-            printf("\n游戏记录已成功保存至: %s\n", filename);
+            printf("\n游戏记录已成功保存至: %s (CSV格式)\n", filename);
             printf("您可以使用以下命令进行复盘: .\\gobang.exe -l %s\n", filename);
+            printf("CSV格式文件可以直接用Excel打开查看和分析\n");
             break;
         case 1: // 目录创建失败
             printf("\n游戏记录保存失败: 无法创建 'records' 目录。\n");
@@ -264,17 +309,24 @@ int save_game_to_file(const char *filename, int game_mode)
         return 2; // 文件打开失败
     }
 
-    // 写入游戏模式和棋盘大小
-    if (fprintf(file, "%d\n%d\n", game_mode, BOARD_SIZE) < 0)
+    // 写入CSV文件头部
+    if (fprintf(file, "游戏模式,棋盘大小,玩家1得分,玩家2得分\n%d,%d,%d,%d\n\n", game_mode, BOARD_SIZE, player1_final_score, player2_final_score) < 0)
+    {
+        fclose(file);
+        return 3; // 文件写入失败
+    }
+    
+    // 写入CSV表头
+    if (fprintf(file, "步数,玩家,行坐标,列坐标\n") < 0)
     {
         fclose(file);
         return 3; // 文件写入失败
     }
 
-    // 写入所有落子步骤
+    // 写入所有落子步骤（CSV格式）
     for (int i = 0; i < step_count; i++)
     {
-        if (fprintf(file, "%d %d %d\n", steps[i].player, steps[i].x, steps[i].y) < 0)
+        if (fprintf(file, "%d,%d,%d,%d\n", i+1, steps[i].player, steps[i].x+1, steps[i].y+1) < 0)
         {
             fclose(file);
             return 3; // 文件写入失败
@@ -306,18 +358,34 @@ int load_game_from_file(const char *filename)
         return false;
     }
 
-    // 读取游戏模式和棋盘大小
-    int game_mode, size;
-    if (fscanf(file, "%d", &game_mode) != 1 || (game_mode != 1 && game_mode != 2))
+    // 跳过CSV文件头部行
+    char buffer[256];
+    if (fgets(buffer, sizeof(buffer), file) == NULL) // 跳过"游戏模式,棋盘大小"
     {
         fclose(file);
-        return 0; // 无效的游戏模式
+        return 0;
     }
-    if (fscanf(file, "%d", &size) != 1 || size < 5 || size > MAX_BOARD_SIZE)
+
+    // 读取游戏模式、棋盘大小和评分结果
+    int game_mode, size;
+    if (fscanf(file, "%d,%d,%d,%d", &game_mode, &size, &player1_final_score, &player2_final_score) != 4 || (game_mode != 1 && game_mode != 2))
+    {
+        fclose(file);
+        return 0; // 无效的游戏模式或文件格式
+    }
+    if (size < 5 || size > MAX_BOARD_SIZE)
     {
         fclose(file);
         return false;
     }
+    
+    // 设置评分已计算标志
+    scores_calculated = 1;
+
+    // 跳过空行和表头行
+    fgets(buffer, sizeof(buffer), file); // 跳过换行
+    fgets(buffer, sizeof(buffer), file); // 跳过空行
+    fgets(buffer, sizeof(buffer), file); // 跳过"步数,玩家,行坐标,列坐标"
 
     // 初始化棋盘
     BOARD_SIZE = size;
@@ -325,8 +393,12 @@ int load_game_from_file(const char *filename)
 
     // 读取所有落子步骤
     step_count = 0;
-    while (fscanf(file, "%d %d %d", &steps[step_count].player, &steps[step_count].x, &steps[step_count].y) == 3)
+    int step_num; // 用于存储步数，但不使用
+    while (fscanf(file, "%d,%d,%d,%d", &step_num, &steps[step_count].player, &steps[step_count].x, &steps[step_count].y) == 4)
     {
+        // 将1-based坐标转换为0-based坐标
+        steps[step_count].x--;
+        steps[step_count].y--;
         step_count++;
     }
 

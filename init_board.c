@@ -1,6 +1,7 @@
 #include "init_board.h"
 #include "game_mode.h"
 #include "gobang.h"
+#include "config.h"
 #include <stdio.h>
 
 /**
