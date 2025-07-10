@@ -222,11 +222,8 @@ void run_ai_game()
 {
     // 重置评分计算标志，确保每局游戏都会重新计算评分
     scores_calculated = 0;
-    
-    setup_game_options();
 
     // AI对战模式
-    setup_board_size();
     int AI_DEPTH = 3;
     AI_DEPTH = get_integer_input("请选择AI难度(1~5), 数字越大越强，注意数字越大AI思考时间越长！):", 1, 5);
 
@@ -255,6 +252,13 @@ void run_ai_game()
             }
             if (step_count > old_step_count)
             {
+                // 检查玩家是否获胜
+                Step last_step = steps[step_count - 1];
+                if (check_win(last_step.x, last_step.y, PLAYER))
+                {
+                    printf("\n玩家获胜！\n");
+                    break;
+                }
                 current_player = AI;
             }
         }
@@ -307,11 +311,8 @@ void run_pvp_game()
 {
     // 重置评分计算标志，确保每局游戏都会重新计算评分
     scores_calculated = 0;
-    
-    setup_game_options();
 
     // 双人对战模式
-    setup_board_size();
     empty_board();
     int current_player = determine_first_player(PLAYER1, PLAYER2);
     print_board();

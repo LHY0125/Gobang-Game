@@ -34,6 +34,7 @@
 int player1_final_score = 0;
 int player2_final_score = 0;
 int scores_calculated = 0;
+char winner_info[50] = "平局或未完成"; // 存储胜负信息
 
 void review_process(int game_mode)
 {
@@ -42,45 +43,7 @@ void review_process(int game_mode)
     // 如果评分尚未计算，则计算评分
     if (!scores_calculated)
     {
-        // 评估双方表现
-        player1_final_score = 0;
-        player2_final_score = 0;
-
-        // 遍历所有步数，累积每一步的得分，后期步骤权重更高
-        for (int i = 0; i < step_count; i++)
-        {
-            // 计算时间权重因子：步数越靠后，权重越大
-            double time_weight = 1.0 + (double)i / step_count * TIME_WEIGHT_FACTOR; // 最后的步骤权重是开始步骤的(1+TIME_WEIGHT_FACTOR)倍
-            
-            if (steps[i].player == PLAYER || steps[i].player == PLAYER1)
-            {
-                player1_final_score += (int)(calculate_step_score(steps[i].x, steps[i].y, steps[i].player) * time_weight);
-            }
-            else
-            {
-                player2_final_score += (int)(calculate_step_score(steps[i].x, steps[i].y, steps[i].player) * time_weight);
-            }
-        }
-        
-        // 胜负加权：获胜方获得额外的评分奖励
-        if (step_count > 0)
-        {
-            Step last_step = steps[step_count - 1];
-            if (check_win(last_step.x, last_step.y, last_step.player))
-            {
-                // 获胜方获得额外奖励分数
-                if (last_step.player == PLAYER || last_step.player == PLAYER1)
-                {
-                    player1_final_score += WIN_BONUS; // 获胜奖励
-                }
-                else
-                {
-                    player2_final_score += WIN_BONUS; // 获胜奖励
-                }
-            }
-        }
-        
-        scores_calculated = 1; // 标记评分已计算
+        calculate_game_scores();
     }
     else
     {
@@ -164,11 +127,92 @@ void review_process(int game_mode)
                     ; // 等待回车
             }
         }
+        
+        // 显示胜负结果（直接使用文件中的信息）
+        printf("\n===== 对局结果 =====");
+        if (strcmp(winner_info, "玩家获胜") == 0)
+        {
+            printf("\n? 恭喜！玩家获胜！\n");
+        }
+        else if (strcmp(winner_info, "AI获胜") == 0)
+        {
+            printf("\n? AI获胜！\n");
+        }
+        else if (strcmp(winner_info, "玩家1获胜") == 0)
+        {
+            printf("\n? 恭喜！玩家1(黑棋)获胜！\n");
+        }
+        else if (strcmp(winner_info, "玩家2获胜") == 0)
+        {
+            printf("\n? 恭喜！玩家2(白棋)获胜！\n");
+        }
+        else
+        {
+            printf("\n?? 对局平局或未完成\n");
+        }
+        
         printf("\n复盘结束！按Enter查看评分...");
         getchar(); // 等待用户按键
     }
 
     // 显示评分结果
+    display_game_scores(game_mode);
+
+    getchar();
+}
+
+/**
+ * @brief 计算游戏评分
+ */
+void calculate_game_scores()
+{
+    // 评估双方表现
+    player1_final_score = 0;
+    player2_final_score = 0;
+
+    // 遍历所有步数，累积每一步的得分，后期步骤权重更高
+    for (int i = 0; i < step_count; i++)
+    {
+        // 计算时间权重因子：步数越靠后，权重越大
+        double time_weight = 1.0 + (double)i / step_count * TIME_WEIGHT_FACTOR; // 最后的步骤权重是开始步骤的(1+TIME_WEIGHT_FACTOR)倍
+        
+        if (steps[i].player == PLAYER || steps[i].player == PLAYER1)
+        {
+            player1_final_score += (int)(calculate_step_score(steps[i].x, steps[i].y, steps[i].player) * time_weight);
+        }
+        else
+        {
+            player2_final_score += (int)(calculate_step_score(steps[i].x, steps[i].y, steps[i].player) * time_weight);
+        }
+    }
+    
+    // 胜负加权：获胜方获得额外的评分奖励
+    if (step_count > 0)
+    {
+        Step last_step = steps[step_count - 1];
+        if (check_win(last_step.x, last_step.y, last_step.player))
+        {
+            // 获胜方获得额外奖励分数
+            if (last_step.player == PLAYER || last_step.player == PLAYER1)
+            {
+                player1_final_score += WIN_BONUS; // 获胜奖励
+            }
+            else
+            {
+                player2_final_score += WIN_BONUS; // 获胜奖励
+            }
+        }
+    }
+    
+    scores_calculated = 1; // 标记评分已计算
+}
+
+/**
+ * @brief 显示游戏评分结果和MVP评选
+ * @param game_mode 游戏模式(1-人机对战, 2-双人对战)
+ */
+void display_game_scores(int game_mode)
+{
     printf("\n===== 对局评分 =====\n");
     double sum_score = (long double)player1_final_score + (long double)player2_final_score;
 
@@ -217,8 +261,6 @@ void review_process(int game_mode)
     {
         printf("\n双方势均力敌！\n");
     }
-
-    getchar();
 }
 
 /**
@@ -309,8 +351,42 @@ int save_game_to_file(const char *filename, int game_mode)
         return 2; // 文件打开失败
     }
 
+    // 判断胜负结果
+    strcpy(winner_info, "平局或未完成");
+    if (step_count > 0)
+    {
+        Step last_step = steps[step_count - 1];
+        if (check_win(last_step.x, last_step.y, last_step.player))
+        {
+            if (game_mode == 1)
+            {
+                // 人机对战
+                if (last_step.player == PLAYER)
+                {
+                    strcpy(winner_info, "玩家获胜");
+                }
+                else
+                {
+                    strcpy(winner_info, "AI获胜");
+                }
+            }
+            else
+            {
+                // 双人对战
+                if (last_step.player == PLAYER1)
+                {
+                    strcpy(winner_info, "玩家1获胜");
+                }
+                else
+                {
+                    strcpy(winner_info, "玩家2获胜");
+                }
+            }
+        }
+    }
+    
     // 写入CSV文件头部
-    if (fprintf(file, "游戏模式,棋盘大小,玩家1得分,玩家2得分\n%d,%d,%d,%d\n\n", game_mode, BOARD_SIZE, player1_final_score, player2_final_score) < 0)
+    if (fprintf(file, "游戏模式,棋盘大小,玩家1得分,玩家2得分,对局结果\n%d,%d,%d,%d,%s\n\n", game_mode, BOARD_SIZE, player1_final_score, player2_final_score, winner_info) < 0)
     {
         fclose(file);
         return 3; // 文件写入失败
@@ -368,10 +444,26 @@ int load_game_from_file(const char *filename)
 
     // 读取游戏模式、棋盘大小和评分结果
     int game_mode, size;
-    if (fscanf(file, "%d,%d,%d,%d", &game_mode, &size, &player1_final_score, &player2_final_score) != 4 || (game_mode != 1 && game_mode != 2))
+    
+    // 尝试读取新格式（包含胜负信息）
+    int read_count = fscanf(file, "%d,%d,%d,%d,%49s", &game_mode, &size, &player1_final_score, &player2_final_score, winner_info);
+    
+    if (read_count == 4)
+    {
+        // 旧格式文件，没有胜负信息
+        strcpy(winner_info, "未知");
+    }
+    else if (read_count != 5)
+    {
+        // 文件格式错误
+        fclose(file);
+        return 0;
+    }
+    
+    if (game_mode != 1 && game_mode != 2)
     {
         fclose(file);
-        return 0; // 无效的游戏模式或文件格式
+        return 0; // 无效的游戏模式
     }
     if (size < 5 || size > MAX_BOARD_SIZE)
     {

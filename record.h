@@ -3,37 +3,49 @@
 
 #include "gobang.h"
 
-// È«¾Ö±äÁ¿£¬ÓÃÓÚ´æ´¢¶Ô¾ÖÆÀ·Ö£¬È·±£¶ÔÕ½½áÊøºÍ¸´ÅÌÄ£Ê½Ê¹ÓÃÏàÍ¬µÄÆÀ·Ö
-extern int player1_final_score;
-extern int player2_final_score;
-extern int scores_calculated;
+// å…¨å±€å˜é‡ï¼Œç”¨äºå­˜å‚¨å¯¹å±€è¯„åˆ†ï¼Œç¡®ä¿å¯¹æˆ˜ç»“æŸå’Œå¤ç›˜æ¨¡å¼ä½¿ç”¨ç›¸åŒçš„è¯„åˆ†
+extern int player1_final_score;  // ç©å®¶1æœ€ç»ˆå¾—åˆ†
+extern int player2_final_score;  // ç©å®¶2æœ€ç»ˆå¾—åˆ†
+extern int scores_calculated;    // è¯„åˆ†è®¡ç®—æ ‡å¿—
+extern char winner_info[50];     // å­˜å‚¨èƒœè´Ÿä¿¡æ¯
 
-// --- ¸´ÅÌÓë¼ÇÂ¼ ---
+// --- å¤ç›˜ä¸è®°å½•åŠŸèƒ½ ---
 /**
- * @brief ½øÈë¸´ÅÌÁ÷³Ì£¬»Ø¹ËÕû¾ÖÓÎÏ·
- * @param game_mode ÓÎÏ·Ä£Ê½£¨1ÎªÈË»ú£¬2ÎªË«ÈË£©
+ * @brief è¿›å…¥å¤ç›˜æµç¨‹ï¼Œå›é¡¾æ•´å±€æ¸¸æˆ
+ * @param game_mode æ¸¸æˆæ¨¡å¼ï¼ˆ1ä¸ºäººæœºå¯¹æˆ˜ï¼Œ2ä¸ºåŒäººå¯¹æˆ˜ï¼‰
  */
 void review_process(int game_mode);
 
 /**
- * @brief ½«µ±Ç°¶Ô¾Ö¼ÇÂ¼±£´æµ½ÎÄ¼ş
- * @param filename Òª±£´æµ½µÄÎÄ¼şÃû
- * @param game_mode ÓÎÏ·Ä£Ê½
- * @return 0±íÊ¾³É¹¦£¬·Ç0±íÊ¾Ê§°Ü
+ * @brief å°†å½“å‰å¯¹å±€è®°å½•ä¿å­˜åˆ°æ–‡ä»¶
+ * @param filename è¦ä¿å­˜åˆ°çš„æ–‡ä»¶å
+ * @param game_mode æ¸¸æˆæ¨¡å¼
+ * @return 0è¡¨ç¤ºæˆåŠŸï¼Œé0è¡¨ç¤ºå¤±è´¥
  */
 int save_game_to_file(const char *filename, int game_mode);
 
 /**
- * @brief ´¦Àí±£´æÓÎÏ·¼ÇÂ¼µÄÂß¼­
- * @param game_mode ÓÎÏ·Ä£Ê½
+ * @brief å¤„ç†ä¿å­˜æ¸¸æˆè®°å½•çš„é€»è¾‘
+ * @param game_mode æ¸¸æˆæ¨¡å¼
  */
 void handle_save_record(int game_mode);
 
 /**
- * @brief ´ÓÎÄ¼ş¼ÓÔØÓÎÏ·¼ÇÂ¼
- * @param filename Òª¼ÓÔØµÄÎÄ¼şÃû
- * @return 0±íÊ¾³É¹¦£¬·Ç0±íÊ¾Ê§°Ü
+ * @brief ä»æ–‡ä»¶åŠ è½½æ¸¸æˆè®°å½•
+ * @param filename è¦åŠ è½½çš„æ–‡ä»¶å
+ * @return æ¸¸æˆæ¨¡å¼ï¼ˆ1æˆ–2ï¼‰ï¼Œ0è¡¨ç¤ºå¤±è´¥
  */
 int load_game_from_file(const char *filename);
+
+/**
+ * @brief è®¡ç®—æ¸¸æˆè¯„åˆ†
+ */
+void calculate_game_scores();
+
+/**
+ * @brief æ˜¾ç¤ºæ¸¸æˆè¯„åˆ†ç»“æœå’ŒMVPè¯„é€‰
+ * @param game_mode æ¸¸æˆæ¨¡å¼ï¼ˆ1-äººæœºå¯¹æˆ˜ï¼Œ2-åŒäººå¯¹æˆ˜ï¼‰
+ */
+void display_game_scores(int game_mode);
 
 #endif // RECORD_H

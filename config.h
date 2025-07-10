@@ -15,6 +15,7 @@
 
 //---------- 棋盘相关参数 ----------//
 #define MAX_BOARD_SIZE 25                           // 支持的最大棋盘尺寸
+#define MIN_BOARD_SIZE 5                            // 支持的最小棋盘尺寸
 #define DEFAULT_BOARD_SIZE 15                       // 默认棋盘尺寸
 #define MAX_STEPS (MAX_BOARD_SIZE * MAX_BOARD_SIZE) // 游戏最大步数
 
@@ -34,7 +35,7 @@
 //---------- 游戏设置默认值 ----------//
 #define DEFAULT_USE_FORBIDDEN_MOVES false  // 默认不启用禁手规则
 #define DEFAULT_USE_TIMER 0                // 默认不启用计时器
-#define DEFAULT_TIME_LIMIT 30              // 默认时间限制为30秒
+#define DEFAULT_TIME_LIMIT 30              // 默认时间限制为30秒(内部存储)
 
 //---------- AI参数 ----------//
 #define DEFAULT_AI_DEPTH 3                 // 默认AI搜索深度
@@ -90,5 +91,46 @@
 // 文件路径参数
 #define RECORDS_DIR "records"        // 记录文件目录
 #define MAX_PATH_LENGTH 256          // 最大路径长度
+
+//---------- 配置管理函数声明 ----------//
+/**
+ * @brief 加载游戏配置
+ */
+void load_game_config();
+
+/**
+ * @brief 保存游戏配置
+ */
+void save_game_config();
+
+/**
+ * @brief 重置为默认配置
+ */
+void reset_to_default_config();
+
+/**
+ * @brief 显示当前配置
+ */
+void display_current_config();
+
+/**
+ * @brief 配置棋盘大小
+ */
+void config_board_size();
+
+/**
+ * @brief 配置禁手规则
+ */
+void config_forbidden_moves();
+
+/**
+ * @brief 配置计时器
+ */
+void config_timer();
+
+/**
+ * @brief 配置管理主菜单
+ */
+void config_management_menu();
 
 #endif // CONFIG_H

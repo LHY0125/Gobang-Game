@@ -23,7 +23,7 @@ extern int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE];   // 存储棋盘状态的二�
 extern int step_count;                              // 当前游戏的总步数
 extern bool use_forbidden_moves;                    // 是否启用禁手规则的标志
 extern int use_timer;                               // 是否启用计时器的标志
-extern int time_limit;                              // 每回合的时间限制（秒）
+extern int time_limit;                              // 每回合的时间限制（秒，内部存储）
 extern const int direction[4][2];                   // 定义四个基本搜索方向：水平、垂直、左斜、右斜
 
 // 数据结构
