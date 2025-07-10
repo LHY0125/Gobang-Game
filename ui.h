@@ -6,8 +6,8 @@
 /**
  * @brief UI模块 - 用户界面相关功能
  * @author 刘航宇
- * @date 2025-01-15
- * @version 1.0
+ * @date 2025-07-10
+ * @version 5.0
  */
 
 /**

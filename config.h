@@ -2,8 +2,8 @@
  * @file config.h
  * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @brief 五子棋游戏参数配置头文件
- * @version 1.0
- * @date 2025-07-09
+ * @version 5.0
+ * @date 2025-07-10
  *
  * @copyright Copyright (c) 2025
  *
