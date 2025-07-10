@@ -1,16 +1,16 @@
 /**
  * @file network.h
- * @author Áõº½Óî(3364451258@qq.com¡¢15236416560@163.com¡¢lhy3364451258@outlook.com)
- * @brief Îå×ÓÆåÍøÂç¶ÔÕ½Ä£¿éÍ·ÎÄ¼ş
+ * @author åˆ˜èˆªå®‡(3364451258@qq.comã€15236416560@163.comã€lhy3364451258@outlook.com)
+ * @brief äº”å­æ£‹ç½‘ç»œå¯¹æˆ˜æ¨¡å—å¤´æ–‡ä»¶
  * @version 1.0
  * @date 2025-01-15
  *
  * @copyright Copyright (c) 2025
  *
- * @note ±¾ÎÄ¼ş¶¨ÒåÁËÎå×ÓÆåÓÎÏ·µÄÍøÂç¶ÔÕ½¹¦ÄÜ£º
- * 1. ·şÎñÆ÷Ä£Ê½£¨Ö÷»ú£©
- * 2. ¿Í»§¶ËÄ£Ê½£¨¼ÓÈëÓÎÏ·£©
- * 3. ÍøÂçÏûÏ¢´«Êä
+ * @note æœ¬æ–‡ä»¶å®šä¹‰äº†äº”å­æ£‹æ¸¸æˆçš„ç½‘ç»œå¯¹æˆ˜åŠŸèƒ½ï¼š
+ * 1. æœåŠ¡å™¨æ¨¡å¼ï¼ˆä¸»æœºï¼‰
+ * 2. å®¢æˆ·ç«¯æ¨¡å¼ï¼ˆåŠ å…¥æ¸¸æˆï¼‰
+ * 3. ç½‘ç»œæ¶ˆæ¯ä¼ è¾“
  */
 
 #ifndef NETWORK_H
@@ -34,152 +34,152 @@
 #define closesocket close
 #endif
 
-// ÍøÂçÅäÖÃ
+// ç½‘ç»œé…ç½®
 #define DEFAULT_PORT 8888
 #define BUFFER_SIZE 1024
 #define MAX_IP_LENGTH 16
 
-// ÏûÏ¢ÀàĞÍ
-#define MSG_MOVE 1          // Âä×ÓÏûÏ¢
-#define MSG_CHAT 2          // ÁÄÌìÏûÏ¢
-#define MSG_SURRENDER 3     // ÈÏÊäÏûÏ¢
-#define MSG_UNDO_REQUEST 4  // »ÚÆåÇëÇó
-#define MSG_UNDO_RESPONSE 5 // »ÚÆå»ØÓ¦
-#define MSG_GAME_START 6    // ÓÎÏ·¿ªÊ¼
-#define MSG_GAME_END 7      // ÓÎÏ·½áÊø
-#define MSG_HEARTBEAT 8     // ĞÄÌø°ü
-#define MSG_DISCONNECT 9    // ¶ÏÏßÏûÏ¢
+// æ¶ˆæ¯ç±»å‹
+#define MSG_MOVE 1          // è½å­æ¶ˆæ¯
+#define MSG_CHAT 2          // èŠå¤©æ¶ˆæ¯
+#define MSG_SURRENDER 3     // è®¤è¾“æ¶ˆæ¯
+#define MSG_UNDO_REQUEST 4  // æ‚”æ£‹è¯·æ±‚
+#define MSG_UNDO_RESPONSE 5 // æ‚”æ£‹å›åº”
+#define MSG_GAME_START 6    // æ¸¸æˆå¼€å§‹
+#define MSG_GAME_END 7      // æ¸¸æˆç»“æŸ
+#define MSG_HEARTBEAT 8     // å¿ƒè·³åŒ…
+#define MSG_DISCONNECT 9    // æ–­çº¿æ¶ˆæ¯
 
-// ÍøÂçÏûÏ¢½á¹¹
+// ç½‘ç»œæ¶ˆæ¯ç»“æ„
 typedef struct {
-    int type;           // ÏûÏ¢ÀàĞÍ
-    int player_id;      // Íæ¼ÒID
-    int x, y;          // ×ø±ê£¨ÓÃÓÚÂä×Ó£©
-    char message[256]; // ÏûÏ¢ÄÚÈİ£¨ÓÃÓÚÁÄÌìµÈ£©
-    time_t timestamp;  // Ê±¼ä´Á
+    int type;           // æ¶ˆæ¯ç±»å‹
+    int player_id;      // ç©å®¶ID
+    int x, y;          // åæ ‡ï¼ˆç”¨äºè½å­ï¼‰
+    char message[256]; // æ¶ˆæ¯å†…å®¹ï¼ˆç”¨äºèŠå¤©ç­‰ï¼‰
+    time_t timestamp;  // æ—¶é—´æˆ³
 } NetworkMessage;
 
-// ÍøÂçÓÎÏ·×´Ì¬
+// ç½‘ç»œæ¸¸æˆçŠ¶æ€
 typedef struct {
-    SOCKET socket;          // Ì×½Ó×Ö
-    bool is_server;         // ÊÇ·ñÎª·şÎñÆ÷
-    bool is_connected;      // ÊÇ·ñÒÑÁ¬½Ó
-    int local_player_id;    // ±¾µØÍæ¼ÒID
-    int remote_player_id;   // Ô¶³ÌÍæ¼ÒID
-    char remote_ip[MAX_IP_LENGTH]; // Ô¶³ÌIPµØÖ·
-    int port;              // ¶Ë¿ÚºÅ
+    SOCKET socket;          // å¥—æ¥å­—
+    bool is_server;         // æ˜¯å¦ä¸ºæœåŠ¡å™¨
+    bool is_connected;      // æ˜¯å¦å·²è¿æ¥
+    int local_player_id;    // æœ¬åœ°ç©å®¶ID
+    int remote_player_id;   // è¿œç¨‹ç©å®¶ID
+    char remote_ip[MAX_IP_LENGTH]; // è¿œç¨‹IPåœ°å€
+    int port;              // ç«¯å£å·
 } NetworkGameState;
 
-// È«¾Ö±äÁ¿ÉùÃ÷ÏÖÔÚÔÚglobals.hÖĞ
+// å…¨å±€å˜é‡å£°æ˜ç°åœ¨åœ¨globals.hä¸­
 
-// º¯ÊıÉùÃ÷
+// å‡½æ•°å£°æ˜
 
 /**
- * @brief ³õÊ¼»¯ÍøÂçÄ£¿é
- * @return true ³õÊ¼»¯³É¹¦
- * @return false ³õÊ¼»¯Ê§°Ü
+ * @brief åˆå§‹åŒ–ç½‘ç»œæ¨¡å—
+ * @return true åˆå§‹åŒ–æˆåŠŸ
+ * @return false åˆå§‹åŒ–å¤±è´¥
  */
 bool init_network();
 
 /**
- * @brief ÇåÀíÍøÂçÄ£¿é
+ * @brief æ¸…ç†ç½‘ç»œæ¨¡å—
  */
 void cleanup_network();
 
 /**
- * @brief ´´½¨·şÎñÆ÷£¨Ö÷»úÄ£Ê½£©
- * @param port ¼àÌı¶Ë¿Ú
- * @return true ´´½¨³É¹¦
- * @return false ´´½¨Ê§°Ü
+ * @brief åˆ›å»ºæœåŠ¡å™¨ï¼ˆä¸»æœºæ¨¡å¼ï¼‰
+ * @param port ç›‘å¬ç«¯å£
+ * @return true åˆ›å»ºæˆåŠŸ
+ * @return false åˆ›å»ºå¤±è´¥
  */
 bool create_server(int port);
 
 /**
- * @brief Á¬½Óµ½·şÎñÆ÷£¨¿Í»§¶ËÄ£Ê½£©
- * @param ip ·şÎñÆ÷IPµØÖ·
- * @param port ·şÎñÆ÷¶Ë¿Ú
- * @return true Á¬½Ó³É¹¦
- * @return false Á¬½ÓÊ§°Ü
+ * @brief è¿æ¥åˆ°æœåŠ¡å™¨ï¼ˆå®¢æˆ·ç«¯æ¨¡å¼ï¼‰
+ * @param ip æœåŠ¡å™¨IPåœ°å€
+ * @param port æœåŠ¡å™¨ç«¯å£
+ * @return true è¿æ¥æˆåŠŸ
+ * @return false è¿æ¥å¤±è´¥
  */
 bool connect_to_server(const char* ip, int port);
 
 /**
- * @brief ·¢ËÍÍøÂçÏûÏ¢
- * @param msg Òª·¢ËÍµÄÏûÏ¢
- * @return true ·¢ËÍ³É¹¦
- * @return false ·¢ËÍÊ§°Ü
+ * @brief å‘é€ç½‘ç»œæ¶ˆæ¯
+ * @param msg è¦å‘é€çš„æ¶ˆæ¯
+ * @return true å‘é€æˆåŠŸ
+ * @return false å‘é€å¤±è´¥
  */
 bool send_network_message(const NetworkMessage* msg);
 
 /**
- * @brief ½ÓÊÕÍøÂçÏûÏ¢
- * @param msg ½ÓÊÕÏûÏ¢µÄ»º³åÇø
- * @param timeout_ms ³¬Ê±Ê±¼ä£¨ºÁÃë£©£¬0±íÊ¾×èÈûµÈ´ı
- * @return true ½ÓÊÕ³É¹¦
- * @return false ½ÓÊÕÊ§°Ü»ò³¬Ê±
+ * @brief æ¥æ”¶ç½‘ç»œæ¶ˆæ¯
+ * @param msg æ¥æ”¶æ¶ˆæ¯çš„ç¼“å†²åŒº
+ * @param timeout_ms è¶…æ—¶æ—¶é—´ï¼ˆæ¯«ç§’ï¼‰ï¼Œ0è¡¨ç¤ºé˜»å¡ç­‰å¾…
+ * @return true æ¥æ”¶æˆåŠŸ
+ * @return false æ¥æ”¶å¤±è´¥æˆ–è¶…æ—¶
  */
 bool receive_network_message(NetworkMessage* msg, int timeout_ms);
 
 /**
- * @brief ¶Ï¿ªÍøÂçÁ¬½Ó
+ * @brief æ–­å¼€ç½‘ç»œè¿æ¥
  */
 void disconnect_network();
 
 /**
- * @brief ¼ì²éÍøÂçÁ¬½Ó×´Ì¬
- * @return true Á¬½ÓÕı³£
- * @return false Á¬½Ó¶Ï¿ª
+ * @brief æ£€æŸ¥ç½‘ç»œè¿æ¥çŠ¶æ€
+ * @return true è¿æ¥æ­£å¸¸
+ * @return false è¿æ¥æ–­å¼€
  */
 bool is_network_connected();
 
 /**
- * @brief »ñÈ¡±¾»úIPµØÖ·
- * @param ip_buffer ´æ´¢IPµØÖ·µÄ»º³åÇø
- * @param buffer_size »º³åÇø´óĞ¡
- * @return true »ñÈ¡³É¹¦
- * @return false »ñÈ¡Ê§°Ü
+ * @brief è·å–æœ¬æœºIPåœ°å€
+ * @param ip_buffer å­˜å‚¨IPåœ°å€çš„ç¼“å†²åŒº
+ * @param buffer_size ç¼“å†²åŒºå¤§å°
+ * @return true è·å–æˆåŠŸ
+ * @return false è·å–å¤±è´¥
  */
 bool get_local_ip(char* ip_buffer, int buffer_size);
 
 /**
- * @brief ·¢ËÍÂä×ÓÏûÏ¢
- * @param x ĞĞ×ø±ê
- * @param y ÁĞ×ø±ê
- * @param player_id Íæ¼ÒID
- * @return true ·¢ËÍ³É¹¦
- * @return false ·¢ËÍÊ§°Ü
+ * @brief å‘é€è½å­æ¶ˆæ¯
+ * @param x è¡Œåæ ‡
+ * @param y åˆ—åæ ‡
+ * @param player_id ç©å®¶ID
+ * @return true å‘é€æˆåŠŸ
+ * @return false å‘é€å¤±è´¥
  */
 bool send_move(int x, int y, int player_id);
 
 /**
- * @brief ·¢ËÍÁÄÌìÏûÏ¢
- * @param message ÁÄÌìÄÚÈİ
- * @return true ·¢ËÍ³É¹¦
- * @return false ·¢ËÍÊ§°Ü
+ * @brief å‘é€èŠå¤©æ¶ˆæ¯
+ * @param message èŠå¤©å†…å®¹
+ * @return true å‘é€æˆåŠŸ
+ * @return false å‘é€å¤±è´¥
  */
 bool send_chat_message(const char* message);
 
 /**
- * @brief ·¢ËÍÈÏÊäÏûÏ¢
- * @return true ·¢ËÍ³É¹¦
- * @return false ·¢ËÍÊ§°Ü
+ * @brief å‘é€è®¤è¾“æ¶ˆæ¯
+ * @return true å‘é€æˆåŠŸ
+ * @return false å‘é€å¤±è´¥
  */
 bool send_surrender();
 
 /**
- * @brief ·¢ËÍ»ÚÆåÇëÇó
- * @param steps »ÚÆå²½Êı
- * @return true ·¢ËÍ³É¹¦
- * @return false ·¢ËÍÊ§°Ü
+ * @brief å‘é€æ‚”æ£‹è¯·æ±‚
+ * @param steps æ‚”æ£‹æ­¥æ•°
+ * @return true å‘é€æˆåŠŸ
+ * @return false å‘é€å¤±è´¥
  */
 bool send_undo_request(int steps);
 
 /**
- * @brief ·¢ËÍ»ÚÆå»ØÓ¦
- * @param accepted ÊÇ·ñÍ¬Òâ»ÚÆå
- * @param steps »ÚÆå²½Êı
- * @return true ·¢ËÍ³É¹¦
- * @return false ·¢ËÍÊ§°Ü
+ * @brief å‘é€æ‚”æ£‹å›åº”
+ * @param accepted æ˜¯å¦åŒæ„æ‚”æ£‹
+ * @param steps æ‚”æ£‹æ­¥æ•°
+ * @return true å‘é€æˆåŠŸ
+ * @return false å‘é€å¤±è´¥
  */
 bool send_undo_response(bool accepted, int steps);
 

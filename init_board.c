@@ -8,12 +8,12 @@
 #include <string.h>
 
 /**
- * @brief ��ʼ������Ϊȫ��״̬�����ò���������
- * ����������鲢������λ����ΪEMPTY��ͬʱ��step_count����Ϊ0
+ * @brief 初始化棋盘为全空状态并重置步数计数器
+ * 清空棋盘数组并将所有位置设为EMPTY，同时将step_count重置为0
  */
 void empty_board()
 {
-    // ��ʼ������״̬Ϊȫ��
+    // 初始化棋盘状态为全空
     for (int i = 0; i < BOARD_SIZE; i++)
     {
         for (int j = 0; j < BOARD_SIZE; j++)
@@ -21,82 +21,82 @@ void empty_board()
             board[i][j] = EMPTY;
         }
     }
-    step_count = 0; // ���ò���������
+    step_count = 0; // 重置步数计数器
 }
 
 /**
- * @brief ��ӡ��ǰ����״̬
- * �Կɶ���ʽ������̣��������кź�����״̬
- * ���������ʾΪ'x'��AI������ʾΪ'��'����λ��ʾΪ'��'
+ * @brief 打印当前棋盘状态
+ * 以可读格式输出棋盘，包括行列号和棋子状态
+ * 玩家棋子显示为'x'，AI棋子显示为'○'，空位显示为'·'
  */
 void print_board()
 {
-    // ��ӡ�кţ�1-BOARD_SIZE��ʾ��
+    // 打印列号（1-BOARD_SIZE显示）
     printf("\n  ");
     for (int i = 0; i < BOARD_SIZE; i++)
     {
         printf("%2d", i + 1);
-        if (i + 1 == 9) // �����к�9��10+�Ķ���
+        if (i + 1 == 9) // 处理列号9和10+的对齐
         {
             printf(" ");
         }
     }
     printf("\n");
 
-    // ���д�ӡ��������
+    // 逐行打印棋盘内容
     for (int i = 0; i < BOARD_SIZE; i++)
     {
-        printf("%2d ", i + 1); // ��ӡ�кţ�1-BOARD_SIZE��
+        printf("%2d ", i + 1); // 打印行号（1-BOARD_SIZE）
         for (int j = 0; j < BOARD_SIZE; j++)
         {
             if (board[i][j] == PLAYER)
             {
-                printf("x "); // �������
+                printf("x "); // 玩家棋子
             }
             else if (board[i][j] == AI)
             {
-                printf("�� "); // AI����(ʹ�á���ʾ)
+                printf("○ "); // AI棋子(使用○显示)
             }
             else
             {
-                printf("�� "); // ��λ
+                printf("· "); // 空位
             }
         }
-        printf("\n"); // ÿ�н�������
+        printf("\n"); // 每行结束换行
     }
 }
 
 /**
- * @brief �������̴�С
+ * @brief 配置棋盘大小
  *
- * @param player1 ���1
- * @param player2 ���2
+ * @param player1 玩家1
+ * @param player2 玩家2
  */
 void setup_board_size()
 {
-    printf("ͨ�����̴�С��Ϊ��������(13X13)����׼����(15X15)����������(19X19)\n");
+    printf("通常棋盘大小分为休闲棋盘(13X13)、标准棋盘(15X15)和特殊棋盘(19X19)\n");
     char prompt[100];
-    sprintf(prompt, "���������̴�С(5~%d)(Ĭ��Ϊ��׼����):\n", MAX_BOARD_SIZE);
+    sprintf(prompt, "请输入棋盘大小(5~%d)(默认为标准棋盘):\n", MAX_BOARD_SIZE);
     BOARD_SIZE = get_integer_input(prompt, 5, MAX_BOARD_SIZE);
 }
 
 /**
  * @brief Set the up game options object
- * ������Ϸѡ��������ֹ��򡢼�ʱ����ʱ������
+ * 配置游戏选项，包括禁手规则、计时器和时间限制
  */
 void setup_game_options()
 {
-    use_forbidden_moves = get_integer_input("�Ƿ����ý��ֹ��� (1-��, 0-��): ", 0, 1);
+    use_forbidden_moves = get_integer_input("是否启用禁手规则 (1-是, 0-否): ", 0, 1);
 
-    use_timer = get_integer_input("�Ƿ����ü�ʱ�� (1-��, 0-��): ", 0, 1);
+    use_timer = get_integer_input("是否启用计时器 (1-是, 0-否): ", 0, 1);
     if (use_timer)
     {
-        time_limit = get_integer_input("������ÿ�غϵ�ʱ������ (1~60����): ", 1, 60) * 60;
+        time_limit = get_integer_input("请输入每回合的时间限制 (1~60分钟): ", 1, 60) * 60;
     }
 }
 
 /**
- * @brief ȷ���������
+ * @brief 确定先手玩家
  *
  * @param player1
  * @param player2
@@ -105,7 +105,7 @@ void setup_game_options()
 int determine_first_player(int player1, int player2)
 {
     char prompt[100];
-    sprintf(prompt, "��ѡ�����ַ� (1 for Player %d, 2 for Player %d): ", player1, player2);
+    sprintf(prompt, "请选择先手方 (1 for Player %d, 2 for Player %d): ", player1, player2);
     int first_player_choice = get_integer_input(prompt, 1, 2);
     if (first_player_choice == 1)
     {

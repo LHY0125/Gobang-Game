@@ -3,42 +3,42 @@
 
 #include "gobang.h"
 
-// --- ╦╢елсК╪гб╪╧╕дэ ---
+// --- Е╓█Г⌡≤Д╦▌Х╝╟Е╫∙Е┼÷Х┐╫ ---
 /**
- * @brief ╫ЬхК╦╢елаВЁлё╛╩ь╧куШ╬жсно╥
- * @param game_mode сно╥дёй╫ё╗1н╙хк╩З╤ту╫ё╛2н╙к╚хк╤ту╫ё╘
+ * @brief Х©⌡Е┘╔Е╓█Г⌡≤Ф╣│Г╗▀О╪▄Е⌡·И║╬Ф∙╢Е╠─Ф╦╦Ф┬▐
+ * @param game_mode Ф╦╦Ф┬▐Ф╗║Е╪▐О╪┬1Д╦╨Д╨╨Ф°╨Е╞╧Ф┬≤О╪▄2Д╦╨Е▐▄Д╨╨Е╞╧Ф┬≤О╪┴
  */
 void review_process(int game_mode);
 
 /**
- * @brief ╫╚╣╠г╟╤т╬ж╪гб╪╠ё╢Ф╣╫нд╪Ч
- * @param filename р╙╠ё╢Ф╣╫╣днд╪ЧцШ
- * @param game_mode сно╥дёй╫
- * @return 0╠Мй╬Ёи╧╕ё╛╥г0╠Мй╬й╖╟э
+ * @brief Е╟├Е╫⌠Е┴█Е╞╧Е╠─Х╝╟Е╫∙Д©²Е╜≤Е┬╟Ф√┤Д╩╤
+ * @param filename Х╕│Д©²Е╜≤Е┬╟Г └Ф√┤Д╩╤Е░█
+ * @param game_mode Ф╦╦Ф┬▐Ф╗║Е╪▐
+ * @return 0Х║╗Г╓╨Ф┬░Е┼÷О╪▄И²·0Х║╗Г╓╨Е╓╠Х╢╔
  */
 int save_game_to_file(const char *filename, int game_mode);
 
 /**
- * @brief ╢╕юМ╠ё╢Фсно╥╪гб╪╣дбъ╪╜
- * @param game_mode сно╥дёй╫
+ * @brief Е╓└Г░├Д©²Е╜≤Ф╦╦Ф┬▐Х╝╟Е╫∙Г └И─╩Х╬▒
+ * @param game_mode Ф╦╦Ф┬▐Ф╗║Е╪▐
  */
 void handle_save_record(int game_mode);
 
 /**
- * @brief ╢снд╪Ч╪стьсно╥╪гб╪
- * @param filename р╙╪сть╣днд╪ЧцШ
- * @return сно╥дёй╫ё╗1╩Р2ё╘ё╛0╠Мй╬й╖╟э
+ * @brief Д╩▌Ф√┤Д╩╤Е┼═Х╫╫Ф╦╦Ф┬▐Х╝╟Е╫∙
+ * @param filename Х╕│Е┼═Х╫╫Г └Ф√┤Д╩╤Е░█
+ * @return Ф╦╦Ф┬▐Ф╗║Е╪▐О╪┬1Ф┬√2О╪┴О╪▄0Х║╗Г╓╨Е╓╠Х╢╔
  */
 int load_game_from_file(const char *filename);
 
 /**
- * @brief ╪фкЦсно╥фю╥ж
+ * @brief Х╝║Г╝≈Ф╦╦Ф┬▐Х╞└Е┬├
  */
 void calculate_game_scores();
 
 /**
- * @brief отй╬сно╥фю╥ж╫А╧Ш╨мMVPфюя║
- * @param game_mode сно╥дёй╫ё╗1-хк╩З╤ту╫ё╛2-к╚хк╤ту╫ё╘
+ * @brief Ф≤╬Г╓╨Ф╦╦Ф┬▐Х╞└Е┬├Г╩⌠Ф·°Е▓▄MVPХ╞└И─┴
+ * @param game_mode Ф╦╦Ф┬▐Ф╗║Е╪▐О╪┬1-Д╨╨Ф°╨Е╞╧Ф┬≤О╪▄2-Е▐▄Д╨╨Е╞╧Ф┬≤О╪┴
  */
 void display_game_scores(int game_mode);
 

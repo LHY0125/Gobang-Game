@@ -1,151 +1,151 @@
 /**
  * @file config.h
- * @author Áõº½Óî(3364451258@qq.com¡¢15236416560@163.com¡¢lhy3364451258@outlook.com)
- * @brief Îå×ÓÆåÓÎÏ·²ÎÊýÅäÖÃÍ·ÎÄ¼þ
+ * @author åˆ˜èˆªå®‡(3364451258@qq.comã€15236416560@163.comã€lhy3364451258@outlook.com)
+ * @brief äº”å­æ£‹æ¸¸æˆå‚æ•°é…ç½®å¤´æ–‡ä»¶
  * @version 6.0
  * @date 2025-07-10
  *
  * @copyright Copyright (c) 2025
  *
- * @note ±¾ÎÄ¼þ¼¯ÖÐ¶¨ÒåÁËÎå×ÓÆåÓÎÏ·µÄËùÓÐ²ÎÊýÅäÖÃ£¬±ãÓÚÍ³Ò»¹ÜÀíºÍÐÞ¸Ä
+ * @note æœ¬æ–‡ä»¶é›†ä¸­å®šä¹‰äº†äº”å­æ£‹æ¸¸æˆçš„æ‰€æœ‰å‚æ•°é…ç½®ï¼Œä¾¿äºŽç»Ÿä¸€ç®¡ç†å’Œä¿®æ”¹
  */
 
 #ifndef CONFIG_H
 #define CONFIG_H
 
-//---------- ÆåÅÌÏà¹Ø²ÎÊý ----------//
-#define MAX_BOARD_SIZE 25                           // Ö§³ÖµÄ×î´óÆåÅÌ³ß´ç
-#define MIN_BOARD_SIZE 5                            // Ö§³ÖµÄ×îÐ¡ÆåÅÌ³ß´ç
-#define DEFAULT_BOARD_SIZE 15                       // Ä¬ÈÏÆåÅÌ³ß´ç
-#define MAX_STEPS (MAX_BOARD_SIZE * MAX_BOARD_SIZE) // ÓÎÏ·×î´ó²½Êý
+//---------- æ£‹ç›˜ç›¸å…³å‚æ•° ----------//
+#define MAX_BOARD_SIZE 25                           // æ”¯æŒçš„æœ€å¤§æ£‹ç›˜å°ºå¯¸
+#define MIN_BOARD_SIZE 5                            // æ”¯æŒçš„æœ€å°æ£‹ç›˜å°ºå¯¸
+#define DEFAULT_BOARD_SIZE 15                       // é»˜è®¤æ£‹ç›˜å°ºå¯¸
+#define MAX_STEPS (MAX_BOARD_SIZE * MAX_BOARD_SIZE) // æ¸¸æˆæœ€å¤§æ­¥æ•°
 
-//---------- Íæ¼Ò±êÊ¶²ÎÊý ----------//
-#define EMPTY 0                                     // ÆåÅÌ¿ÕÎ»±êÊ¶
-#define PLAYER 1                                    // Íæ¼Ò±êÊ¶ (ÓÃÓÚÈË»ú¶ÔÕ½Ä£Ê½)
-#define AI 2                                        // AI±êÊ¶ (ÓÃÓÚÈË»ú¶ÔÕ½Ä£Ê½)
-#define PLAYER1 1                                   // Íæ¼Ò1±êÊ¶ (ÓÃÓÚË«ÈË¶ÔÕ½Ä£Ê½)
-#define PLAYER2 2                                   // Íæ¼Ò2±êÊ¶ (ÓÃÓÚË«ÈË¶ÔÕ½Ä£Ê½)
+//---------- çŽ©å®¶æ ‡è¯†å‚æ•° ----------//
+#define EMPTY 0                                     // æ£‹ç›˜ç©ºä½æ ‡è¯†
+#define PLAYER 1                                    // çŽ©å®¶æ ‡è¯† (ç”¨äºŽäººæœºå¯¹æˆ˜æ¨¡å¼)
+#define AI 2                                        // AIæ ‡è¯† (ç”¨äºŽäººæœºå¯¹æˆ˜æ¨¡å¼)
+#define PLAYER1 1                                   // çŽ©å®¶1æ ‡è¯† (ç”¨äºŽåŒäººå¯¹æˆ˜æ¨¡å¼)
+#define PLAYER2 2                                   // çŽ©å®¶2æ ‡è¯† (ç”¨äºŽåŒäººå¯¹æˆ˜æ¨¡å¼)
 
-//---------- ÌØÊâÊäÈëÃüÁî ----------//
-#define INPUT_UNDO -1       // »ÚÆå
-#define INPUT_SAVE -2       // ±£´æ
-#define INPUT_EXIT -3       // ÍË³ö
-#define INPUT_SURRENDER -4  // ÈÏÊä
+//---------- ç‰¹æ®Šè¾“å…¥å‘½ä»¤ ----------//
+#define INPUT_UNDO -1       // æ‚”æ£‹
+#define INPUT_SAVE -2       // ä¿å­˜
+#define INPUT_EXIT -3       // é€€å‡º
+#define INPUT_SURRENDER -4  // è®¤è¾“
 
-//---------- ÓÎÏ·ÉèÖÃÄ¬ÈÏÖµ ----------//
-#define DEFAULT_USE_FORBIDDEN_MOVES false  // Ä¬ÈÏ²»ÆôÓÃ½ûÊÖ¹æÔò
-#define DEFAULT_USE_TIMER 0                // Ä¬ÈÏ²»ÆôÓÃ¼ÆÊ±Æ÷
-#define DEFAULT_TIME_LIMIT 30              // Ä¬ÈÏÊ±¼äÏÞÖÆÎª30Ãë(ÄÚ²¿´æ´¢)
+//---------- æ¸¸æˆè®¾ç½®é»˜è®¤å€¼ ----------//
+#define DEFAULT_USE_FORBIDDEN_MOVES false  // é»˜è®¤ä¸å¯ç”¨ç¦æ‰‹è§„åˆ™
+#define DEFAULT_USE_TIMER 0                // é»˜è®¤ä¸å¯ç”¨è®¡æ—¶å™¨
+#define DEFAULT_TIME_LIMIT 30              // é»˜è®¤æ—¶é—´é™åˆ¶ä¸º30ç§’(å†…éƒ¨å­˜å‚¨)
 
-//---------- AI²ÎÊý ----------//
-#define DEFAULT_AI_DEPTH 3                 // Ä¬ÈÏAIËÑË÷Éî¶È
-#define DEFAULT_DEFENSE_COEFFICIENT 1.2    // Ä¬ÈÏ·ÀÊØÏµÊý
+//---------- AIå‚æ•° ----------//
+#define DEFAULT_AI_DEPTH 3                 // é»˜è®¤AIæœç´¢æ·±åº¦
+#define DEFAULT_DEFENSE_COEFFICIENT 1.2    // é»˜è®¤é˜²å®ˆç³»æ•°
 
-//---------- ÍøÂç²ÎÊý ----------//
-#define DEFAULT_NETWORK_PORT 8888          // Ä¬ÈÏÍøÂç¶Ë¿Ú
-#define MIN_NETWORK_PORT 1024              // ×îÐ¡ÍøÂç¶Ë¿Ú
-#define MAX_NETWORK_PORT 65535             // ×î´óÍøÂç¶Ë¿Ú
-#define NETWORK_TIMEOUT_MS 5000            // ÍøÂç³¬Ê±Ê±¼ä(ºÁÃë)
-#define NETWORK_BUFFER_SIZE 1024           // ÍøÂç»º³åÇø´óÐ¡
+//---------- ç½‘ç»œå‚æ•° ----------//
+#define DEFAULT_NETWORK_PORT 8888          // é»˜è®¤ç½‘ç»œç«¯å£
+#define MIN_NETWORK_PORT 1024              // æœ€å°ç½‘ç»œç«¯å£
+#define MAX_NETWORK_PORT 65535             // æœ€å¤§ç½‘ç»œç«¯å£
+#define NETWORK_TIMEOUT_MS 5000            // ç½‘ç»œè¶…æ—¶æ—¶é—´(æ¯«ç§’)
+#define NETWORK_BUFFER_SIZE 1024           // ç½‘ç»œç¼“å†²åŒºå¤§å°
 
-//---------- ÆÀ·Ö²ÎÊý ----------//
-// ÆåÐÍÆÀ·Ö - ÓÃÓÚcalculate_step_scoreº¯Êý
-#define SCORE_FIVE 0            // ÎåÁ¬
-#define SCORE_LIVE_FOUR 2000    // »îËÄ
-#define SCORE_RUSH_FOUR 1000    // ³åËÄ
-#define SCORE_DEAD_FOUR 300     // ËÀËÄ
-#define SCORE_LIVE_THREE 500    // »îÈý
-#define SCORE_SLEEP_THREE 200   // ÃßÈý
-#define SCORE_DEAD_THREE 80     // ËÀÈý
-#define SCORE_LIVE_TWO 100      // »î¶þ
-#define SCORE_SLEEP_TWO 40      // Ãß¶þ
-#define SCORE_DEAD_TWO 15       // ËÀ¶þ
-#define SCORE_LIVE_ONE 15       // ¿ª·Åµ¥×Ó
-#define SCORE_HALF_ONE 8        // °ë¿ª·Åµ¥×Ó
-#define SCORE_DEAD_ONE 2        // ·â±Õµ¥×Ó
+//---------- è¯„åˆ†å‚æ•° ----------//
+// æ£‹åž‹è¯„åˆ† - ç”¨äºŽcalculate_step_scoreå‡½æ•°
+#define SCORE_FIVE 0            // äº”è¿ž
+#define SCORE_LIVE_FOUR 2000    // æ´»å››
+#define SCORE_RUSH_FOUR 1000    // å†²å››
+#define SCORE_DEAD_FOUR 300     // æ­»å››
+#define SCORE_LIVE_THREE 500    // æ´»ä¸‰
+#define SCORE_SLEEP_THREE 200   // çœ ä¸‰
+#define SCORE_DEAD_THREE 80     // æ­»ä¸‰
+#define SCORE_LIVE_TWO 100      // æ´»äºŒ
+#define SCORE_SLEEP_TWO 40      // çœ äºŒ
+#define SCORE_DEAD_TWO 15       // æ­»äºŒ
+#define SCORE_LIVE_ONE 15       // å¼€æ”¾å•å­
+#define SCORE_HALF_ONE 8        // åŠå¼€æ”¾å•å­
+#define SCORE_DEAD_ONE 2        // å°é—­å•å­
 
-// Î»ÖÃ½±ÀøÏµÊý
-#define POSITION_BONUS_FACTOR 10     // Î»ÖÃ½±ÀøÒò×Ó
+// ä½ç½®å¥–åŠ±ç³»æ•°
+#define POSITION_BONUS_FACTOR 10     // ä½ç½®å¥–åŠ±å› å­
 
-// AIÆÀ¹À²ÎÊý - ÓÃÓÚevaluate_posº¯Êý
-#define AI_SCORE_FIVE 1000000        // AIÆÀ¹À-ÎåÁ¬
-#define AI_SCORE_LIVE_FOUR 100000    // AIÆÀ¹À-»îËÄ
-#define AI_SCORE_RUSH_FOUR 10000     // AIÆÀ¹À-³åËÄ
-#define AI_SCORE_DEAD_FOUR 500       // AIÆÀ¹À-ËÀËÄ
-#define AI_SCORE_LIVE_THREE 5000     // AIÆÀ¹À-»îÈý
-#define AI_SCORE_SLEEP_THREE 1000    // AIÆÀ¹À-ÃßÈý
-#define AI_SCORE_DEAD_THREE 50       // AIÆÀ¹À-ËÀÈý
-#define AI_SCORE_LIVE_TWO 500        // AIÆÀ¹À-»î¶þ
-#define AI_SCORE_SLEEP_TWO 100       // AIÆÀ¹À-Ãß¶þ
-#define AI_SCORE_DEAD_TWO 10         // AIÆÀ¹À-ËÀ¶þ
-#define AI_SCORE_LIVE_ONE 50         // AIÆÀ¹À-¿ª·Åµ¥×Ó
-#define AI_SCORE_HALF_ONE 10         // AIÆÀ¹À-°ë¿ª·Åµ¥×Ó
-#define AI_SCORE_DEAD_ONE 1          // AIÆÀ¹À-·â±Õµ¥×Ó
+// AIè¯„ä¼°å‚æ•° - ç”¨äºŽevaluate_poså‡½æ•°
+#define AI_SCORE_FIVE 1000000        // AIè¯„ä¼°-äº”è¿ž
+#define AI_SCORE_LIVE_FOUR 100000    // AIè¯„ä¼°-æ´»å››
+#define AI_SCORE_RUSH_FOUR 10000     // AIè¯„ä¼°-å†²å››
+#define AI_SCORE_DEAD_FOUR 500       // AIè¯„ä¼°-æ­»å››
+#define AI_SCORE_LIVE_THREE 5000     // AIè¯„ä¼°-æ´»ä¸‰
+#define AI_SCORE_SLEEP_THREE 1000    // AIè¯„ä¼°-çœ ä¸‰
+#define AI_SCORE_DEAD_THREE 50       // AIè¯„ä¼°-æ­»ä¸‰
+#define AI_SCORE_LIVE_TWO 500        // AIè¯„ä¼°-æ´»äºŒ
+#define AI_SCORE_SLEEP_TWO 100       // AIè¯„ä¼°-çœ äºŒ
+#define AI_SCORE_DEAD_TWO 10         // AIè¯„ä¼°-æ­»äºŒ
+#define AI_SCORE_LIVE_ONE 50         // AIè¯„ä¼°-å¼€æ”¾å•å­
+#define AI_SCORE_HALF_ONE 10         // AIè¯„ä¼°-åŠå¼€æ”¾å•å­
+#define AI_SCORE_DEAD_ONE 1          // AIè¯„ä¼°-å°é—­å•å­
 
-// AIÎ»ÖÃ½±ÀøÏµÊý
-#define AI_POSITION_BONUS_FACTOR 50  // AIÎ»ÖÃ½±ÀøÒò×Ó
+// AIä½ç½®å¥–åŠ±ç³»æ•°
+#define AI_POSITION_BONUS_FACTOR 50  // AIä½ç½®å¥–åŠ±å› å­
 
-// ËÑË÷Ëã·¨²ÎÊý
-#define SEARCH_MAX_SCORE 1000000        // ËÑË÷×î´ó·ÖÊý
-#define SEARCH_WIN_BONUS 1000000        // »ñÊ¤½±Àø·ÖÊý
-#define AI_NEARBY_RANGE 2               // AIËÑË÷µÄÁÚ½ü·¶Î§
-#define AI_SEARCH_RANGE_THRESHOLD 10    // AI¿ªÊ¼ÏÞÖÆËÑË÷·¶Î§µÄ²½ÊýãÐÖµ
+// æœç´¢ç®—æ³•å‚æ•°
+#define SEARCH_MAX_SCORE 1000000        // æœç´¢æœ€å¤§åˆ†æ•°
+#define SEARCH_WIN_BONUS 1000000        // èŽ·èƒœå¥–åŠ±åˆ†æ•°
+#define AI_NEARBY_RANGE 2               // AIæœç´¢çš„é‚»è¿‘èŒƒå›´
+#define AI_SEARCH_RANGE_THRESHOLD 10    // AIå¼€å§‹é™åˆ¶æœç´¢èŒƒå›´çš„æ­¥æ•°é˜ˆå€¼
 
-// ÆÀ·ÖÈ¨ÖØ²ÎÊý
-#define TIME_WEIGHT_FACTOR 0.5          // Ê±¼äÈ¨ÖØÒò×Ó
-#define WIN_BONUS 2000                  // Ê¤Àû½±Àø·ÖÊý
+// è¯„åˆ†æƒé‡å‚æ•°
+#define TIME_WEIGHT_FACTOR 0.5          // æ—¶é—´æƒé‡å› å­
+#define WIN_BONUS 2000                  // èƒœåˆ©å¥–åŠ±åˆ†æ•°
 
-// ÎÄ¼þÂ·¾¶²ÎÊý
-#define RECORDS_DIR "records"           // ¼ÇÂ¼ÎÄ¼þÄ¿Â¼
-#define CONFIG_FILE "gobang_config.ini" // ÅäÖÃÎÄ¼þÂ·¾¶
-#define MAX_PATH_LENGTH 256             // ×î´óÂ·¾¶³¤¶È
+// æ–‡ä»¶è·¯å¾„å‚æ•°
+#define RECORDS_DIR "records"           // è®°å½•æ–‡ä»¶ç›®å½•
+#define CONFIG_FILE "gobang_config.ini" // é…ç½®æ–‡ä»¶è·¯å¾„
+#define MAX_PATH_LENGTH 256             // æœ€å¤§è·¯å¾„é•¿åº¦
 
-//---------- ÅäÖÃ¹ÜÀíº¯ÊýÉùÃ÷ ----------//
+//---------- é…ç½®ç®¡ç†å‡½æ•°å£°æ˜Ž ----------//
 /**
- * @brief ¼ÓÔØÓÎÏ·ÅäÖÃ
+ * @brief åŠ è½½æ¸¸æˆé…ç½®
  */
 void load_game_config();
 
 /**
- * @brief ±£´æÓÎÏ·ÅäÖÃ
+ * @brief ä¿å­˜æ¸¸æˆé…ç½®
  */
 void save_game_config();
 
 /**
- * @brief ÖØÖÃÎªÄ¬ÈÏÅäÖÃ
+ * @brief é‡ç½®ä¸ºé»˜è®¤é…ç½®
  */
 void reset_to_default_config();
 
 /**
- * @brief ÏÔÊ¾µ±Ç°ÅäÖÃ
+ * @brief æ˜¾ç¤ºå½“å‰é…ç½®
  */
 void display_current_config();
 
 /**
- * @brief ÅäÖÃÆåÅÌ´óÐ¡
+ * @brief é…ç½®æ£‹ç›˜å¤§å°
  */
 void config_board_size();
 
 /**
- * @brief ÅäÖÃ½ûÊÖ¹æÔò
+ * @brief é…ç½®ç¦æ‰‹è§„åˆ™
  */
 void config_forbidden_moves();
 
 /**
- * @brief ÅäÖÃ¼ÆÊ±Æ÷
+ * @brief é…ç½®è®¡æ—¶å™¨
  */
 void config_timer();
 
 /**
- * @brief ÅäÖÃÍøÂç²ÎÊý
+ * @brief é…ç½®ç½‘ç»œå‚æ•°
  */
 void config_network();
 
 /**
- * @brief ÅäÖÃ¹ÜÀíÖ÷²Ëµ¥
+ * @brief é…ç½®ç®¡ç†ä¸»èœå•
  */
 void config_management_menu();
 
-//---------- ÍøÂçÅäÖÃÈ«¾Ö±äÁ¿ÉùÃ÷ ----------// È«¾Ö±äÁ¿ÉùÃ÷ÏÖÔÚÔÚglobals.hÖÐ
+//---------- ç½‘ç»œé…ç½®å…¨å±€å˜é‡å£°æ˜Ž ----------// å…¨å±€å˜é‡å£°æ˜ŽçŽ°åœ¨åœ¨globals.hä¸­
 
 #endif // CONFIG_H
