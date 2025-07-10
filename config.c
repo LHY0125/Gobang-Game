@@ -1,11 +1,10 @@
 #include "config.h"
 #include "ui.h"
+#include "game_mode.h"
+#include "globals.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-// 配置文件路径
-#define CONFIG_FILE "gobang_config.ini"
 
 /**
  * @brief 加载游戏配置
@@ -47,6 +46,22 @@ void load_game_config()
         {
             time_limit = atoi(line + 11);
         }
+        else if (strncmp(line, "NETWORK_PORT=", 13) == 0)
+        {
+            int port = atoi(line + 13);
+            if (port >= MIN_NETWORK_PORT && port <= MAX_NETWORK_PORT)
+            {
+                network_port = port;
+            }
+        }
+        else if (strncmp(line, "NETWORK_TIMEOUT=", 16) == 0)
+        {
+            int timeout = atoi(line + 16);
+            if (timeout > 0)
+            {
+                network_timeout = timeout;
+            }
+        }
         else if (strncmp(line, "AI_DIFFICULTY=", 14) == 0)
         {
             int difficulty = atoi(line + 14);
@@ -83,6 +98,10 @@ void save_game_config()
     fprintf(file, "USE_TIMER=%d\n", use_timer);
     fprintf(file, "\n# 时间限制 (分钟)\n");
     fprintf(file, "TIME_LIMIT=%d\n", time_limit);
+    fprintf(file, "\n# 网络端口 (范围: %d-%d)\n", MIN_NETWORK_PORT, MAX_NETWORK_PORT);
+    fprintf(file, "NETWORK_PORT=%d\n", network_port);
+    fprintf(file, "\n# 网络超时时间 (毫秒)\n");
+    fprintf(file, "NETWORK_TIMEOUT=%d\n", network_timeout);
     
     fclose(file);
     printf("配置保存完成\n");
@@ -97,6 +116,8 @@ void reset_to_default_config()
     use_forbidden_moves = DEFAULT_USE_FORBIDDEN_MOVES;
     use_timer = DEFAULT_USE_TIMER;
     time_limit = DEFAULT_TIME_LIMIT;
+    network_port = DEFAULT_NETWORK_PORT;
+    network_timeout = NETWORK_TIMEOUT_MS;
     
     printf("已重置为默认配置\n");
 }
@@ -114,6 +135,8 @@ void display_current_config()
     {
         printf("时间限制: %d 分钟\n", time_limit / 60);
     }
+    printf("网络端口: %d\n", network_port);
+    printf("网络超时: %d 毫秒\n", network_timeout);
     printf("=====================\n");
 }
 
@@ -207,6 +230,56 @@ void config_timer()
 }
 
 /**
+ * @brief 配置网络参数
+ */
+void config_network()
+{
+    printf("\n===== 网络配置 =====\n");
+    printf("当前网络端口: %d\n", network_port);
+    printf("当前网络超时: %d 毫秒\n", network_timeout);
+    
+    printf("\n请输入新的网络端口 (%d-%d): ", MIN_NETWORK_PORT, MAX_NETWORK_PORT);
+    int new_port;
+    if (scanf("%d", &new_port) == 1)
+    {
+        if (new_port >= MIN_NETWORK_PORT && new_port <= MAX_NETWORK_PORT)
+        {
+            network_port = new_port;
+            printf("网络端口已设置为: %d\n", network_port);
+        }
+        else
+        {
+            printf("无效的端口号！端口范围: %d-%d\n", MIN_NETWORK_PORT, MAX_NETWORK_PORT);
+        }
+    }
+    else
+    {
+        printf("输入格式错误！\n");
+        while (getchar() != '\n');
+    }
+    
+    printf("\n请输入网络超时时间(毫秒, 建议1000-10000): ");
+    int new_timeout;
+    if (scanf("%d", &new_timeout) == 1)
+    {
+        if (new_timeout > 0)
+        {
+            network_timeout = new_timeout;
+            printf("网络超时已设置为: %d 毫秒\n", network_timeout);
+        }
+        else
+        {
+            printf("无效的超时时间！\n");
+        }
+    }
+    else
+    {
+        printf("输入格式错误！\n");
+        while (getchar() != '\n');
+    }
+}
+
+/**
  * @brief 配置管理主菜单
  */
 void config_management_menu()
@@ -240,9 +313,12 @@ void config_management_menu()
                 config_timer();
                 break;
             case 4:
-                printf("AI难度设置功能开发中...\n");
+                config_network();
                 break;
             case 5:
+                printf("AI难度设置功能开发中...\n");
+                break;
+            case 6:
                 save_game_config();
                 return;
             default:

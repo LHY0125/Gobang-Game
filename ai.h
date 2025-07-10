@@ -3,37 +3,34 @@
 
 #include "gobang.h"
 
-// é˜²å®ˆç³»æ•°
-extern double defense_coefficient;
-
 /**
- * @brief è¯„ä¼°ä¸€ä¸ªè½å­ä½ç½®çš„ç»¼åˆå¾—åˆ†ï¼ˆç»“åˆè¿›æ”»å’Œé˜²å®ˆï¼‰
+ * @brief ÆÀ¹ÀÒ»¸öÂä×ÓÎ»ÖÃµÄ×ÛºÏµÃ·Ö£¨½áºÏ½ø¹¥ºÍ·ÀÊØ£©
  *
- * @param x è¡Œåæ ‡
- * @param y åˆ—åæ ‡
- * @return int ç»¼åˆå¾—åˆ†
+ * @param x ĞĞ×ø±ê
+ * @param y ÁĞ×ø±ê
+ * @return int ×ÛºÏµÃ·Ö
  */
 int evaluate_move(int x, int y);
 
 /**
- * @brief è¯„ä¼°æŒ‡å®šä½ç½®çš„ä»·å€¼
+ * @brief ÆÀ¹ÀÖ¸¶¨Î»ÖÃµÄ¼ÛÖµ
  *
- * @param x ä½ç½®xåæ ‡
- * @param y ä½ç½®yåæ ‡
- * @param player ç©å®¶æ ‡è¯†(PLAYER/AI)
- * @return int ä½ç½®ä»·å€¼
+ * @param x Î»ÖÃx×ø±ê
+ * @param y Î»ÖÃy×ø±ê
+ * @param player Íæ¼Ò±êÊ¶(PLAYER/AI)
+ * @return int Î»ÖÃ¼ÛÖµ
  */
 int evaluate_pos(int x, int y, int player);
 
 /**
- * @brief è¯„ä¼°æ£‹ç›˜ä»·å€¼
+ * @brief ÆÀ¹ÀÆåÅÌ¼ÛÖµ
  *
- * @param player ç©å®¶æ ‡è¯†(PLAYER/AI)
+ * @param player Íæ¼Ò±êÊ¶(PLAYER/AI)
  */
 int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximizing);
 
 /**
- * @brief AIä¸‹æ£‹
+ * @brief AIÏÂÆå
  *
  * @param depth
  */

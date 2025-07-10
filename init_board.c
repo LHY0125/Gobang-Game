@@ -1,16 +1,19 @@
 #include "init_board.h"
-#include "game_mode.h"
 #include "gobang.h"
+#include "game_mode.h"
 #include "config.h"
+#include "globals.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /**
- * @brief åˆå§‹åŒ–æ£‹ç›˜ä¸ºå…¨ç©ºçŠ¶æ€å¹¶é‡ç½®æ­¥æ•°è®¡æ•°å™¨
- * æ¸…ç©ºæ£‹ç›˜æ•°ç»„å¹¶å°†æ‰€æœ‰ä½ç½®è®¾ä¸ºEMPTYï¼ŒåŒæ—¶å°†step_counté‡ç½®ä¸º0
+ * @brief ³õÊ¼»¯ÆåÅÌÎªÈ«¿Õ×´Ì¬²¢ÖØÖÃ²½Êı¼ÆÊıÆ÷
+ * Çå¿ÕÆåÅÌÊı×é²¢½«ËùÓĞÎ»ÖÃÉèÎªEMPTY£¬Í¬Ê±½«step_countÖØÖÃÎª0
  */
 void empty_board()
 {
-    // åˆå§‹åŒ–æ£‹ç›˜çŠ¶æ€ä¸ºå…¨ç©º
+    // ³õÊ¼»¯ÆåÅÌ×´Ì¬ÎªÈ«¿Õ
     for (int i = 0; i < BOARD_SIZE; i++)
     {
         for (int j = 0; j < BOARD_SIZE; j++)
@@ -18,82 +21,82 @@ void empty_board()
             board[i][j] = EMPTY;
         }
     }
-    step_count = 0; // é‡ç½®æ­¥æ•°è®¡æ•°å™¨
+    step_count = 0; // ÖØÖÃ²½Êı¼ÆÊıÆ÷
 }
 
 /**
- * @brief æ‰“å°å½“å‰æ£‹ç›˜çŠ¶æ€
- * ä»¥å¯è¯»æ ¼å¼è¾“å‡ºæ£‹ç›˜ï¼ŒåŒ…æ‹¬è¡Œåˆ—å·å’Œæ£‹å­çŠ¶æ€
- * ç©å®¶æ£‹å­æ˜¾ç¤ºä¸º'x'ï¼ŒAIæ£‹å­æ˜¾ç¤ºä¸º'â—‹'ï¼Œç©ºä½æ˜¾ç¤ºä¸º'Â·'
+ * @brief ´òÓ¡µ±Ç°ÆåÅÌ×´Ì¬
+ * ÒÔ¿É¶Á¸ñÊ½Êä³öÆåÅÌ£¬°üÀ¨ĞĞÁĞºÅºÍÆå×Ó×´Ì¬
+ * Íæ¼ÒÆå×ÓÏÔÊ¾Îª'x'£¬AIÆå×ÓÏÔÊ¾Îª'¡ğ'£¬¿ÕÎ»ÏÔÊ¾Îª'¡¤'
  */
 void print_board()
 {
-    // æ‰“å°åˆ—å·ï¼ˆ1-BOARD_SIZEæ˜¾ç¤ºï¼‰
+    // ´òÓ¡ÁĞºÅ£¨1-BOARD_SIZEÏÔÊ¾£©
     printf("\n  ");
     for (int i = 0; i < BOARD_SIZE; i++)
     {
         printf("%2d", i + 1);
-        if (i + 1 == 9) // å¤„ç†åˆ—å·9å’Œ10+çš„å¯¹é½
+        if (i + 1 == 9) // ´¦ÀíÁĞºÅ9ºÍ10+µÄ¶ÔÆë
         {
             printf(" ");
         }
     }
     printf("\n");
 
-    // é€è¡Œæ‰“å°æ£‹ç›˜å†…å®¹
+    // ÖğĞĞ´òÓ¡ÆåÅÌÄÚÈİ
     for (int i = 0; i < BOARD_SIZE; i++)
     {
-        printf("%2d ", i + 1); // æ‰“å°è¡Œå·ï¼ˆ1-BOARD_SIZEï¼‰
+        printf("%2d ", i + 1); // ´òÓ¡ĞĞºÅ£¨1-BOARD_SIZE£©
         for (int j = 0; j < BOARD_SIZE; j++)
         {
             if (board[i][j] == PLAYER)
             {
-                printf("x "); // ç©å®¶æ£‹å­
+                printf("x "); // Íæ¼ÒÆå×Ó
             }
             else if (board[i][j] == AI)
             {
-                printf("â—‹ "); // AIæ£‹å­(ä½¿ç”¨â—‹æ˜¾ç¤º)
+                printf("¡ğ "); // AIÆå×Ó(Ê¹ÓÃ¡ğÏÔÊ¾)
             }
             else
             {
-                printf("Â· "); // ç©ºä½
+                printf("¡¤ "); // ¿ÕÎ»
             }
         }
-        printf("\n"); // æ¯è¡Œç»“æŸæ¢è¡Œ
+        printf("\n"); // Ã¿ĞĞ½áÊø»»ĞĞ
     }
 }
 
 /**
- * @brief é…ç½®æ£‹ç›˜å¤§å°
+ * @brief ÅäÖÃÆåÅÌ´óĞ¡
  *
- * @param player1 ç©å®¶1
- * @param player2 ç©å®¶2
+ * @param player1 Íæ¼Ò1
+ * @param player2 Íæ¼Ò2
  */
 void setup_board_size()
 {
-    printf("é€šå¸¸æ£‹ç›˜å¤§å°åˆ†ä¸ºä¼‘é—²æ£‹ç›˜(13X13)ã€æ ‡å‡†æ£‹ç›˜(15X15)å’Œç‰¹æ®Šæ£‹ç›˜(19X19)\n");
+    printf("Í¨³£ÆåÅÌ´óĞ¡·ÖÎªĞİÏĞÆåÅÌ(13X13)¡¢±ê×¼ÆåÅÌ(15X15)ºÍÌØÊâÆåÅÌ(19X19)\n");
     char prompt[100];
-    sprintf(prompt, "è¯·è¾“å…¥æ£‹ç›˜å¤§å°(5~%d)(é»˜è®¤ä¸ºæ ‡å‡†æ£‹ç›˜):\n", MAX_BOARD_SIZE);
+    sprintf(prompt, "ÇëÊäÈëÆåÅÌ´óĞ¡(5~%d)(Ä¬ÈÏÎª±ê×¼ÆåÅÌ):\n", MAX_BOARD_SIZE);
     BOARD_SIZE = get_integer_input(prompt, 5, MAX_BOARD_SIZE);
 }
 
 /**
  * @brief Set the up game options object
- * é…ç½®æ¸¸æˆé€‰é¡¹ï¼ŒåŒ…æ‹¬ç¦æ‰‹è§„åˆ™ã€è®¡æ—¶å™¨å’Œæ—¶é—´é™åˆ¶
+ * ÅäÖÃÓÎÏ·Ñ¡Ïî£¬°üÀ¨½ûÊÖ¹æÔò¡¢¼ÆÊ±Æ÷ºÍÊ±¼äÏŞÖÆ
  */
 void setup_game_options()
 {
-    use_forbidden_moves = get_integer_input("æ˜¯å¦å¯ç”¨ç¦æ‰‹è§„åˆ™ (1-æ˜¯, 0-å¦): ", 0, 1);
+    use_forbidden_moves = get_integer_input("ÊÇ·ñÆôÓÃ½ûÊÖ¹æÔò (1-ÊÇ, 0-·ñ): ", 0, 1);
 
-    use_timer = get_integer_input("æ˜¯å¦å¯ç”¨è®¡æ—¶å™¨ (1-æ˜¯, 0-å¦): ", 0, 1);
+    use_timer = get_integer_input("ÊÇ·ñÆôÓÃ¼ÆÊ±Æ÷ (1-ÊÇ, 0-·ñ): ", 0, 1);
     if (use_timer)
     {
-        time_limit = get_integer_input("è¯·è¾“å…¥æ¯å›åˆçš„æ—¶é—´é™åˆ¶ (1~60åˆ†é’Ÿ): ", 1, 60) * 60;
+        time_limit = get_integer_input("ÇëÊäÈëÃ¿»ØºÏµÄÊ±¼äÏŞÖÆ (1~60·ÖÖÓ): ", 1, 60) * 60;
     }
 }
 
 /**
- * @brief ç¡®å®šå…ˆæ‰‹ç©å®¶
+ * @brief È·¶¨ÏÈÊÖÍæ¼Ò
  *
  * @param player1
  * @param player2
@@ -102,7 +105,7 @@ void setup_game_options()
 int determine_first_player(int player1, int player2)
 {
     char prompt[100];
-    sprintf(prompt, "è¯·é€‰æ‹©å…ˆæ‰‹æ–¹ (1 for Player %d, 2 for Player %d): ", player1, player2);
+    sprintf(prompt, "ÇëÑ¡ÔñÏÈÊÖ·½ (1 for Player %d, 2 for Player %d): ", player1, player2);
     int first_player_choice = get_integer_input(prompt, 1, 2);
     if (first_player_choice == 1)
     {

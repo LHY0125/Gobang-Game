@@ -2,105 +2,109 @@
 #include "game_mode.h"
 #include "gobang.h"
 #include "init_board.h"
+#include "ui.h"
 #include "config.h"
+#include "globals.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#include <io.h>
+#else
+#include <unistd.h>
+#include <sys/types.h>
+#include <dirent.h>
+#endif
 
 /**
- * @brief å¤ç›˜æ¸¸æˆå…¨è¿‡ç¨‹å¹¶å±•ç¤ºè¯„åˆ†
- * @note å®ç°æµç¨‹:
- * 1. åˆå§‹åŒ–ä¸´æ—¶å¤ç›˜æ£‹ç›˜
- * 2. æŒ‰æ­¥æ•°é¡ºåºé€æ­¥é‡ç°æ¯ä¸ªè½å­
- * 3. æ¯æ­¥æ˜¾ç¤º:
- *    - å½“å‰æ­¥æ•°/æ€»æ­¥æ•°
- *    - è½å­æ–¹(ç©å®¶/AI)
- *    - è½å­ä½ç½®(1-basedåæ ‡)
- *    - å½“å‰æ£‹ç›˜çŠ¶æ€
- * 4. é€šè¿‡ç”¨æˆ·æŒ‰Enteré”®æ§åˆ¶æ­¥éª¤å‰è¿›
- * 5. å¤ç›˜ç»“æŸåè‡ªåŠ¨è¿›å…¥è¯„åˆ†ç¯èŠ‚:
- *    - è¯„ä¼°åŒæ–¹è¡¨ç°
- *    - æ˜¾ç¤ºå¾—åˆ†
- *    - è¯„é€‰MVP
- * @note æŠ€æœ¯ç»†èŠ‚:
- * - ä½¿ç”¨ç‹¬ç«‹ä¸´æ—¶æ£‹ç›˜é¿å…å½±å“ä¸»æ¸¸æˆçŠ¶æ€
- * - åæ ‡æ˜¾ç¤ºè½¬æ¢ä¸º1-basedæ–¹ä¾¿ç”¨æˆ·ç†è§£
- * - åŒ…å«è¾“å…¥ç¼“å†²åŒºæ¸…ç†é˜²æ­¢æ„å¤–è¾“å…¥
- * - è¯„åˆ†ç¯èŠ‚è°ƒç”¨calculate_final_score()å‡½æ•°
+ * @brief ¸´ÅÌÓÎÏ·È«¹ı³Ì²¢Õ¹Ê¾ÆÀ·Ö
+ * @note ÊµÏÖÁ÷³Ì:
+ * 1. ³õÊ¼»¯ÁÙÊ±¸´ÅÌÆåÅÌ
+ * 2. °´²½ÊıË³ĞòÖğ²½ÖØÏÖÃ¿¸öÂä×Ó
+ * 3. Ã¿²½ÏÔÊ¾:
+ *    - µ±Ç°²½Êı/×Ü²½Êı
+ *    - Âä×Ó·½(Íæ¼Ò/AI)
+ *    - Âä×ÓÎ»ÖÃ(1-based×ø±ê)
+ *    - µ±Ç°ÆåÅÌ×´Ì¬
+ * 4. Í¨¹ıÓÃ»§°´Enter¼ü¿ØÖÆ²½ÖèÇ°½ø
+ * 5. ¸´ÅÌ½áÊøºó×Ô¶¯½øÈëÆÀ·Ö»·½Ú:
+ *    - ÆÀ¹ÀË«·½±íÏÖ
+ *    - ÏÔÊ¾µÃ·Ö
+ *    - ÆÀÑ¡MVP
+ * @note ¼¼ÊõÏ¸½Ú:
+ * - Ê¹ÓÃ¶ÀÁ¢ÁÙÊ±ÆåÅÌ±ÜÃâÓ°ÏìÖ÷ÓÎÏ·×´Ì¬
+ * - ×ø±êÏÔÊ¾×ª»»Îª1-based·½±ãÓÃ»§Àí½â
+ * - °üº¬ÊäÈë»º³åÇøÇåÀí·ÀÖ¹ÒâÍâÊäÈë
+ * - ÆÀ·Ö»·½Úµ÷ÓÃcalculate_final_score()º¯Êı
  */
-
-// å…¨å±€å˜é‡ï¼Œç”¨äºå­˜å‚¨å¯¹å±€è¯„åˆ†ï¼Œç¡®ä¿å¯¹æˆ˜ç»“æŸå’Œå¤ç›˜æ¨¡å¼ä½¿ç”¨ç›¸åŒçš„è¯„åˆ†
-int player1_final_score = 0;
-int player2_final_score = 0;
-int scores_calculated = 0;
-char winner_info[50] = "å¹³å±€æˆ–æœªå®Œæˆ"; // å­˜å‚¨èƒœè´Ÿä¿¡æ¯
-
 void review_process(int game_mode)
 {
-    int review_choice = get_integer_input("æ˜¯å¦è¦å¤ç›˜æœ¬å±€æ¯”èµ›? (1-æ˜¯, 0-å¦): ", 0, 1);
+    int review_choice = get_integer_input("ÊÇ·ñÒª¸´ÅÌ±¾¾Ö±ÈÈü? (1-ÊÇ, 0-·ñ): ", 0, 1);
     
-    // å¦‚æœè¯„åˆ†å°šæœªè®¡ç®—ï¼Œåˆ™è®¡ç®—è¯„åˆ†
+    // Èç¹ûÆÀ·ÖÉĞÎ´¼ÆËã£¬Ôò¼ÆËãÆÀ·Ö
     if (!scores_calculated)
     {
         calculate_game_scores();
     }
     else
     {
-        // è¯„åˆ†å·²ä»æ–‡ä»¶ä¸­åŠ è½½ï¼Œç›´æ¥ä½¿ç”¨
-        printf("ä»è®°å½•æ–‡ä»¶ä¸­åŠ è½½è¯„åˆ†æ•°æ®\n");
+        // ÆÀ·ÖÒÑ´ÓÎÄ¼şÖĞ¼ÓÔØ£¬Ö±½ÓÊ¹ÓÃ
+        printf("´Ó¼ÇÂ¼ÎÄ¼şÖĞ¼ÓÔØÆÀ·ÖÊı¾İ\n");
     }
     
     if (review_choice == 1)
     {
-        printf("\n===== å¤ç›˜è®°å½•(æ€»æ­¥æ•°ï¼š%d) =====\n", step_count);
-        // æ¸…ç©ºè¾“å…¥ç¼“å†²åŒº
+        printf("\n===== ¸´ÅÌ¼ÇÂ¼(×Ü²½Êı£º%d) =====\n", step_count);
+        // Çå¿ÕÊäÈë»º³åÇø
         int c;
         while ((c = getchar()) != '\n' && c != EOF)
             ;
 
-        // åˆ›å»ºä¸´æ—¶å¤ç›˜æ£‹ç›˜
+        // ´´½¨ÁÙÊ±¸´ÅÌÆåÅÌ
         int temp_board[MAX_BOARD_SIZE][MAX_BOARD_SIZE];
-        memset(temp_board, EMPTY, sizeof(temp_board)); // åˆå§‹åŒ–ä¸ºç©ºæ£‹ç›˜
+        memset(temp_board, EMPTY, sizeof(temp_board)); // ³õÊ¼»¯Îª¿ÕÆåÅÌ
 
-        // é€æ­¥é‡ç°æ¸¸æˆè¿‡ç¨‹
+        // Öğ²½ÖØÏÖÓÎÏ·¹ı³Ì
         for (int i = 0; i < step_count; i++)
         {
-            Step s = steps[i];               // è·å–å½“å‰æ­¥éª¤
-            temp_board[s.x][s.y] = s.player; // åœ¨ä¸´æ—¶æ£‹ç›˜ä¸Šè½å­
+            Step s = steps[i];               // »ñÈ¡µ±Ç°²½Öè
+            temp_board[s.x][s.y] = s.player; // ÔÚÁÙÊ±ÆåÅÌÉÏÂä×Ó
 
-            // æ‰“å°å½“å‰æ­¥éª¤ä¿¡æ¯
-            // æ ¹æ®æ¸¸æˆæ¨¡å¼æ˜¾ç¤ºä¸åŒçš„æ ‡é¢˜å’Œç©å®¶ä¿¡æ¯
+            // ´òÓ¡µ±Ç°²½ÖèĞÅÏ¢
+            // ¸ù¾İÓÎÏ·Ä£Ê½ÏÔÊ¾²»Í¬µÄ±êÌâºÍÍæ¼ÒĞÅÏ¢
             if (game_mode == 1)
             {
-                // äººæœºå¯¹æˆ˜
-                printf("\n===== äº”å­æ£‹äººæœºå¯¹æˆ˜(%dX%dæ£‹ç›˜) =====", BOARD_SIZE, BOARD_SIZE);
-                printf("\n    ç¬¬%dæ­¥/%dæ­¥: %s è½å­äº(%d, %d)\n",
+                // ÈË»ú¶ÔÕ½
+                printf("\n===== Îå×ÓÆåÈË»ú¶ÔÕ½(%dX%dÆåÅÌ) =====", BOARD_SIZE, BOARD_SIZE);
+                printf("\n    µÚ%d²½/%d²½: %s Âä×ÓÓÚ(%d, %d)\n",
                        i + 1, step_count,
-                       (s.player == PLAYER) ? "ç©å®¶" : "AI",
+                       (s.player == PLAYER) ? "Íæ¼Ò" : "AI",
                        s.x + 1, s.y + 1);
             }
             else
             {
-                // åŒäººå¯¹æˆ˜
-                printf("\n===== äº”å­æ£‹åŒäººå¯¹æˆ˜(%dX%dæ£‹ç›˜) =====", BOARD_SIZE, BOARD_SIZE);
-                printf("\n    ç¬¬%dæ­¥/%dæ­¥: %s è½å­äº(%d, %d)\n",
+                // Ë«ÈË¶ÔÕ½
+                printf("\n===== Îå×ÓÆåË«ÈË¶ÔÕ½(%dX%dÆåÅÌ) =====", BOARD_SIZE, BOARD_SIZE);
+                printf("\n    µÚ%d²½/%d²½: %s Âä×ÓÓÚ(%d, %d)\n",
                        i + 1, step_count,
-                       (s.player == PLAYER1) ? "ç©å®¶1(é»‘æ£‹)" : "ç©å®¶2(ç™½æ£‹)",
+                       (s.player == PLAYER1) ? "Íæ¼Ò1(ºÚÆå)" : "Íæ¼Ò2(°×Æå)",
                        s.x + 1, s.y + 1);
             }
 
-            // æ‰“å°å½“å‰å¤ç›˜æ£‹ç›˜
+            // ´òÓ¡µ±Ç°¸´ÅÌÆåÅÌ
             printf("  ");
             for (int col = 0; col < BOARD_SIZE; col++)
             {
-                printf("%2d", col + 1); // åˆ—å·
+                printf("%2d", col + 1); // ÁĞºÅ
             }           
             printf("\n");
 
             for (int row = 0; row < BOARD_SIZE; row++)
             {
-                printf("%2d ", row + 1); // è¡Œå·
+                printf("%2d ", row + 1); // ĞĞºÅ
                 for (int col = 0; col < BOARD_SIZE; col++)
                 {
                     if (temp_board[row][col] == PLAYER || temp_board[row][col] == PLAYER1)
@@ -109,72 +113,72 @@ void review_process(int game_mode)
                     }
                     else if (temp_board[row][col] == AI || temp_board[row][col] == PLAYER2)
                     {
-                        printf("â—‹ ");
+                        printf("¡ğ ");
                     }
                     else
                     {
-                        printf("Â· ");
+                        printf("¡¤ ");
                     }
                 }
-                printf("\n"); // è¡Œç»“æŸæ¢è¡Œ
+                printf("\n"); // ĞĞ½áÊø»»ĞĞ
             }
 
-            // å¦‚æœä¸æ˜¯æœ€åä¸€æ­¥ï¼Œç­‰å¾…ç”¨æˆ·æŒ‰é”®ç»§ç»­
+            // Èç¹û²»ÊÇ×îºóÒ»²½£¬µÈ´ıÓÃ»§°´¼ü¼ÌĞø
             if (i < step_count - 1)
             {
-                printf("\næŒ‰Enterç»§ç»­ä¸‹ä¸€æ­¥...");
+                printf("\n°´Enter¼ÌĞøÏÂÒ»²½...");
                 while (getchar() != '\n')
-                    ; // ç­‰å¾…å›è½¦
+                    ; // µÈ´ı»Ø³µ
             }
         }
         
-        // æ˜¾ç¤ºèƒœè´Ÿç»“æœï¼ˆç›´æ¥ä½¿ç”¨æ–‡ä»¶ä¸­çš„ä¿¡æ¯ï¼‰
-        printf("\n===== å¯¹å±€ç»“æœ =====");
-        if (strcmp(winner_info, "ç©å®¶è·èƒœ") == 0)
+        // ÏÔÊ¾Ê¤¸º½á¹û£¨Ö±½ÓÊ¹ÓÃÎÄ¼şÖĞµÄĞÅÏ¢£©
+        printf("\n===== ¶Ô¾Ö½á¹û =====");
+        if (strcmp(winner_info, "Íæ¼Ò»ñÊ¤") == 0)
         {
-            printf("\n? æ­å–œï¼ç©å®¶è·èƒœï¼\n");
+            printf("\n? ¹§Ï²£¡Íæ¼Ò»ñÊ¤£¡\n");
         }
-        else if (strcmp(winner_info, "AIè·èƒœ") == 0)
+        else if (strcmp(winner_info, "AI»ñÊ¤") == 0)
         {
-            printf("\n? AIè·èƒœï¼\n");
+            printf("\n? AI»ñÊ¤£¡\n");
         }
-        else if (strcmp(winner_info, "ç©å®¶1è·èƒœ") == 0)
+        else if (strcmp(winner_info, "Íæ¼Ò1»ñÊ¤") == 0)
         {
-            printf("\n? æ­å–œï¼ç©å®¶1(é»‘æ£‹)è·èƒœï¼\n");
+            printf("\n? ¹§Ï²£¡Íæ¼Ò1(ºÚÆå)»ñÊ¤£¡\n");
         }
-        else if (strcmp(winner_info, "ç©å®¶2è·èƒœ") == 0)
+        else if (strcmp(winner_info, "Íæ¼Ò2»ñÊ¤") == 0)
         {
-            printf("\n? æ­å–œï¼ç©å®¶2(ç™½æ£‹)è·èƒœï¼\n");
+            printf("\n? ¹§Ï²£¡Íæ¼Ò2(°×Æå)»ñÊ¤£¡\n");
         }
         else
         {
-            printf("\n?? å¯¹å±€å¹³å±€æˆ–æœªå®Œæˆ\n");
+            printf("\n?? ¶Ô¾ÖÆ½¾Ö»òÎ´Íê³É\n");
         }
         
-        printf("\nå¤ç›˜ç»“æŸï¼æŒ‰EnteræŸ¥çœ‹è¯„åˆ†...");
-        getchar(); // ç­‰å¾…ç”¨æˆ·æŒ‰é”®
+        printf("\n¸´ÅÌ½áÊø£¡°´Enter²é¿´ÆÀ·Ö...");
+        getchar(); // µÈ´ıÓÃ»§°´¼ü
     }
 
-    // æ˜¾ç¤ºè¯„åˆ†ç»“æœ
+    // ÏÔÊ¾ÆÀ·Ö½á¹û
     display_game_scores(game_mode);
 
     getchar();
 }
 
 /**
- * @brief è®¡ç®—æ¸¸æˆè¯„åˆ†
+ * @brief ¼ÆËãÓÎÏ·ÆÀ·Ö
  */
 void calculate_game_scores()
 {
-    // è¯„ä¼°åŒæ–¹è¡¨ç°
+    // ÆÀ¹ÀË«·½±íÏÖ
     player1_final_score = 0;
     player2_final_score = 0;
 
-    // éå†æ‰€æœ‰æ­¥æ•°ï¼Œç´¯ç§¯æ¯ä¸€æ­¥çš„å¾—åˆ†ï¼ŒåæœŸæ­¥éª¤æƒé‡æ›´é«˜
+    // ±éÀúËùÓĞ²½Êı£¬ÀÛ»ıÃ¿Ò»²½µÄµÃ·Ö£¬ºóÆÚ²½ÖèÈ¨ÖØ¸ü¸ß
     for (int i = 0; i < step_count; i++)
     {
-        // è®¡ç®—æ—¶é—´æƒé‡å› å­ï¼šæ­¥æ•°è¶Šé åï¼Œæƒé‡è¶Šå¤§
-        double time_weight = 1.0 + (double)i / step_count * TIME_WEIGHT_FACTOR; // æœ€åçš„æ­¥éª¤æƒé‡æ˜¯å¼€å§‹æ­¥éª¤çš„(1+TIME_WEIGHT_FACTOR)å€
+        // ¼ÆËãÊ±¼äÈ¨ÖØÒò×Ó£º²½ÊıÔ½¿¿ºó£¬È¨ÖØÔ½´ó
+        double time_weight = 1.0 + (double)i / step_count * TIME_WEIGHT_FACTOR; // ×îºóµÄ²½ÖèÈ¨ÖØÊÇ¿ªÊ¼²½ÖèµÄ(1+TIME_WEIGHT_FACTOR)±¶
         
         if (steps[i].player == PLAYER || steps[i].player == PLAYER1)
         {
@@ -186,50 +190,50 @@ void calculate_game_scores()
         }
     }
     
-    // èƒœè´ŸåŠ æƒï¼šè·èƒœæ–¹è·å¾—é¢å¤–çš„è¯„åˆ†å¥–åŠ±
+    // Ê¤¸º¼ÓÈ¨£º»ñÊ¤·½»ñµÃ¶îÍâµÄÆÀ·Ö½±Àø
     if (step_count > 0)
     {
         Step last_step = steps[step_count - 1];
         if (check_win(last_step.x, last_step.y, last_step.player))
         {
-            // è·èƒœæ–¹è·å¾—é¢å¤–å¥–åŠ±åˆ†æ•°
+            // »ñÊ¤·½»ñµÃ¶îÍâ½±Àø·ÖÊı
             if (last_step.player == PLAYER || last_step.player == PLAYER1)
             {
-                player1_final_score += WIN_BONUS; // è·èƒœå¥–åŠ±
+                player1_final_score += WIN_BONUS; // »ñÊ¤½±Àø
             }
             else
             {
-                player2_final_score += WIN_BONUS; // è·èƒœå¥–åŠ±
+                player2_final_score += WIN_BONUS; // »ñÊ¤½±Àø
             }
         }
     }
     
-    scores_calculated = 1; // æ ‡è®°è¯„åˆ†å·²è®¡ç®—
+    scores_calculated = 1; // ±ê¼ÇÆÀ·ÖÒÑ¼ÆËã
 }
 
 /**
- * @brief æ˜¾ç¤ºæ¸¸æˆè¯„åˆ†ç»“æœå’ŒMVPè¯„é€‰
- * @param game_mode æ¸¸æˆæ¨¡å¼(1-äººæœºå¯¹æˆ˜, 2-åŒäººå¯¹æˆ˜)
+ * @brief ÏÔÊ¾ÓÎÏ·ÆÀ·Ö½á¹ûºÍMVPÆÀÑ¡
+ * @param game_mode ÓÎÏ·Ä£Ê½(1-ÈË»ú¶ÔÕ½, 2-Ë«ÈË¶ÔÕ½)
  */
 void display_game_scores(int game_mode)
 {
-    printf("\n===== å¯¹å±€è¯„åˆ† =====\n");
+    printf("\n===== ¶Ô¾ÖÆÀ·Ö =====\n");
     double sum_score = (long double)player1_final_score + (long double)player2_final_score;
 
     if (sum_score > 0)
     {
         if (game_mode == 1)
         {
-            printf("ç©å®¶å¾—åˆ†: %d, å æ¯”: %.2f%%\n",
+            printf("Íæ¼ÒµÃ·Ö: %d, Õ¼±È: %.2f%%\n",
                    player1_final_score, (double)player1_final_score * 100.0 / sum_score);
-            printf("AIå¾—åˆ†: %d, å æ¯”: %.2f%%\n",
+            printf("AIµÃ·Ö: %d, Õ¼±È: %.2f%%\n",
                    player2_final_score, (double)player2_final_score * 100.0 / sum_score);
         }
         else
         {
-            printf("ç©å®¶1(é»‘æ£‹)å¾—åˆ†: %d, å æ¯”: %.2f%%\n",
+            printf("Íæ¼Ò1(ºÚÆå)µÃ·Ö: %d, Õ¼±È: %.2f%%\n",
                    player1_final_score, (double)player1_final_score * 100.0 / sum_score);
-            printf("ç©å®¶2(ç™½æ£‹)å¾—åˆ†: %d, å æ¯”: %.2f%%\n",
+            printf("Íæ¼Ò2(°×Æå)µÃ·Ö: %d, Õ¼±È: %.2f%%\n",
                    player2_final_score, (double)player2_final_score * 100.0 / sum_score);
         }
     }
@@ -237,41 +241,41 @@ void display_game_scores(int game_mode)
     {
         if (game_mode == 1)
         {
-            printf("ç©å®¶å¾—åˆ†: %d\n", player1_final_score);
-            printf("AIå¾—åˆ†: %d\n", player2_final_score);
+            printf("Íæ¼ÒµÃ·Ö: %d\n", player1_final_score);
+            printf("AIµÃ·Ö: %d\n", player2_final_score);
         }
         else
         {
-            printf("ç©å®¶1(é»‘æ£‹)å¾—åˆ†: %d\n", player1_final_score);
-            printf("ç©å®¶2(ç™½æ£‹)å¾—åˆ†: %d\n", player2_final_score);
+            printf("Íæ¼Ò1(ºÚÆå)µÃ·Ö: %d\n", player1_final_score);
+            printf("Íæ¼Ò2(°×Æå)µÃ·Ö: %d\n", player2_final_score);
         }
-        printf("æ³¨: åŒæ–¹å¾—åˆ†å‡ä¸º0ï¼Œæ— æ³•è®¡ç®—å æ¯”\n");
+        printf("×¢: Ë«·½µÃ·Ö¾ùÎª0£¬ÎŞ·¨¼ÆËãÕ¼±È\n");
     }
 
-    // è¯„é€‰MVP
+    // ÆÀÑ¡MVP
     if (player1_final_score > player2_final_score)
     {
-        printf("\nMVP: %s (é¢†å…ˆ %d åˆ†)\n", (game_mode == 1) ? "ç©å®¶" : "ç©å®¶1(é»‘æ£‹)", player1_final_score - player2_final_score);
+        printf("\nMVP: %s (ÁìÏÈ %d ·Ö)\n", (game_mode == 1) ? "Íæ¼Ò" : "Íæ¼Ò1(ºÚÆå)", player1_final_score - player2_final_score);
     }
     else if (player2_final_score > player1_final_score)
     {
-        printf("\nMVP: %s (é¢†å…ˆ %d åˆ†)\n", (game_mode == 1) ? "AI" : "ç©å®¶2(ç™½æ£‹)", player2_final_score - player1_final_score);
+        printf("\nMVP: %s (ÁìÏÈ %d ·Ö)\n", (game_mode == 1) ? "AI" : "Íæ¼Ò2(°×Æå)", player2_final_score - player1_final_score);
     }
     else
     {
-        printf("\nåŒæ–¹åŠ¿å‡åŠ›æ•Œï¼\n");
+        printf("\nË«·½ÊÆ¾ùÁ¦µĞ£¡\n");
     }
 }
 
 /**
- * @brief å¤„ç†æ¸¸æˆç»“æŸåçš„è®°å½•ä¿å­˜
- * @return int ä¿å­˜çŠ¶æ€ç (0-æˆåŠŸ, 1-ç›®å½•åˆ›å»ºå¤±è´¥, 2-æ–‡ä»¶æ‰“å¼€å¤±è´¥, 3-æ–‡ä»¶å†™å…¥å¤±è´¥)
+ * @brief ´¦ÀíÓÎÏ·½áÊøºóµÄ¼ÇÂ¼±£´æ
+ * @return int ±£´æ×´Ì¬Âë(0-³É¹¦, 1-Ä¿Â¼´´½¨Ê§°Ü, 2-ÎÄ¼ş´ò¿ªÊ§°Ü, 3-ÎÄ¼şĞ´ÈëÊ§°Ü)
  */
 void handle_save_record(int game_mode)
 {
     int save_choice = 0;
-    printf("===== æ¸¸æˆç»“æŸ =====\n");
-    printf("æ˜¯å¦ä¿å­˜æ¸¸æˆè®°å½•? (1-æ˜¯, 0-å¦): ");
+    printf("===== ÓÎÏ·½áÊø =====\n");
+    printf("ÊÇ·ñ±£´æÓÎÏ·¼ÇÂ¼? (1-ÊÇ, 0-·ñ): ");
     scanf("%d", &save_choice);
 
     if (save_choice == 1)
@@ -284,75 +288,75 @@ void handle_save_record(int game_mode)
         int save_status = save_game_to_file(filename, game_mode);
         switch (save_status)
         {
-        case 0: // æˆåŠŸ
-            printf("\næ¸¸æˆè®°å½•å·²æˆåŠŸä¿å­˜è‡³: %s (CSVæ ¼å¼)\n", filename);
-            printf("æ‚¨å¯ä»¥ä½¿ç”¨ä»¥ä¸‹å‘½ä»¤è¿›è¡Œå¤ç›˜: .\\gobang.exe -l %s\n", filename);
-            printf("CSVæ ¼å¼æ–‡ä»¶å¯ä»¥ç›´æ¥ç”¨Excelæ‰“å¼€æŸ¥çœ‹å’Œåˆ†æ\n");
+        case 0: // ³É¹¦
+            printf("\nÓÎÏ·¼ÇÂ¼ÒÑ³É¹¦±£´æÖÁ: %s (CSV¸ñÊ½)\n", filename);
+            printf("Äú¿ÉÒÔÊ¹ÓÃÒÔÏÂÃüÁî½øĞĞ¸´ÅÌ: .\\gobang.exe -l %s\n", filename);
+            printf("CSV¸ñÊ½ÎÄ¼ş¿ÉÒÔÖ±½ÓÓÃExcel´ò¿ª²é¿´ºÍ·ÖÎö\n");
             break;
-        case 1: // ç›®å½•åˆ›å»ºå¤±è´¥
-            printf("\næ¸¸æˆè®°å½•ä¿å­˜å¤±è´¥: æ— æ³•åˆ›å»º 'records' ç›®å½•ã€‚\n");
-            printf("è¯·æ£€æŸ¥ç¨‹åºæ˜¯å¦å…·æœ‰è¶³å¤Ÿçš„å†™å…¥æƒé™æˆ–ç£ç›˜ç©ºé—´æ˜¯å¦å……è¶³ã€‚\n");
+        case 1: // Ä¿Â¼´´½¨Ê§°Ü
+            printf("\nÓÎÏ·¼ÇÂ¼±£´æÊ§°Ü: ÎŞ·¨´´½¨ 'records' Ä¿Â¼¡£\n");
+            printf("Çë¼ì²é³ÌĞòÊÇ·ñ¾ßÓĞ×ã¹»µÄĞ´ÈëÈ¨ÏŞ»ò´ÅÅÌ¿Õ¼äÊÇ·ñ³ä×ã¡£\n");
             break;
-        case 2: // æ–‡ä»¶æ‰“å¼€å¤±è´¥
-            printf("\næ¸¸æˆè®°å½•ä¿å­˜å¤±è´¥: æ— æ³•åœ¨è·¯å¾„ '%s' åˆ›å»ºæ–‡ä»¶ã€‚\n", filename);
-            printf("è¯·æ£€æŸ¥è·¯å¾„æ˜¯å¦æœ‰æ•ˆä»¥åŠç¨‹åºæ˜¯å¦å…·æœ‰å†™å…¥æƒé™ã€‚\n");
+        case 2: // ÎÄ¼ş´ò¿ªÊ§°Ü
+            printf("\nÓÎÏ·¼ÇÂ¼±£´æÊ§°Ü: ÎŞ·¨ÔÚÂ·¾¶ '%s' ´´½¨ÎÄ¼ş¡£\n", filename);
+            printf("Çë¼ì²éÂ·¾¶ÊÇ·ñÓĞĞ§ÒÔ¼°³ÌĞòÊÇ·ñ¾ßÓĞĞ´ÈëÈ¨ÏŞ¡£\n");
             break;
-        case 3: // æ–‡ä»¶å†™å…¥å¤±è´¥
-            printf("\næ¸¸æˆè®°å½•ä¿å­˜å¤±è´¥: å†™å…¥æ–‡ä»¶æ—¶å‘ç”Ÿé”™è¯¯ã€‚\n");
-            printf("è¯·æ£€æŸ¥ç£ç›˜ç©ºé—´æ˜¯å¦å·²æ»¡ã€‚\n");
+        case 3: // ÎÄ¼şĞ´ÈëÊ§°Ü
+            printf("\nÓÎÏ·¼ÇÂ¼±£´æÊ§°Ü: Ğ´ÈëÎÄ¼şÊ±·¢Éú´íÎó¡£\n");
+            printf("Çë¼ì²é´ÅÅÌ¿Õ¼äÊÇ·ñÒÑÂú¡£\n");
             break;
         default:
-            printf("\næ¸¸æˆè®°å½•ä¿å­˜å¤±è´¥: å‘ç”ŸæœªçŸ¥é”™è¯¯ã€‚\n");
+            printf("\nÓÎÏ·¼ÇÂ¼±£´æÊ§°Ü: ·¢ÉúÎ´Öª´íÎó¡£\n");
             break;
         }
     }
 }
 
 /**
- * @brief å°†å½“å‰æ¸¸æˆè®°å½•ä¿å­˜åˆ°æ–‡ä»¶
- * @param filename è¦ä¿å­˜çš„æ–‡ä»¶å
- * @return int é”™è¯¯ç :
- *   0: æˆåŠŸ
- *   1: ç›®å½•åˆ›å»ºå¤±è´¥
- *   2: æ–‡ä»¶æ‰“å¼€å¤±è´¥
- *   3: æ–‡ä»¶å†™å…¥å¤±è´¥
+ * @brief ½«µ±Ç°ÓÎÏ·¼ÇÂ¼±£´æµ½ÎÄ¼ş
+ * @param filename Òª±£´æµÄÎÄ¼şÃû
+ * @return int ´íÎóÂë:
+ *   0: ³É¹¦
+ *   1: Ä¿Â¼´´½¨Ê§°Ü
+ *   2: ÎÄ¼ş´ò¿ªÊ§°Ü
+ *   3: ÎÄ¼şĞ´ÈëÊ§°Ü
  */
 int save_game_to_file(const char *filename, int game_mode)
 {
-    // åˆ›å»ºrecordsç›®å½•(å¦‚æœä¸å­˜åœ¨)
+    // ´´½¨recordsÄ¿Â¼(Èç¹û²»´æÔÚ)
     struct stat st = {0};
     if (stat("records", &st) == -1)
     {
         if (mkdir("records") != 0)
         {
-            // æ£€æŸ¥æ˜¯å¦ç›®å½•å·²å­˜åœ¨(å¤šçº¿ç¨‹æƒ…å†µä¸‹å¯èƒ½è¢«å…¶ä»–çº¿ç¨‹åˆ›å»º)
+            // ¼ì²éÊÇ·ñÄ¿Â¼ÒÑ´æÔÚ(¶àÏß³ÌÇé¿öÏÂ¿ÉÄÜ±»ÆäËûÏß³Ì´´½¨)
             if (stat("records", &st) == -1)
             {
 #ifdef _WIN32
-                printf("é”™è¯¯ï¼šæ— æ³•åˆ›å»ºrecordsç›®å½•\n");
-                printf("å¯èƒ½åŸå› ï¼š\n");
-                printf("1. æ²¡æœ‰å†™å…¥æƒé™ - è¯·å°è¯•ä»¥ç®¡ç†å‘˜èº«ä»½è¿è¡Œ\n");
-                printf("2. é˜²ç—…æ¯’è½¯ä»¶é˜»æ­¢ - è¯·æ£€æŸ¥å®‰å…¨è½¯ä»¶è®¾ç½®\n");
-                printf("3. è·¯å¾„æ— æ•ˆ - è¯·æ£€æŸ¥å·¥ä½œç›®å½•\n");
+                printf("´íÎó£ºÎŞ·¨´´½¨recordsÄ¿Â¼\n");
+                printf("¿ÉÄÜÔ­Òò£º\n");
+                printf("1. Ã»ÓĞĞ´ÈëÈ¨ÏŞ - Çë³¢ÊÔÒÔ¹ÜÀíÔ±Éí·İÔËĞĞ\n");
+                printf("2. ·À²¡¶¾Èí¼ş×èÖ¹ - Çë¼ì²é°²È«Èí¼şÉèÖÃ\n");
+                printf("3. Â·¾¶ÎŞĞ§ - Çë¼ì²é¹¤×÷Ä¿Â¼\n");
 #else
-                perror("åˆ›å»ºç›®å½•å¤±è´¥");
+                perror("´´½¨Ä¿Â¼Ê§°Ü");
 #endif
-                return 1; // ç›®å½•åˆ›å»ºå¤±è´¥
+                return 1; // Ä¿Â¼´´½¨Ê§°Ü
             }
         }
     }
 
-    // æ‰“å¼€æ–‡ä»¶
+    // ´ò¿ªÎÄ¼ş
     char fullpath[256];
     snprintf(fullpath, sizeof(fullpath), "records/%s", filename);
     FILE *file = fopen(fullpath, "w");
     if (!file)
     {
-        return 2; // æ–‡ä»¶æ‰“å¼€å¤±è´¥
+        return 2; // ÎÄ¼ş´ò¿ªÊ§°Ü
     }
 
-    // åˆ¤æ–­èƒœè´Ÿç»“æœ
-    strcpy(winner_info, "å¹³å±€æˆ–æœªå®Œæˆ");
+    // ÅĞ¶ÏÊ¤¸º½á¹û
+    strcpy(winner_info, "Æ½¾Ö»òÎ´Íê³É");
     if (step_count > 0)
     {
         Step last_step = steps[step_count - 1];
@@ -360,72 +364,72 @@ int save_game_to_file(const char *filename, int game_mode)
         {
             if (game_mode == 1)
             {
-                // äººæœºå¯¹æˆ˜
+                // ÈË»ú¶ÔÕ½
                 if (last_step.player == PLAYER)
                 {
-                    strcpy(winner_info, "ç©å®¶è·èƒœ");
+                    strcpy(winner_info, "Íæ¼Ò»ñÊ¤");
                 }
                 else
                 {
-                    strcpy(winner_info, "AIè·èƒœ");
+                    strcpy(winner_info, "AI»ñÊ¤");
                 }
             }
             else
             {
-                // åŒäººå¯¹æˆ˜
+                // Ë«ÈË¶ÔÕ½
                 if (last_step.player == PLAYER1)
                 {
-                    strcpy(winner_info, "ç©å®¶1è·èƒœ");
+                    strcpy(winner_info, "Íæ¼Ò1»ñÊ¤");
                 }
                 else
                 {
-                    strcpy(winner_info, "ç©å®¶2è·èƒœ");
+                    strcpy(winner_info, "Íæ¼Ò2»ñÊ¤");
                 }
             }
         }
     }
     
-    // å†™å…¥CSVæ–‡ä»¶å¤´éƒ¨
-    if (fprintf(file, "æ¸¸æˆæ¨¡å¼,æ£‹ç›˜å¤§å°,ç©å®¶1å¾—åˆ†,ç©å®¶2å¾—åˆ†,å¯¹å±€ç»“æœ\n%d,%d,%d,%d,%s\n\n", game_mode, BOARD_SIZE, player1_final_score, player2_final_score, winner_info) < 0)
+    // Ğ´ÈëCSVÎÄ¼şÍ·²¿
+    if (fprintf(file, "ÓÎÏ·Ä£Ê½,ÆåÅÌ´óĞ¡,Íæ¼Ò1µÃ·Ö,Íæ¼Ò2µÃ·Ö,¶Ô¾Ö½á¹û\n%d,%d,%d,%d,%s\n\n", game_mode, BOARD_SIZE, player1_final_score, player2_final_score, winner_info) < 0)
     {
         fclose(file);
-        return 3; // æ–‡ä»¶å†™å…¥å¤±è´¥
+        return 3; // ÎÄ¼şĞ´ÈëÊ§°Ü
     }
     
-    // å†™å…¥CSVè¡¨å¤´
-    if (fprintf(file, "æ­¥æ•°,ç©å®¶,è¡Œåæ ‡,åˆ—åæ ‡\n") < 0)
+    // Ğ´ÈëCSV±íÍ·
+    if (fprintf(file, "²½Êı,Íæ¼Ò,ĞĞ×ø±ê,ÁĞ×ø±ê\n") < 0)
     {
         fclose(file);
-        return 3; // æ–‡ä»¶å†™å…¥å¤±è´¥
+        return 3; // ÎÄ¼şĞ´ÈëÊ§°Ü
     }
 
-    // å†™å…¥æ‰€æœ‰è½å­æ­¥éª¤ï¼ˆCSVæ ¼å¼ï¼‰
+    // Ğ´ÈëËùÓĞÂä×Ó²½Öè£¨CSV¸ñÊ½£©
     for (int i = 0; i < step_count; i++)
     {
         if (fprintf(file, "%d,%d,%d,%d\n", i+1, steps[i].player, steps[i].x+1, steps[i].y+1) < 0)
         {
             fclose(file);
-            return 3; // æ–‡ä»¶å†™å…¥å¤±è´¥
+            return 3; // ÎÄ¼şĞ´ÈëÊ§°Ü
         }
     }
 
     if (fclose(file) != 0)
     {
-        return 3; // æ–‡ä»¶å…³é—­/å†™å…¥å¤±è´¥
+        return 3; // ÎÄ¼ş¹Ø±Õ/Ğ´ÈëÊ§°Ü
     }
 
-    return 0; // æˆåŠŸ
+    return 0; // ³É¹¦
 }
 
 /**
- * @brief ä»æ–‡ä»¶åŠ è½½æ¸¸æˆè®°å½•
- * @param filename è¦åŠ è½½çš„æ–‡ä»¶å
- * @return true åŠ è½½æˆåŠŸ
- * @return false åŠ è½½å¤±è´¥
+ * @brief ´ÓÎÄ¼ş¼ÓÔØÓÎÏ·¼ÇÂ¼
+ * @param filename Òª¼ÓÔØµÄÎÄ¼şÃû
+ * @return true ¼ÓÔØ³É¹¦
+ * @return false ¼ÓÔØÊ§°Ü
  */
 int load_game_from_file(const char *filename)
 {
-    // æ‰“å¼€æ–‡ä»¶
+    // ´ò¿ªÎÄ¼ş
     char fullpath[256];
     snprintf(fullpath, sizeof(fullpath), "records/%s", filename);
     FILE *file = fopen(fullpath, "r");
@@ -434,28 +438,28 @@ int load_game_from_file(const char *filename)
         return false;
     }
 
-    // è·³è¿‡CSVæ–‡ä»¶å¤´éƒ¨è¡Œ
+    // Ìø¹ıCSVÎÄ¼şÍ·²¿ĞĞ
     char buffer[256];
-    if (fgets(buffer, sizeof(buffer), file) == NULL) // è·³è¿‡"æ¸¸æˆæ¨¡å¼,æ£‹ç›˜å¤§å°"
+    if (fgets(buffer, sizeof(buffer), file) == NULL) // Ìø¹ı"ÓÎÏ·Ä£Ê½,ÆåÅÌ´óĞ¡"
     {
         fclose(file);
         return 0;
     }
 
-    // è¯»å–æ¸¸æˆæ¨¡å¼ã€æ£‹ç›˜å¤§å°å’Œè¯„åˆ†ç»“æœ
+    // ¶ÁÈ¡ÓÎÏ·Ä£Ê½¡¢ÆåÅÌ´óĞ¡ºÍÆÀ·Ö½á¹û
     int game_mode, size;
     
-    // å°è¯•è¯»å–æ–°æ ¼å¼ï¼ˆåŒ…å«èƒœè´Ÿä¿¡æ¯ï¼‰
+    // ³¢ÊÔ¶ÁÈ¡ĞÂ¸ñÊ½£¨°üº¬Ê¤¸ºĞÅÏ¢£©
     int read_count = fscanf(file, "%d,%d,%d,%d,%49s", &game_mode, &size, &player1_final_score, &player2_final_score, winner_info);
     
     if (read_count == 4)
     {
-        // æ—§æ ¼å¼æ–‡ä»¶ï¼Œæ²¡æœ‰èƒœè´Ÿä¿¡æ¯
-        strcpy(winner_info, "æœªçŸ¥");
+        // ¾É¸ñÊ½ÎÄ¼ş£¬Ã»ÓĞÊ¤¸ºĞÅÏ¢
+        strcpy(winner_info, "Î´Öª");
     }
     else if (read_count != 5)
     {
-        // æ–‡ä»¶æ ¼å¼é”™è¯¯
+        // ÎÄ¼ş¸ñÊ½´íÎó
         fclose(file);
         return 0;
     }
@@ -463,7 +467,7 @@ int load_game_from_file(const char *filename)
     if (game_mode != 1 && game_mode != 2)
     {
         fclose(file);
-        return 0; // æ— æ•ˆçš„æ¸¸æˆæ¨¡å¼
+        return 0; // ÎŞĞ§µÄÓÎÏ·Ä£Ê½
     }
     if (size < 5 || size > MAX_BOARD_SIZE)
     {
@@ -471,24 +475,24 @@ int load_game_from_file(const char *filename)
         return false;
     }
     
-    // è®¾ç½®è¯„åˆ†å·²è®¡ç®—æ ‡å¿—
+    // ÉèÖÃÆÀ·ÖÒÑ¼ÆËã±êÖ¾
     scores_calculated = 1;
 
-    // è·³è¿‡ç©ºè¡Œå’Œè¡¨å¤´è¡Œ
-    fgets(buffer, sizeof(buffer), file); // è·³è¿‡æ¢è¡Œ
-    fgets(buffer, sizeof(buffer), file); // è·³è¿‡ç©ºè¡Œ
-    fgets(buffer, sizeof(buffer), file); // è·³è¿‡"æ­¥æ•°,ç©å®¶,è¡Œåæ ‡,åˆ—åæ ‡"
+    // Ìø¹ı¿ÕĞĞºÍ±íÍ·ĞĞ
+    fgets(buffer, sizeof(buffer), file); // Ìø¹ı»»ĞĞ
+    fgets(buffer, sizeof(buffer), file); // Ìø¹ı¿ÕĞĞ
+    fgets(buffer, sizeof(buffer), file); // Ìø¹ı"²½Êı,Íæ¼Ò,ĞĞ×ø±ê,ÁĞ×ø±ê"
 
-    // åˆå§‹åŒ–æ£‹ç›˜
+    // ³õÊ¼»¯ÆåÅÌ
     BOARD_SIZE = size;
     empty_board();
 
-    // è¯»å–æ‰€æœ‰è½å­æ­¥éª¤
+    // ¶ÁÈ¡ËùÓĞÂä×Ó²½Öè
     step_count = 0;
-    int step_num; // ç”¨äºå­˜å‚¨æ­¥æ•°ï¼Œä½†ä¸ä½¿ç”¨
+    int step_num; // ÓÃÓÚ´æ´¢²½Êı£¬µ«²»Ê¹ÓÃ
     while (fscanf(file, "%d,%d,%d,%d", &step_num, &steps[step_count].player, &steps[step_count].x, &steps[step_count].y) == 4)
     {
-        // å°†1-basedåæ ‡è½¬æ¢ä¸º0-basedåæ ‡
+        // ½«1-based×ø±ê×ª»»Îª0-based×ø±ê
         steps[step_count].x--;
         steps[step_count].y--;
         step_count++;

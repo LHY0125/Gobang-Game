@@ -4,13 +4,15 @@
 #include "ai.h"
 #include "record.h"
 #include "config.h"
+#include "network.h"
+#include "ui.h"
+#include "globals.h"
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 
-// 引用record.h中定义的全局变量
-extern int scores_calculated;
+// 全局变量现在在globals.c中定义
 #ifdef _WIN32
 #include <windows.h>
 #include <direct.h>
@@ -424,4 +426,238 @@ void run_review_mode()
     {
         printf("加载复盘文件失败！可能是旧版本文件格式或文件损坏\n");
     }
+}
+
+/**
+ * @brief 网络对战模式
+ */
+void run_network_game()
+{
+    // 重置评分计算标志
+    scores_calculated = 0;
+    
+    // 初始化网络模块
+    if (!init_network()) {
+        printf("网络初始化失败！\n");
+        pause_for_input("按任意键返回主菜单...");
+        return;
+    }
+    
+    printf("=== 网络对战模式 ===\n");
+    printf("1. 创建房间（作为主机）\n");
+    printf("2. 加入房间（连接到主机）\n");
+    
+    int choice = get_integer_input("请选择模式(1-2): ", 1, 2);
+    
+    bool connection_success = false;
+    
+    if (choice == 1) {
+        // 服务器模式
+        int port = get_integer_input("请输入监听端口(默认8888): ", MIN_NETWORK_PORT, MAX_NETWORK_PORT);
+        if (port == 0) port = network_port;
+        
+        printf("\n正在创建房间...\n");
+        connection_success = create_server(port);
+    } else {
+        // 客户端模式
+        char ip[MAX_IP_LENGTH];
+        printf("请输入服务器IP地址: ");
+        scanf("%s", ip);
+        
+        int port = get_integer_input("请输入服务器端口(默认8888): ", MIN_NETWORK_PORT, MAX_NETWORK_PORT);
+        if (port == 0) port = network_port;
+        
+        printf("\n正在连接到服务器...\n");
+        connection_success = connect_to_server(ip, port);
+    }
+    
+    if (!connection_success) {
+        printf("网络连接失败！\n");
+        cleanup_network();
+        pause_for_input("按任意键返回主菜单...");
+        return;
+    }
+    
+    printf("\n网络连接成功！游戏即将开始...\n");
+    printf("你是玩家%d，%s先手\n", 
+           network_state.local_player_id,
+           network_state.local_player_id == PLAYER1 ? "你" : "对方");
+    
+    // 开始网络游戏
+    empty_board();
+    print_board();
+    
+    if (network_game_loop()) {
+        printf("===== 游戏结束 =====\n");
+        review_process(2);     // 使用PvP模式的复盘
+        handle_save_record(2); // 保存为PvP模式记录
+    } else {
+        printf("游戏因网络错误而结束\n");
+    }
+    
+    // 清理网络连接
+    disconnect_network();
+    pause_for_input("按任意键返回主菜单...");
+}
+
+/**
+ * @brief 处理网络玩家回合
+ */
+bool handle_network_player_turn(int current_player, bool is_local_turn)
+{
+    if (is_local_turn) {
+        // 本地玩家回合
+        int x, y;
+        time_t start_time, end_time;
+        
+        if (use_timer) {
+            time(&start_time);
+        }
+        
+        printf("\n轮到你了，请输入落子坐标(行 列，1~%d)，或输入R/r悔棋，S/s认输: ", BOARD_SIZE);
+        
+        while (1) {
+            if (use_timer) {
+                time(&end_time);
+                if (difftime(end_time, start_time) > time_limit) {
+                    printf("\n你超时了，对方获胜！\n");
+                    send_surrender(); // 发送认输消息
+                    return false;
+                }
+            }
+            
+            if (parse_player_input(&x, &y)) {
+                if (x == INPUT_SURRENDER) {
+                    printf("\n你选择认输，对方获胜！\n");
+                    send_surrender();
+                    return false;
+                }
+                break;
+            } else {
+                // 处理特殊命令或继续等待输入
+                continue;
+            }
+        }
+        
+        x--; y--; // 转换为0-based坐标
+        
+        if (!player_move(x, y, current_player)) {
+            printf("坐标无效！请重新输入。\n");
+            return true; // 继续当前回合
+        }
+        
+        // 发送落子消息
+        if (!send_move(x, y, current_player)) {
+            printf("发送落子消息失败！\n");
+            return false;
+        }
+        
+        print_board();
+        
+        if (check_win(x, y, current_player)) {
+            printf("\n你获胜了！\n");
+            return false;
+        }
+        
+    } else {
+        // 等待对方落子
+        printf("\n等待对方落子...\n");
+        
+        NetworkMessage msg;
+        time_t start_time = time(NULL);
+        
+        while (1) {
+            if (receive_network_message(&msg, 1000)) { // 1秒超时
+                if (msg.type == MSG_MOVE && msg.player_id == current_player) {
+                    // 收到落子消息
+                    if (!player_move(msg.x, msg.y, current_player)) {
+                        printf("收到无效的落子坐标！\n");
+                        return false;
+                    }
+                    
+                    printf("对方落子: (%d, %d)\n", msg.x + 1, msg.y + 1);
+                    print_board();
+                    
+                    if (check_win(msg.x, msg.y, current_player)) {
+                        printf("\n对方获胜！\n");
+                        return false;
+                    }
+                    break;
+                    
+                } else if (msg.type == MSG_SURRENDER) {
+                    printf("\n对方认输，你获胜了！\n");
+                    return false;
+                    
+                } else if (msg.type == MSG_DISCONNECT) {
+                    printf("\n对方已断开连接\n");
+                    return false;
+                    
+                } else if (msg.type == MSG_CHAT) {
+                    printf("[对方]: %s\n", msg.message);
+                    
+                } else if (msg.type == MSG_UNDO_REQUEST) {
+                    int steps = msg.x;
+                    printf("\n对方请求悔棋 %d 步，是否同意？(1:同意/0:拒绝): ", steps);
+                    int response = get_integer_input("", 0, 1);
+                    
+                    if (response && return_move(steps * 2)) {
+                        printf("同意悔棋，双方各退 %d 步\n", steps);
+                        send_undo_response(true, steps);
+                        print_board();
+                        return true; // 继续游戏
+                    } else {
+                        printf("拒绝悔棋\n");
+                        send_undo_response(false, steps);
+                    }
+                }
+            }
+            
+            // 检查超时
+            if (use_timer && difftime(time(NULL), start_time) > time_limit) {
+                printf("\n对方超时，你获胜！\n");
+                return false;
+            }
+            
+            // 检查网络连接
+            if (!is_network_connected()) {
+                printf("\n网络连接断开\n");
+                return false;
+            }
+        }
+    }
+    
+    return true;
+}
+
+/**
+ * @brief 网络游戏主循环
+ */
+bool network_game_loop()
+{
+    int current_player = PLAYER1; // 总是从玩家1开始
+    
+    while (1) {
+        bool is_local_turn = (current_player == network_state.local_player_id);
+        
+        if (!handle_network_player_turn(current_player, is_local_turn)) {
+            return true; // 游戏结束
+        }
+        
+        // 检查平局
+        if (step_count == BOARD_SIZE * BOARD_SIZE) {
+            printf("\n平局！\n");
+            return true;
+        }
+        
+        // 切换玩家
+        current_player = (current_player == PLAYER1) ? PLAYER2 : PLAYER1;
+        
+        // 检查网络连接
+        if (!is_network_connected()) {
+            printf("\n网络连接断开\n");
+            return false;
+        }
+    }
+    
+    return true;
 }

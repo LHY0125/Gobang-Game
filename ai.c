@@ -1,115 +1,108 @@
 #include "gobang.h"
 #include "ai.h"
 #include "config.h"
+#include "globals.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
-// é˜²å®ˆç³»æ•°
-double defense_coefficient = DEFAULT_DEFENSE_COEFFICIENT;
-extern int BOARD_SIZE;
-extern int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE];
-extern int step_count;
-extern const int direction[4][2];
-extern Step steps[MAX_STEPS];
-
 /**
- * @brief è¯„ä¼°ä¸€ä¸ªè½å­ä½ç½®çš„ç»¼åˆå¾—åˆ†ï¼ˆç»“åˆè¿›æ”»å’Œé˜²å®ˆï¼‰
- * @param x è¡Œåæ ‡
- * @param y åˆ—åæ ‡
- * @return int ç»¼åˆå¾—åˆ†
+ * @brief ÆÀ¹ÀÒ»¸öÂä×ÓÎ»ÖÃµÄ×ÛºÏµÃ·Ö£¨½áºÏ½ø¹¥ºÍ·ÀÊØ£©
+ * @param x ĞĞ×ø±ê
+ * @param y ÁĞ×ø±ê
+ * @return int ×ÛºÏµÃ·Ö
  */
 int evaluate_move(int x, int y)
 {
-    // è¿›æ”»å¾—åˆ†ï¼šè¯„ä¼°AIåœ¨æ­¤å¤„è½å­çš„åˆ†æ•°
+    // ½ø¹¥µÃ·Ö£ºÆÀ¹ÀAIÔÚ´Ë´¦Âä×ÓµÄ·ÖÊı
     int attack_score = evaluate_pos(x, y, AI);
 
-    // é˜²å®ˆå¾—åˆ†ï¼šè¯„ä¼°ç©å®¶åœ¨æ­¤å¤„è½å­çš„åˆ†æ•°ï¼Œä½œä¸ºé˜²å®ˆçš„ä¾æ®
+    // ·ÀÊØµÃ·Ö£ºÆÀ¹ÀÍæ¼ÒÔÚ´Ë´¦Âä×ÓµÄ·ÖÊı£¬×÷Îª·ÀÊØµÄÒÀ¾İ
     int defense_score = evaluate_pos(x, y, PLAYER);
 
-    // ç»¼åˆå¾—åˆ†ï¼Œé˜²å®ˆæƒé‡ç”± defense_coefficient æ§åˆ¶
+    // ×ÛºÏµÃ·Ö£¬·ÀÊØÈ¨ÖØÓÉ defense_coefficient ¿ØÖÆ
     return attack_score + (int)(defense_score * defense_coefficient);
 }
 
 /**
- * @brief è¯„ä¼°ç‰¹å®šä½ç½®å¯¹å½“å‰ç©å®¶çš„æˆ˜ç•¥ä»·å€¼
- * @param x è¡Œåæ ‡(0-base)
- * @param y åˆ—åæ ‡(0-base)
- * @param player ç©å®¶æ ‡è¯†(PLAYER/AI)
- * @return int ç»¼åˆè¯„ä¼°åˆ†æ•°(è¶Šé«˜è¡¨ç¤ºä½ç½®è¶Šå¥½)
- * @note è¯„åˆ†æ ‡å‡†:
- * - æ´»å››:100000 å†²å››:10000 æ­»å››:500
- * - æ´»ä¸‰:5000 çœ ä¸‰:1000 æ­»ä¸‰:50
- * - æ´»äºŒ:500 çœ äºŒ:100 æ­»äºŒ:10
- * - å•å­:50(å¼€æ”¾)/10(åŠå¼€æ”¾)/1(å°é—­)
- * - ä¸­å¿ƒä½ç½®æœ‰é¢å¤–åŠ æˆ
+ * @brief ÆÀ¹ÀÌØ¶¨Î»ÖÃ¶Ôµ±Ç°Íæ¼ÒµÄÕ½ÂÔ¼ÛÖµ
+ * @param x ĞĞ×ø±ê(0-base)
+ * @param y ÁĞ×ø±ê(0-base)
+ * @param player Íæ¼Ò±êÊ¶(PLAYER/AI)
+ * @return int ×ÛºÏÆÀ¹À·ÖÊı(Ô½¸ß±íÊ¾Î»ÖÃÔ½ºÃ)
+ * @note ÆÀ·Ö±ê×¼:
+ * - »îËÄ:100000 ³åËÄ:10000 ËÀËÄ:500
+ * - »îÈı:5000 ÃßÈı:1000 ËÀÈı:50
+ * - »î¶ş:500 Ãß¶ş:100 ËÀ¶ş:10
+ * - µ¥×Ó:50(¿ª·Å)/10(°ë¿ª·Å)/1(·â±Õ)
+ * - ÖĞĞÄÎ»ÖÃÓĞ¶îÍâ¼Ó³É
  */
 int evaluate_pos(int x, int y, int player)
 {
-    // ä¿å­˜åŸå§‹å€¼ç”¨äºè¿˜åŸ
+    // ±£´æÔ­Ê¼ÖµÓÃÓÚ»¹Ô­
     int original = board[x][y];
-    // æ¨¡æ‹Ÿåœ¨è¯¥ä½ç½®è½å­
+    // Ä£ÄâÔÚ¸ÃÎ»ÖÃÂä×Ó
     board[x][y] = player;
 
-    int total_score = 0;      // æ€»åˆ†
-    int line_scores[4] = {0}; // å››ä¸ªæ–¹å‘çš„å¾—åˆ†
+    int total_score = 0;      // ×Ü·Ö
+    int line_scores[4] = {0}; // ËÄ¸ö·½ÏòµÄµÃ·Ö
 
-    // éå†å››ä¸ªæ–¹å‘è¿›è¡Œè¯„ä¼°
+    // ±éÀúËÄ¸ö·½Ïò½øĞĞÆÀ¹À
     for (int i = 0; i < 4; i++)
     {
         int dx = direction[i][0], dy = direction[i][1];
-        // è·å–å½“å‰æ–¹å‘ä¸Šçš„æ£‹å‹ä¿¡æ¯
+        // »ñÈ¡µ±Ç°·½ÏòÉÏµÄÆåĞÍĞÅÏ¢
         DirInfo info = count_specific_direction(x, y, dx, dy, player);
 
-        // ç›´æ¥å½¢æˆäº”è¿ç ä¸ºå¿…èƒœ
+        // Ö±½ÓĞÎ³ÉÎåÁ¬ÖéÎª±ØÊ¤
         if (info.continuous_chess >= 5)
         {
-            board[x][y] = original; // è¿˜åŸæ£‹ç›˜
-            return SEARCH_WIN_BONUS; // è¿”å›æœ€å¤§åˆ†
+            board[x][y] = original; // »¹Ô­ÆåÅÌ
+            return SEARCH_WIN_BONUS; // ·µ»Ø×î´ó·Ö
         }
 
-        // æ ¹æ®è¿ç»­æ£‹å­æ•°è¯„åˆ†
+        // ¸ù¾İÁ¬ĞøÆå×ÓÊıÆÀ·Ö
         switch (info.continuous_chess)
         {
-        case 4:                                     // å››è¿ç 
-            if (info.check_start && info.check_end) // æ´»å››(ä¸¤ç«¯å¼€æ”¾)
+        case 4:                                     // ËÄÁ¬Öé
+            if (info.check_start && info.check_end) // »îËÄ(Á½¶Ë¿ª·Å)
                 line_scores[i] = AI_SCORE_LIVE_FOUR;
-            else if (info.check_start || info.check_end) // å†²å››(ä¸€ç«¯å¼€æ”¾)
+            else if (info.check_start || info.check_end) // ³åËÄ(Ò»¶Ë¿ª·Å)
                 line_scores[i] = AI_SCORE_RUSH_FOUR;
-            else // æ­»å››(ä¸¤ç«¯å°é—­)
+            else // ËÀËÄ(Á½¶Ë·â±Õ)
                 line_scores[i] = AI_SCORE_DEAD_FOUR;
             break;
 
-        case 3:                                     // ä¸‰è¿ç 
-            if (info.check_start && info.check_end) // æ´»ä¸‰
+        case 3:                                     // ÈıÁ¬Öé
+            if (info.check_start && info.check_end) // »îÈı
                 line_scores[i] = AI_SCORE_LIVE_THREE;
-            else if (info.check_start || info.check_end) // çœ ä¸‰
+            else if (info.check_start || info.check_end) // ÃßÈı
                 line_scores[i] = AI_SCORE_SLEEP_THREE;
-            else // æ­»ä¸‰
+            else // ËÀÈı
                 line_scores[i] = AI_SCORE_DEAD_THREE;
             break;
 
-        case 2:                                     // äºŒè¿ç 
-            if (info.check_start && info.check_end) // æ´»äºŒ
+        case 2:                                     // ¶şÁ¬Öé
+            if (info.check_start && info.check_end) // »î¶ş
                 line_scores[i] = AI_SCORE_LIVE_TWO;
-            else if (info.check_start || info.check_end) // çœ äºŒ
+            else if (info.check_start || info.check_end) // Ãß¶ş
                 line_scores[i] = AI_SCORE_SLEEP_TWO;
-            else // æ­»äºŒ
+            else // ËÀ¶ş
                 line_scores[i] = AI_SCORE_DEAD_TWO;
             break;
 
-        case 1:                                     // å•å­
-            if (info.check_start && info.check_end) // å¼€æ”¾ä½ç½®
+        case 1:                                     // µ¥×Ó
+            if (info.check_start && info.check_end) // ¿ª·ÅÎ»ÖÃ
                 line_scores[i] = AI_SCORE_LIVE_ONE;
-            else if (info.check_start || info.check_end) // åŠå¼€æ”¾ä½ç½®
+            else if (info.check_start || info.check_end) // °ë¿ª·ÅÎ»ÖÃ
                 line_scores[i] = AI_SCORE_HALF_ONE;
-            else // å°é—­ä½ç½®
+            else // ·â±ÕÎ»ÖÃ
                 line_scores[i] = AI_SCORE_DEAD_ONE;
             break;
         }
     }
 
-    // è®¡ç®—æ€»åˆ†ï¼ˆæœ€é«˜æ–¹å‘åˆ†+å…¶ä»–æ–¹å‘åˆ†åŠ æƒï¼‰
+    // ¼ÆËã×Ü·Ö£¨×î¸ß·½Ïò·Ö+ÆäËû·½Ïò·Ö¼ÓÈ¨£©
     int max_score = 0;
     int sum_score = 0;
     for (int i = 0; i < 4; i++)
@@ -120,44 +113,44 @@ int evaluate_pos(int x, int y, int player)
         }
         sum_score += line_scores[i];
     }
-    total_score = max_score * 10 + sum_score; // ä¸»æ–¹å‘æƒé‡æ›´é«˜
+    total_score = max_score * 10 + sum_score; // Ö÷·½ÏòÈ¨ÖØ¸ü¸ß
 
-    // ä½ç½®å¥–åŠ±ï¼šè¶Šé è¿‘ä¸­å¿ƒåˆ†æ•°è¶Šé«˜
+    // Î»ÖÃ½±Àø£ºÔ½¿¿½üÖĞĞÄ·ÖÊıÔ½¸ß
     int center_x = BOARD_SIZE / 2;
     int center_y = BOARD_SIZE / 2;
-    int distance = abs(x - center_x) + abs(y - center_y); // æ›¼å“ˆé¡¿è·ç¦»
-    int position_bonus = AI_POSITION_BONUS_FACTOR * (BOARD_SIZE - distance);    // è·ç¦»ä¸­å¿ƒè¶Šè¿‘å¥–åŠ±è¶Šé«˜
+    int distance = abs(x - center_x) + abs(y - center_y); // Âü¹ş¶Ù¾àÀë
+    int position_bonus = AI_POSITION_BONUS_FACTOR * (BOARD_SIZE - distance);    // ¾àÀëÖĞĞÄÔ½½ü½±ÀøÔ½¸ß
 
-    board[x][y] = original;              // è¿˜åŸæ£‹ç›˜çŠ¶æ€
-    return total_score + position_bonus; // è¿”å›æ€»è¯„ä¼°åˆ†
+    board[x][y] = original;              // »¹Ô­ÆåÅÌ×´Ì¬
+    return total_score + position_bonus; // ·µ»Ø×ÜÆÀ¹À·Ö
 }
 
 /**
- * @brief å¸¦Î±-Î²å‰ªæçš„æ·±åº¦ä¼˜å…ˆæœç´¢(æå°æå¤§ç®—æ³•å®ç°)
- * @param x å½“å‰è¡Œåæ ‡
- * @param y å½“å‰åˆ—åæ ‡
- * @param player å½“å‰ç©å®¶
- * @param depth å‰©ä½™æœç´¢æ·±åº¦
- * @param alpha Î±å€¼(å½“å‰æœ€å¤§å€¼)
- * @param beta Î²å€¼(å½“å‰æœ€å°å€¼)
- * @param is_maximizing æ˜¯å¦ä¸ºæå¤§åŒ–ç©å®¶(AI)
- * @return int æœ€ä½³è¯„ä¼°åˆ†æ•°
- * @note ç®—æ³•æµç¨‹:
- * 1. æ£€æŸ¥æ˜¯å¦è·èƒœæˆ–è¾¾åˆ°æœç´¢æ·±åº¦
- * 2. éå†æ‰€æœ‰å¯èƒ½è½å­ä½ç½®
- * 3. é€’å½’è¯„ä¼°æ¯ä¸ªä½ç½®çš„åˆ†æ•°
- * 4. æ ¹æ®is_maximizingé€‰æ‹©æœ€å¤§/æœ€å°å€¼
- * 5. ä½¿ç”¨Î±-Î²å‰ªæä¼˜åŒ–æœç´¢è¿‡ç¨‹
+ * @brief ´ø¦Á-¦Â¼ôÖ¦µÄÉî¶ÈÓÅÏÈËÑË÷(¼«Ğ¡¼«´óËã·¨ÊµÏÖ)
+ * @param x µ±Ç°ĞĞ×ø±ê
+ * @param y µ±Ç°ÁĞ×ø±ê
+ * @param player µ±Ç°Íæ¼Ò
+ * @param depth Ê£ÓàËÑË÷Éî¶È
+ * @param alpha ¦ÁÖµ(µ±Ç°×î´óÖµ)
+ * @param beta ¦ÂÖµ(µ±Ç°×îĞ¡Öµ)
+ * @param is_maximizing ÊÇ·ñÎª¼«´ó»¯Íæ¼Ò(AI)
+ * @return int ×î¼ÑÆÀ¹À·ÖÊı
+ * @note Ëã·¨Á÷³Ì:
+ * 1. ¼ì²éÊÇ·ñ»ñÊ¤»ò´ïµ½ËÑË÷Éî¶È
+ * 2. ±éÀúËùÓĞ¿ÉÄÜÂä×ÓÎ»ÖÃ
+ * 3. µİ¹éÆÀ¹ÀÃ¿¸öÎ»ÖÃµÄ·ÖÊı
+ * 4. ¸ù¾İis_maximizingÑ¡Ôñ×î´ó/×îĞ¡Öµ
+ * 5. Ê¹ÓÃ¦Á-¦Â¼ôÖ¦ÓÅ»¯ËÑË÷¹ı³Ì
  */
 int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximizing)
 {
-    // æ£€æŸ¥å½“å‰è½å­æ˜¯å¦è·èƒœ
+    // ¼ì²éµ±Ç°Âä×ÓÊÇ·ñ»ñÊ¤
     if (check_win(x, y, player))
     {
         return (player == AI) ? SEARCH_WIN_BONUS + depth : -SEARCH_WIN_BONUS - depth;
     }
 
-    // è¾¾åˆ°æœç´¢æ·±åº¦æˆ–å¹³å±€
+    // ´ïµ½ËÑË÷Éî¶È»òÆ½¾Ö
     if (depth == 0 || step_count >= BOARD_SIZE * BOARD_SIZE)
     {
         return evaluate_pos(x, y, AI) - evaluate_pos(x, y, PLAYER);
@@ -165,7 +158,7 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
 
     int best_score = is_maximizing ? -1000000 : 1000000;
 
-    // éå†æ‰€æœ‰å¯èƒ½è½å­ä½ç½®
+    // ±éÀúËùÓĞ¿ÉÄÜÂä×ÓÎ»ÖÃ
     for (int i = 0; i < BOARD_SIZE; i++)
     {
         for (int j = 0; j < BOARD_SIZE; j++)
@@ -175,34 +168,34 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
                 continue;
             }
 
-            // æ¨¡æ‹Ÿå½“å‰ç©å®¶è½å­
+            // Ä£Äâµ±Ç°Íæ¼ÒÂä×Ó
             board[i][j] = player;
             step_count++;
 
-            // é€’å½’æœç´¢(åˆ‡æ¢ç©å®¶å’Œæœç´¢æ·±åº¦)
+            // µİ¹éËÑË÷(ÇĞ»»Íæ¼ÒºÍËÑË÷Éî¶È)
             int current_score = dfs(i, j, (player == AI) ? PLAYER : AI, depth - 1, alpha, beta, !is_maximizing);
 
-            // æ’¤é”€è½å­
+            // ³·ÏúÂä×Ó
             board[i][j] = EMPTY;
             step_count--;
 
-            // æå¤§å€¼ç©å®¶(AI)é€»è¾‘
+            // ¼«´óÖµÍæ¼Ò(AI)Âß¼­
             if (is_maximizing)
             {
                 best_score = (current_score > best_score) ? current_score : best_score;
                 alpha = (best_score > alpha) ? best_score : alpha;
-                // Î±å‰ªæ
+                // ¦Á¼ôÖ¦
                 if (beta <= alpha)
                 {
                     break;
                 }
             }
-            // æå°å€¼ç©å®¶(äººç±»)é€»è¾‘
+            // ¼«Ğ¡ÖµÍæ¼Ò(ÈËÀà)Âß¼­
             else
             {
                 best_score = (current_score < best_score) ? current_score : best_score;
                 beta = (best_score < beta) ? best_score : beta;
-                // Î²å‰ªæ
+                // ¦Â¼ôÖ¦
                 if (beta <= alpha)
                 {
                     break;
@@ -211,7 +204,7 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
         }
         if ((is_maximizing && best_score >= beta) || (!is_maximizing && best_score <= alpha))
         {
-            break; // æå‰é€€å‡ºå¤–å±‚å¾ªç¯
+            break; // ÌáÇ°ÍË³öÍâ²ãÑ­»·
         }
     }
 
@@ -219,28 +212,28 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
 }
 
 /**
- * @brief AIå†³ç­–ä¸»å‡½æ•°ï¼Œä½¿ç”¨è¯„ä¼°å‡½æ•°å’Œæœç´¢ç®—æ³•é€‰æ‹©æœ€ä½³è½å­ä½ç½®
- * @note é‡‡ç”¨ä¸¤é˜¶æ®µå†³ç­–é€»è¾‘ï¼š
- * 1. é˜²å¾¡é˜¶æ®µï¼šæ£€æŸ¥å¹¶é˜»æ­¢ç©å®¶å³å°†è·èƒœçš„ä½ç½®ï¼ˆæ´»å››ã€å†²å››ã€æ´»ä¸‰ï¼‰
- * 2. è¿›æ”»é˜¶æ®µï¼šè‹¥æ— ç´§æ€¥é˜²å¾¡éœ€æ±‚ï¼Œä½¿ç”¨è¯„ä¼°å‡½æ•°é€‰æ‹©æœ€ä½³è¿›æ”»ä½ç½®
- * @note å®ç°ç»†èŠ‚ï¼š
- * - ä¼˜å…ˆå¤„ç†ç©å®¶æ´»å››ã€å†²å››ç­‰å±é™©å±€é¢
- * - æ­¥æ•°>AI_SEARCH_RANGE_THRESHOLDæ—¶ç¼©å°æœç´¢èŒƒå›´åˆ°å·²æœ‰æ£‹å­é™„è¿‘AI_NEARBY_RANGEæ ¼
- * - ä½¿ç”¨ä¸­å¿ƒä½ç½®ä¼˜å…ˆç­–ç•¥
+ * @brief AI¾ö²ßÖ÷º¯Êı£¬Ê¹ÓÃÆÀ¹Àº¯ÊıºÍËÑË÷Ëã·¨Ñ¡Ôñ×î¼ÑÂä×ÓÎ»ÖÃ
+ * @note ²ÉÓÃÁ½½×¶Î¾ö²ßÂß¼­£º
+ * 1. ·ÀÓù½×¶Î£º¼ì²é²¢×èÖ¹Íæ¼Ò¼´½«»ñÊ¤µÄÎ»ÖÃ£¨»îËÄ¡¢³åËÄ¡¢»îÈı£©
+ * 2. ½ø¹¥½×¶Î£ºÈôÎŞ½ô¼±·ÀÓùĞèÇó£¬Ê¹ÓÃÆÀ¹Àº¯ÊıÑ¡Ôñ×î¼Ñ½ø¹¥Î»ÖÃ
+ * @note ÊµÏÖÏ¸½Ú£º
+ * - ÓÅÏÈ´¦ÀíÍæ¼Ò»îËÄ¡¢³åËÄµÈÎ£ÏÕ¾ÖÃæ
+ * - ²½Êı>AI_SEARCH_RANGE_THRESHOLDÊ±ËõĞ¡ËÑË÷·¶Î§µ½ÒÑÓĞÆå×Ó¸½½üAI_NEARBY_RANGE¸ñ
+ * - Ê¹ÓÃÖĞĞÄÎ»ÖÃÓÅÏÈ²ßÂÔ
  */
 void ai_move(int depth)
 {
-    // å¦‚æœæ˜¯ç¬¬ä¸€æ­¥ï¼Œç›´æ¥ä¸‹åœ¨ä¸­å¿ƒä½ç½®é™„è¿‘
+    // Èç¹ûÊÇµÚÒ»²½£¬Ö±½ÓÏÂÔÚÖĞĞÄÎ»ÖÃ¸½½ü
     if (step_count == 0)
     {
         int center = BOARD_SIZE / 2;
         board[center][center] = AI;
         steps[step_count++] = (Step){AI, center, center};
-        printf("AIè½å­(%d, %d)\n", center + 1, center + 1);
+        printf("AIÂä×Ó(%d, %d)\n", center + 1, center + 1);
         return;
     }
 
-    // 1. é¦–å…ˆæ£€æŸ¥æ˜¯å¦éœ€è¦é˜»æ­¢ç©å®¶çš„å››å­è¿æ£‹æˆ–ä¸‰å­æ´»æ£‹
+    // 1. Ê×ÏÈ¼ì²éÊÇ·ñĞèÒª×èÖ¹Íæ¼ÒµÄËÄ×ÓÁ¬Æå»òÈı×Ó»îÆå
     for (int i = 0; i < BOARD_SIZE; i++)
     {
         for (int j = 0; j < BOARD_SIZE; j++)
@@ -250,23 +243,23 @@ void ai_move(int depth)
                 continue;
             }
 
-            // æ¨¡æ‹Ÿç©å®¶åœ¨æ­¤ä½ç½®è½å­
+            // Ä£ÄâÍæ¼ÒÔÚ´ËÎ»ÖÃÂä×Ó
             board[i][j] = PLAYER;
             bool need_block = false;
 
-            // æ£€æŸ¥å››ä¸ªæ–¹å‘
+            // ¼ì²éËÄ¸ö·½Ïò
             for (int k = 0; k < 4; k++)
             {
                 DirInfo info = count_specific_direction(i, j, direction[k][0], direction[k][1], PLAYER);
 
-                // å¦‚æœç©å®¶èƒ½å½¢æˆå››å­è¿æ£‹ä¸”è‡³å°‘ä¸€ç«¯å¼€æ”¾
+                // Èç¹ûÍæ¼ÒÄÜĞÎ³ÉËÄ×ÓÁ¬ÆåÇÒÖÁÉÙÒ»¶Ë¿ª·Å
                 if (info.continuous_chess >= 4 && (info.check_start || info.check_end))
                 {
                     need_block = true;
                     break;
                 }
 
-                // å¦‚æœç©å®¶èƒ½å½¢æˆä¸‰å­æ´»æ£‹ä¸”ä¸¤ç«¯å¼€æ”¾
+                // Èç¹ûÍæ¼ÒÄÜĞÎ³ÉÈı×Ó»îÆåÇÒÁ½¶Ë¿ª·Å
                 if (info.continuous_chess == 3 && info.check_start && info.check_end)
                 {
                     need_block = true;
@@ -274,24 +267,24 @@ void ai_move(int depth)
                 }
             }
 
-            board[i][j] = EMPTY; // æ¢å¤æ£‹ç›˜
+            board[i][j] = EMPTY; // »Ö¸´ÆåÅÌ
 
             if (need_block)
             {
-                // å¿…é¡»åœ¨æ­¤ä½ç½®è½å­é˜»æ­¢
+                // ±ØĞëÔÚ´ËÎ»ÖÃÂä×Ó×èÖ¹
                 board[i][j] = AI;
                 steps[step_count++] = (Step){AI, i, j};
-                printf("AIè½å­(%d, %d)\n", i + 1, j + 1);
+                printf("AIÂä×Ó(%d, %d)\n", i + 1, j + 1);
                 return;
             }
         }
     }
 
-    // 2. å¦‚æœæ²¡æœ‰éœ€è¦ç«‹å³é˜»æ­¢çš„æƒ…å†µï¼Œåˆ™æ­£å¸¸è¯„ä¼°
+    // 2. Èç¹ûÃ»ÓĞĞèÒªÁ¢¼´×èÖ¹µÄÇé¿ö£¬ÔòÕı³£ÆÀ¹À
     int best_score = -SEARCH_WIN_BONUS;
     int best_x = -1, best_y = -1;
 
-    // éå†æ£‹ç›˜æ‰€æœ‰ç©ºä½
+    // ±éÀúÆåÅÌËùÓĞ¿ÕÎ»
     for (int i = 0; i < BOARD_SIZE; i++)
     {
         for (int j = 0; j < BOARD_SIZE; j++)
@@ -301,7 +294,7 @@ void ai_move(int depth)
                 continue;
             }
 
-            // åªè€ƒè™‘å·²æœ‰æ£‹å­é™„è¿‘(AI_NEARBY_RANGEæ ¼èŒƒå›´å†…)
+            // Ö»¿¼ÂÇÒÑÓĞÆå×Ó¸½½ü(AI_NEARBY_RANGE¸ñ·¶Î§ÄÚ)
             bool has_nearby_stone = false;
             for (int di = -AI_NEARBY_RANGE; di <= AI_NEARBY_RANGE; di++)
             {
@@ -328,10 +321,10 @@ void ai_move(int depth)
                 continue;
             }
 
-            // ä½¿ç”¨è¯„ä¼°å‡½æ•°è·å–ç»¼åˆå¾—åˆ†
+            // Ê¹ÓÃÆÀ¹Àº¯Êı»ñÈ¡×ÛºÏµÃ·Ö
             int current_score = evaluate_move(i, j);
 
-            // æ›´æ–°æœ€ä½³ä½ç½®
+            // ¸üĞÂ×î¼ÑÎ»ÖÃ
             if (current_score > best_score)
             {
                 best_score = current_score;
@@ -341,11 +334,11 @@ void ai_move(int depth)
         }
     }
 
-    // æ‰§è¡Œæœ€ä½³è½å­
+    // Ö´ĞĞ×î¼ÑÂä×Ó
     if (best_x != -1 && best_y != -1)
     {
         board[best_x][best_y] = AI;
         steps[step_count++] = (Step){AI, best_x, best_y};
-        printf("AIè½å­(%d, %d)\n", best_x + 1, best_y + 1);
+        printf("AIÂä×Ó(%d, %d)\n", best_x + 1, best_y + 1);
     }
 }

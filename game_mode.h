@@ -7,22 +7,18 @@
  *
  * @copyright Copyright (c) 2025
  *
- * @note 本文件定义了五子棋游戏的三种主要模式：
+ * @note 本文件定义了五子棋游戏的四种主要模式：
  * 1. AI对战模式
  * 2. 双人对战模式
- * 3. 复盘模式
+ * 3. 网络对战模式
+ * 4. 复盘模式
  */
 
 #ifndef GAME_MODE_H
 #define GAME_MODE_H
 
 #include "gobang.h"
-
-// 特殊输入命令
-#define INPUT_UNDO -1       // 悔棋
-#define INPUT_SAVE -2       // 保存
-#define INPUT_EXIT -3       // 退出
-#define INPUT_SURRENDER -4  // 认输
+#include "config.h"
 
 /**
  * @brief 从用户获取整数输入
@@ -68,5 +64,27 @@ void run_pvp_game();
  * 加载并重现历史对局
  */
 void run_review_mode();
+
+/**
+ * @brief 网络对战模式
+ * 实现两台设备之间的在线对战
+ */
+void run_network_game();
+
+/**
+ * @brief 处理网络玩家回合
+ * @param current_player 当前玩家
+ * @param is_local_turn 是否为本地玩家回合
+ * @return true 回合处理成功
+ * @return false 游戏结束或网络错误
+ */
+bool handle_network_player_turn(int current_player, bool is_local_turn);
+
+/**
+ * @brief 网络游戏主循环
+ * @return true 游戏正常结束
+ * @return false 网络错误或异常退出
+ */
+bool network_game_loop();
 
 #endif // GAME_MODE_H

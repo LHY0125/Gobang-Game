@@ -4,7 +4,7 @@
  * @details 游戏核心逻辑实现
  * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @date 2025-07-10
- * @version 5.0
+ * @version 6.0
  * @note
  * 1. 新增功能：
  *    - 增加了对禁手规则的支持，防止玩家进行无意义的走法。
@@ -54,8 +54,8 @@
 
 /**
  * @brief 将指令复制到powershell
- * gcc -o gobang.exe main.c gobang.c game_mode.c ai.c record.c init_board.c ui.c config.c
- * gcc 为编译器，五子棋.c gobang.c game_mode.c 为源文件，output/为输出目录
+ * gcc -o gobang.exe main.c gobang.c game_mode.c ai.c record.c init_board.c ui.c config.c network.c globals.c -lws2_32
+ * gcc 为编译器，添加了network.c网络模块，-lws2_32链接Windows网络库
  * @brief 将指令复制到powershell
  * .\gobang.exe
  */
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     {
         clear_screen();
         display_main_menu();
-        int mode = get_integer_input("请输入模式(1-7): ", 1, 7);
+        int mode = get_integer_input("请输入模式(1-8): ", 1, 8);
 
         switch (mode)
         {
@@ -89,22 +89,25 @@ int main(int argc, char *argv[])
                 run_pvp_game();
                 break;
             case 3:
-                run_review_mode();
+                run_network_game();
                 break;
             case 4:
-                config_management_menu();
+                run_review_mode();
                 break;
             case 5:
+                config_management_menu();
+                break;
+            case 6:
                 clear_screen();
                 display_game_rules();
                 pause_for_input("\n按任意键返回主菜单...");
                 break;
-            case 6:
+            case 7:
                 clear_screen();
                 display_about();
                 pause_for_input("\n按任意键返回主菜单...");
                 break;
-            case 7:
+            case 8:
                 save_game_config();
                 printf("感谢使用五子棋游戏！\n");
                 return 0;

@@ -3,117 +3,98 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include "config.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <math.h>
 
-// å®å®šä¹‰
-#define MAX_BOARD_SIZE 25                           // æ”¯æŒçš„æœ€å¤§æ£‹ç›˜å°ºå¯¸
-#define PLAYER 1                                    // ç©å®¶æ ‡è¯† (ç”¨äºäººæœºå¯¹æˆ˜æ¨¡å¼)
-#define AI 2                                        // AIæ ‡è¯† (ç”¨äºäººæœºå¯¹æˆ˜æ¨¡å¼)
-#define PLAYER1 1                                   // ç©å®¶1æ ‡è¯† (ç”¨äºåŒäººå¯¹æˆ˜æ¨¡å¼)
-#define PLAYER2 2                                   // ç©å®¶2æ ‡è¯† (ç”¨äºåŒäººå¯¹æˆ˜æ¨¡å¼)
-#define EMPTY 0                                     // æ£‹ç›˜ç©ºä½æ ‡è¯†
-#define MAX_STEPS (MAX_BOARD_SIZE * MAX_BOARD_SIZE) // æ¸¸æˆæœ€å¤§æ­¥æ•°
+// Êı¾İ½á¹¹
 
-// å…¨å±€å˜é‡
-extern int BOARD_SIZE;                              // å½“å‰å®é™…ä½¿ç”¨çš„æ£‹ç›˜å°ºå¯¸
-extern int board[MAX_BOARD_SIZE][MAX_BOARD_SIZE];   // å­˜å‚¨æ£‹ç›˜çŠ¶æ€çš„äºŒç»´æ•°ç»„
-extern int step_count;                              // å½“å‰æ¸¸æˆçš„æ€»æ­¥æ•°
-extern bool use_forbidden_moves;                    // æ˜¯å¦å¯ç”¨ç¦æ‰‹è§„åˆ™çš„æ ‡å¿—
-extern int use_timer;                               // æ˜¯å¦å¯ç”¨è®¡æ—¶å™¨çš„æ ‡å¿—
-extern int time_limit;                              // æ¯å›åˆçš„æ—¶é—´é™åˆ¶ï¼ˆç§’ï¼Œå†…éƒ¨å­˜å‚¨ï¼‰
-extern const int direction[4][2];                   // å®šä¹‰å››ä¸ªåŸºæœ¬æœç´¢æ–¹å‘ï¼šæ°´å¹³ã€å‚ç›´ã€å·¦æ–œã€å³æ–œ
-
-// æ•°æ®ç»“æ„
 /**
- * @brief è®°å½•ä¸€æ­¥æ£‹çš„è¯¦ç»†ä¿¡æ¯
+ * @brief ¼ÇÂ¼Ò»²½ÆåµÄÏêÏ¸ĞÅÏ¢
  */
 typedef struct
 {
-    int player; // æ‰§è¡Œè¯¥æ­¥çš„ç©å®¶æ ‡è¯†
-    int x;      // è½å­çš„è¡Œåæ ‡ (0-based)
-    int y;      // è½å­çš„åˆ—åæ ‡ (0-based)
+    int player; // Ö´ĞĞ¸Ã²½µÄÍæ¼Ò±êÊ¶
+    int x;      // Âä×ÓµÄĞĞ×ø±ê (0-based)
+    int y;      // Âä×ÓµÄÁĞ×ø±ê (0-based)
 } Step;
 
-extern Step steps[MAX_STEPS]; // ç”¨äºå­˜å‚¨æ¸¸æˆä¸­æ¯ä¸€æ­¥æ£‹çš„æ•°ç»„
-
 /**
- * @brief å­˜å‚¨åœ¨ç‰¹å®šæ–¹å‘ä¸Šæ£‹å­è¿ç»­æ€§çš„ä¿¡æ¯
- * @details ç”¨äºè¯„ä¼°æ£‹å½¢ï¼Œä¾‹å¦‚åˆ¤æ–­æ´»ä¸‰ã€å†²å››ç­‰å…³é”®å½¢æ€ã€‚
+ * @brief ´æ´¢ÔÚÌØ¶¨·½ÏòÉÏÆå×ÓÁ¬ĞøĞÔµÄĞÅÏ¢
+ * @details ÓÃÓÚÆÀ¹ÀÆåĞÎ£¬ÀıÈçÅĞ¶Ï»îÈı¡¢³åËÄµÈ¹Ø¼üĞÎÌ¬¡£
  */
 typedef struct
 {
-    int continuous_chess; // è¿ç»­åŒè‰²æ£‹å­çš„æ•°é‡
-    bool check_start;     // æ£‹å­åºåˆ—çš„èµ·å§‹ç«¯æ˜¯å¦ä¸ºç©ºä½ï¼ˆå³æ˜¯å¦å¼€æ”¾ï¼‰
-    bool check_end;       // æ£‹å­åºåˆ—çš„æœ«å°¾ç«¯æ˜¯å¦ä¸ºç©ºä½ï¼ˆå³æ˜¯å¦å¼€æ”¾ï¼‰
+    int continuous_chess; // Á¬ĞøÍ¬É«Æå×ÓµÄÊıÁ¿
+    bool check_start;     // Æå×ÓĞòÁĞµÄÆğÊ¼¶ËÊÇ·ñÎª¿ÕÎ»£¨¼´ÊÇ·ñ¿ª·Å£©
+    bool check_end;       // Æå×ÓĞòÁĞµÄÄ©Î²¶ËÊÇ·ñÎª¿ÕÎ»£¨¼´ÊÇ·ñ¿ª·Å£©
 } DirInfo;
 
-// å‡½æ•°åŸå‹
+// º¯ÊıÔ­ĞÍ
 
-
-// --- æ¸¸æˆæ ¸å¿ƒé€»è¾‘ ---
+// --- ÓÎÏ·ºËĞÄÂß¼­ ---
 /**
- * @brief æ£€æŸ¥æŒ‡å®šåæ ‡æ˜¯å¦ä¸ºæœ‰æ•ˆè½å­ç‚¹ï¼ˆåœ¨æ£‹ç›˜å†…ä¸”ä¸ºç©ºï¼‰
- * @param x å¾…æ£€æŸ¥çš„è¡Œåæ ‡ (0-based)
- * @param y å¾…æ£€æŸ¥çš„åˆ—åæ ‡ (0-based)
- * @return è‹¥ä½ç½®æœ‰æ•ˆä¸”ä¸ºç©ºåˆ™è¿”å›trueï¼Œå¦åˆ™è¿”å›false
+ * @brief ¼ì²éÖ¸¶¨×ø±êÊÇ·ñÎªÓĞĞ§Âä×Óµã£¨ÔÚÆåÅÌÄÚÇÒÎª¿Õ£©
+ * @param x ´ı¼ì²éµÄĞĞ×ø±ê (0-based)
+ * @param y ´ı¼ì²éµÄÁĞ×ø±ê (0-based)
+ * @return ÈôÎ»ÖÃÓĞĞ§ÇÒÎª¿ÕÔò·µ»Øtrue£¬·ñÔò·µ»Øfalse
  */
 bool have_space(int x, int y);
 
 /**
- * @brief åˆ¤æ–­ä¸€ä¸ªè½å­æ˜¯å¦ä¸ºç¦æ‰‹
- * @param x è½å­çš„è¡Œåæ ‡ (0-based)
- * @param y è½å­çš„åˆ—åæ ‡ (0-based)
- * @param player å½“å‰ç©å®¶çš„æ ‡è¯†
- * @return å¦‚æœæ˜¯ç¦æ‰‹åˆ™è¿”å›trueï¼Œå¦åˆ™è¿”å›false
+ * @brief ÅĞ¶ÏÒ»¸öÂä×ÓÊÇ·ñÎª½ûÊÖ
+ * @param x Âä×ÓµÄĞĞ×ø±ê (0-based)
+ * @param y Âä×ÓµÄÁĞ×ø±ê (0-based)
+ * @param player µ±Ç°Íæ¼ÒµÄ±êÊ¶
+ * @return Èç¹ûÊÇ½ûÊÖÔò·µ»Øtrue£¬·ñÔò·µ»Øfalse
  */
 bool is_forbidden_move(int x, int y, int player);
 
 
 /**
- * @brief æ‰§è¡Œä¸€æ¬¡ç©å®¶è½å­æ“ä½œ
- * @param x è½å­çš„è¡Œåæ ‡ (0-based)
- * @param y è½å­çš„åˆ—åæ ‡ (0-based)
- * @param player å½“å‰ç©å®¶çš„æ ‡è¯†
- * @return è‹¥è½å­æˆåŠŸåˆ™è¿”å›trueï¼Œå¦åˆ™ï¼ˆä½ç½®æ— æ•ˆæˆ–è¢«å ç”¨ï¼‰è¿”å›false
+ * @brief Ö´ĞĞÒ»´ÎÍæ¼ÒÂä×Ó²Ù×÷
+ * @param x Âä×ÓµÄĞĞ×ø±ê (0-based)
+ * @param y Âä×ÓµÄÁĞ×ø±ê (0-based)
+ * @param player µ±Ç°Íæ¼ÒµÄ±êÊ¶
+ * @return ÈôÂä×Ó³É¹¦Ôò·µ»Øtrue£¬·ñÔò£¨Î»ÖÃÎŞĞ§»ò±»Õ¼ÓÃ£©·µ»Øfalse
  */
 bool player_move(int x, int y, int player);
 
 /**
- * @brief è®¡ç®—åœ¨ç‰¹å®šæ–¹å‘ä¸Šçš„æ£‹å­è¿ç»­ä¿¡æ¯
- * @param x èµ·å§‹ç‚¹çš„è¡Œåæ ‡
- * @param y èµ·å§‹ç‚¹çš„åˆ—åæ ‡
- * @param dx xæ–¹å‘çš„å¢é‡ (-1, 0, or 1)
- * @param dy yæ–¹å‘çš„å¢é‡ (-1, 0, or 1)
- * @param player ç©å®¶æ ‡è¯†
- * @return è¿”å›ä¸€ä¸ªåŒ…å«è¿ç»­æ£‹å­ä¿¡æ¯çš„ DirInfo ç»“æ„ä½“
+ * @brief ¼ÆËãÔÚÌØ¶¨·½ÏòÉÏµÄÆå×ÓÁ¬ĞøĞÅÏ¢
+ * @param x ÆğÊ¼µãµÄĞĞ×ø±ê
+ * @param y ÆğÊ¼µãµÄÁĞ×ø±ê
+ * @param dx x·½ÏòµÄÔöÁ¿ (-1, 0, or 1)
+ * @param dy y·½ÏòµÄÔöÁ¿ (-1, 0, or 1)
+ * @param player Íæ¼Ò±êÊ¶
+ * @return ·µ»ØÒ»¸ö°üº¬Á¬ĞøÆå×ÓĞÅÏ¢µÄ DirInfo ½á¹¹Ìå
  */
 DirInfo count_specific_direction(int x, int y, int dx, int dy, int player);
 
 /**
- * @brief æ£€æŸ¥åœ¨æŸç‚¹è½å­åï¼Œè¯¥ç©å®¶æ˜¯å¦è·èƒœ
- * @param x è½å­çš„è¡Œåæ ‡ (0-based)
- * @param y è½å­çš„åˆ—åæ ‡ (0-based)
- * @param player å½“å‰ç©å®¶çš„æ ‡è¯†
- * @return å¦‚æœè·èƒœåˆ™è¿”å›trueï¼Œå¦åˆ™è¿”å›false
+ * @brief ¼ì²éÔÚÄ³µãÂä×Óºó£¬¸ÃÍæ¼ÒÊÇ·ñ»ñÊ¤
+ * @param x Âä×ÓµÄĞĞ×ø±ê (0-based)
+ * @param y Âä×ÓµÄÁĞ×ø±ê (0-based)
+ * @param player µ±Ç°Íæ¼ÒµÄ±êÊ¶
+ * @return Èç¹û»ñÊ¤Ôò·µ»Øtrue£¬·ñÔò·µ»Øfalse
  */
 bool check_win(int x, int y, int player);
 
 /**
- * @brief æ‚”æ£‹åŠŸèƒ½ï¼Œæ’¤é”€æŒ‡å®šæ­¥æ•°
- * @param steps_to_undo è¦æ’¤é”€çš„æ­¥æ•°ï¼ˆæ¯æ­¥åŒ…å«åŒæ–¹å„ä¸€æ¬¡è½å­ï¼‰
- * @return è‹¥æ‚”æ£‹æˆåŠŸåˆ™è¿”å›trueï¼Œå¦åˆ™è¿”å›false
+ * @brief »ÚÆå¹¦ÄÜ£¬³·ÏúÖ¸¶¨²½Êı
+ * @param steps_to_undo Òª³·ÏúµÄ²½Êı£¨Ã¿²½°üº¬Ë«·½¸÷Ò»´ÎÂä×Ó£©
+ * @return Èô»ÚÆå³É¹¦Ôò·µ»Øtrue£¬·ñÔò·µ»Øfalse
  */
 bool return_move(int steps_to_undo);
 
 /**
- * @brief è®¡ç®—å¹¶è¿”å›ä¸€æ­¥æ£‹çš„å¾—åˆ†
- * @param x è½å­çš„è¡Œåæ ‡
- * @param y è½å­çš„åˆ—åæ ‡
- * @param player ç©å®¶æ ‡è¯†
- * @return è¯¥æ­¥æ£‹çš„å¾—åˆ†
+ * @brief ¼ÆËã²¢·µ»ØÒ»²½ÆåµÄµÃ·Ö
+ * @param x Âä×ÓµÄĞĞ×ø±ê
+ * @param y Âä×ÓµÄÁĞ×ø±ê
+ * @param player Íæ¼Ò±êÊ¶
+ * @return ¸Ã²½ÆåµÄµÃ·Ö
  */
 int calculate_step_score(int x, int y, int player);
 
