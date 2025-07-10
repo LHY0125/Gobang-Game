@@ -1,12 +1,6 @@
 /**
  * @file game_mode.h
- * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @brief 五子棋游戏框架头文件
- * @version 4.0
- * @date 2025-07-02
- *
- * @copyright Copyright (c) 2025
- *
  * @note 本文件定义了五子棋游戏的四种主要模式：
  * 1. AI对战模式
  * 2. 双人对战模式
@@ -39,6 +33,15 @@ int get_integer_input(const char *prompt, int min, int max);
  * @return false 输入无效
  */
 bool parse_player_input(int *x, int *y);
+
+/**
+ * @brief 解析网络对战模式下的玩家输入
+ * @param x 行坐标指针
+ * @param y 列坐标指针
+ * @return true 有效坐标输入
+ * @return false 特殊命令或无效输入
+ */
+bool parse_network_player_input(int *x, int *y);
 
 /**
  * @brief 处理AI回合

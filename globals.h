@@ -1,9 +1,6 @@
 /**
  * @file globals.h
- * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @brief 全局变量声明头文件
- * @version 6.0
- * @date 2025-07-10
  * @note 集中管理所有全局变量的声明，提高代码可维护性
  */
 

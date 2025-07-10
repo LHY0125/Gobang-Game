@@ -1,12 +1,6 @@
 /**
  * @file config.h
- * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @brief 五子棋游戏参数配置头文件
- * @version 6.0
- * @date 2025-07-10
- *
- * @copyright Copyright (c) 2025
- *
  * @note 本文件集中定义了五子棋游戏的所有参数配置，便于统一管理和修改
  */
 
@@ -18,6 +12,11 @@
 #define MIN_BOARD_SIZE 5                            // 支持的最小棋盘尺寸
 #define DEFAULT_BOARD_SIZE 15                       // 默认棋盘尺寸
 #define MAX_STEPS (MAX_BOARD_SIZE * MAX_BOARD_SIZE) // 游戏最大步数
+
+//---------- 游戏模式参数 ----------//
+#define GAME_MODE_AI 1                              // 人机对战模式
+#define GAME_MODE_PVP 2                             // 双人对战模式
+#define GAME_MODE_NETWORK 3                         // 网络对战模式
 
 //---------- 玩家标识参数 ----------//
 #define EMPTY 0                                     // 棋盘空位标识

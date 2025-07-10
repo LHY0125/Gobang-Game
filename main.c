@@ -37,31 +37,39 @@ int main(int argc, char *argv[])
 
         switch (mode)
         {
+            // 1. 人机对战
             case 1:
                 run_ai_game();
                 break;
+            // 2. 玩家对战
             case 2:
                 run_pvp_game();
                 break;
+            // 3. 网络对战
             case 3:
                 run_network_game();
                 break;
+            // 4. 复盘模式
             case 4:
                 run_review_mode();
                 break;
+            // 5. 配置管理
             case 5:
                 config_management_menu();
                 break;
+            // 6. 游戏规则
             case 6:
                 clear_screen();
                 display_game_rules();
                 pause_for_input("\n按任意键返回主菜单...");
                 break;
+            // 7. 关于
             case 7:
                 clear_screen();
                 display_about();
                 pause_for_input("\n按任意键返回主菜单...");
                 break;
+            // 8. 退出游戏
             case 8:
                 save_game_config();
                 printf("感谢使用五子棋游戏！\n");

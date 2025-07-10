@@ -1,3 +1,9 @@
+/**
+ * @file record.h
+ * @brief 游戏复盘与记录头文件
+ * @note 本文件定义了游戏复盘与记录相关的函数和数据结构。
+ * 它负责管理游戏的历史记录、加载和保存游戏文件、计算游戏评分等功能。
+ */
 #ifndef RECORD_H
 #define RECORD_H
 

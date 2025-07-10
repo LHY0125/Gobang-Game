@@ -75,7 +75,7 @@ void review_process(int game_mode)
 
             // 打印当前步骤信息
             // 根据游戏模式显示不同的标题和玩家信息
-            if (game_mode == 1)
+            if (game_mode == GAME_MODE_AI)
             {
                 // 人机对战
                 printf("\n===== 五子棋人机对战(%dX%d棋盘) =====", BOARD_SIZE, BOARD_SIZE);
@@ -84,10 +84,19 @@ void review_process(int game_mode)
                        (s.player == PLAYER) ? "玩家" : "AI",
                        s.x + 1, s.y + 1);
             }
-            else
+            else if (game_mode == GAME_MODE_PVP)
             {
                 // 双人对战
                 printf("\n===== 五子棋双人对战(%dX%d棋盘) =====", BOARD_SIZE, BOARD_SIZE);
+                printf("\n    第%d步/%d步: %s 落子于(%d, %d)\n",
+                       i + 1, step_count,
+                       (s.player == PLAYER1) ? "玩家1(黑棋)" : "玩家2(白棋)",
+                       s.x + 1, s.y + 1);
+            }
+            else if (game_mode == GAME_MODE_NETWORK)
+            {
+                // 网络对战
+                printf("\n===== 五子棋网络对战(%dX%d棋盘) =====", BOARD_SIZE, BOARD_SIZE);
                 printf("\n    第%d步/%d步: %s 落子于(%d, %d)\n",
                        i + 1, step_count,
                        (s.player == PLAYER1) ? "玩家1(黑棋)" : "玩家2(白棋)",
@@ -222,14 +231,21 @@ void display_game_scores(int game_mode)
 
     if (sum_score > 0)
     {
-        if (game_mode == 1)
+        if (game_mode == GAME_MODE_AI)
         {
             printf("玩家得分: %d, 占比: %.2f%%\n",
                    player1_final_score, (double)player1_final_score * 100.0 / sum_score);
             printf("AI得分: %d, 占比: %.2f%%\n",
                    player2_final_score, (double)player2_final_score * 100.0 / sum_score);
         }
-        else
+        else if (game_mode == GAME_MODE_PVP)
+        {
+            printf("玩家1(黑棋)得分: %d, 占比: %.2f%%\n",
+                   player1_final_score, (double)player1_final_score * 100.0 / sum_score);
+            printf("玩家2(白棋)得分: %d, 占比: %.2f%%\n",
+                   player2_final_score, (double)player2_final_score * 100.0 / sum_score);
+        }
+        else if (game_mode == GAME_MODE_NETWORK)
         {
             printf("玩家1(黑棋)得分: %d, 占比: %.2f%%\n",
                    player1_final_score, (double)player1_final_score * 100.0 / sum_score);
@@ -239,7 +255,7 @@ void display_game_scores(int game_mode)
     }
     else
     {
-        if (game_mode == 1)
+        if (game_mode == GAME_MODE_AI)
         {
             printf("玩家得分: %d\n", player1_final_score);
             printf("AI得分: %d\n", player2_final_score);
@@ -255,11 +271,11 @@ void display_game_scores(int game_mode)
     // 评选MVP
     if (player1_final_score > player2_final_score)
     {
-        printf("\nMVP: %s (领先 %d 分)\n", (game_mode == 1) ? "玩家" : "玩家1(黑棋)", player1_final_score - player2_final_score);
+        printf("\nMVP: %s (领先 %d 分)\n", (game_mode == GAME_MODE_AI) ? "玩家" : "玩家1(黑棋)", player1_final_score - player2_final_score);
     }
     else if (player2_final_score > player1_final_score)
     {
-        printf("\nMVP: %s (领先 %d 分)\n", (game_mode == 1) ? "AI" : "玩家2(白棋)", player2_final_score - player1_final_score);
+        printf("\nMVP: %s (领先 %d 分)\n", (game_mode == GAME_MODE_AI) ? "AI" : "玩家2(白棋)", player2_final_score - player1_final_score);
     }
     else
     {
@@ -362,7 +378,7 @@ int save_game_to_file(const char *filename, int game_mode)
         Step last_step = steps[step_count - 1];
         if (check_win(last_step.x, last_step.y, last_step.player))
         {
-            if (game_mode == 1)
+            if (game_mode == GAME_MODE_AI)
             {
                 // 人机对战
                 if (last_step.player == PLAYER)
@@ -374,9 +390,21 @@ int save_game_to_file(const char *filename, int game_mode)
                     strcpy(winner_info, "AI获胜");
                 }
             }
-            else
+            else if (game_mode == GAME_MODE_PVP)
             {
                 // 双人对战
+                if (last_step.player == PLAYER1)
+                {
+                    strcpy(winner_info, "玩家1获胜");
+                }
+                else
+                {
+                    strcpy(winner_info, "玩家2获胜");
+                }
+            }
+            else if (game_mode == GAME_MODE_NETWORK)
+            {
+                // 网络对战
                 if (last_step.player == PLAYER1)
                 {
                     strcpy(winner_info, "玩家1获胜");
@@ -464,7 +492,7 @@ int load_game_from_file(const char *filename)
         return 0;
     }
     
-    if (game_mode != 1 && game_mode != 2)
+    if (game_mode != GAME_MODE_AI && game_mode != GAME_MODE_PVP && game_mode != GAME_MODE_NETWORK)
     {
         fclose(file);
         return 0; // 无效的游戏模式

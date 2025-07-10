@@ -1,12 +1,6 @@
 /**
  * @file network.h
- * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @brief 五子棋网络对战模块头文件
- * @version 1.0
- * @date 2025-01-15
- *
- * @copyright Copyright (c) 2025
- *
  * @note 本文件定义了五子棋游戏的网络对战功能：
  * 1. 服务器模式（主机）
  * 2. 客户端模式（加入游戏）
