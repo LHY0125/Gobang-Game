@@ -9,7 +9,7 @@
 
 /**
  * @brief 将指令复制到powershell
- * gcc -o gobang.exe *.c -lws2_32 
+ * gcc -std=c17 -o gobang.exe *.c -lws2_32
    .\gobang.exe
  * gcc 为编译器，添加了network.c网络模块，-lws2_32链接Windows网络库
  */
