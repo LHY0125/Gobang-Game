@@ -1,7 +1,7 @@
 # 🧠 五子棋AI实现详解
 
 ## 📜 算法概述
-本五子棋AI采用α-β剪枝优化的极小极大算法，结合专业的棋型评估系统和多层次的威胁检测机制。
+本五子棋AI采用α-β剪枝优化的极小极大算法，结合专业的棋型评估系统和多层次的威胁检测机制。支持人机对战、双人对战和网络对战多种模式。
 
 ```mermaid
 graph TD
@@ -38,6 +38,14 @@ typedef struct {
     bool check_start;     // 起始方向开放
     bool check_end;       // 结束方向开放
 } DirInfo;
+```
+
+### 🌐 网络对战支持
+```c
+// 网络模式下的AI决策
+void network_ai_move(int depth, int player_id);
+// 同步AI决策到网络对手
+void sync_ai_decision(int x, int y);
 ```
 
 ## ⚙️ 核心函数
@@ -96,6 +104,11 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
    - 基础难度: 3层
    - 最高难度: 5层
 
+4. **网络优化**:
+   - 异步AI计算，避免网络延迟
+   - 决策结果实时同步
+   - 支持断线重连后状态恢复
+
 ## 🎯 典型场景
 
 ### 必胜局面处理
@@ -123,9 +136,12 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
 1. **调试技巧**:
    - 启用`DEBUG_MODE`查看搜索过程
    - 使用`print_board()`可视化评估
+   - 网络模式下使用`network_debug()`监控通信
 
 2. **扩展方向**:
    - 添加开局库
    - 实现并行搜索
    - 优化评估函数
+   - 增强网络对战AI适应性
+   - 支持AI难度动态调整
 ```

@@ -2,22 +2,23 @@
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Version](https://img.shields.io/badge/version-v5.0-blue)
+![Version](https://img.shields.io/badge/version-v6.1-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-> 🎯 **最新版本 v6.0** - 网络功能重大更新，新增在线对战、全局变量统一管理等核心功能
+> 🎯 **最新版本 v6.1** - 网络功能完善更新，优化在线对战体验、全局变量统一管理等核心功能
 
 ## 📋 大版本更新
 
-### v6.0 (2025-07-10) - 网络功能重大更新
+### v6.1 (2025-07-10) - 网络功能完善更新
 - 🌐 **网络对战模式** - 支持在线多人实时对战功能
 - 🔗 **服务器/客户端架构** - 完整的网络通信框架
 - 📡 **实时数据同步** - 棋盘状态和游戏进度实时同步
 - 🛡️ **网络安全验证** - 基本的数据验证和防作弊检测
-- 📊 **连接状态管理** - 自动断线重连和延迟显示
+- 📊 **连接状态管理** - 自动连接检测和延迟显示
 - 🏗️ **全局变量统一管理** - 优化代码结构和可维护性
 - 🔧 **宏定义统一管理** - 消除重复定义，提高代码质量
 - ⚙️ **网络配置系统** - 支持服务器地址和端口配置
+- 🔄 **协议优化** - 改进网络通信协议和错误处理
 
 ## 目录
 - [C语言五子棋对战系统](#c语言五子棋对战系统)
@@ -99,19 +100,21 @@
 -  **内存优化管理** - 高效的内存使用和资源管理
 -  **配置文件支持** - INI格式配置文件自动加载保存
 -  **UTF-8编码支持** - 完美支持中文显示
--  **网络功能预留** - 为未来网络对战功能预留接口
+- **网络对战功能** - 完整的在线多人对战系统
 
 ## 快速开始
 
 ### 编译项目
 ```bash
-gcc -o gobang.exe main.c gobang.c game_mode.c ai.c record.c init_board.c ui.c config.c globals.c network.c
+gcc -o gobang.exe main.c gobang.c game_mode.c ai.c record.c init_board.c ui.c config.c globals.c network.c -lws2_32
 ```
 
 或者使用优化编译：
 ```bash
-gcc -O2 -o gobang.exe main.c gobang.c game_mode.c ai.c record.c init_board.c ui.c config.c globals.c network.c
+gcc -O2 -o gobang.exe main.c gobang.c game_mode.c ai.c record.c init_board.c ui.c config.c globals.c network.c -lws2_32
 ```
+
+**注意：** Windows系统需要添加 `-lws2_32` 链接库以支持网络功能
 
 ### 运行游戏
 ```bash
