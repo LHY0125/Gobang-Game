@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     {
         clear_screen();
         display_main_menu();
-        int mode = get_integer_input("请输入模式(1-8): ", 1, 8);
+        int mode = get_integer_input("请输入模式(0-7): ", 0, 7);
 
         switch (mode)
         {
@@ -62,14 +62,14 @@ int main(int argc, char *argv[])
                 display_game_rules();
                 pause_for_input("\n按任意键返回主菜单...");
                 break;
-            // 7. 关于
+            // 7. 关于游戏
             case 7:
                 clear_screen();
                 display_about();
                 pause_for_input("\n按任意键返回主菜单...");
                 break;
-            // 8. 退出游戏
-            case 8:
+            // 0. 退出游戏
+            case 0:
                 save_game_config();
                 printf("感谢使用五子棋游戏！\n");
                 return 0;

@@ -11,6 +11,8 @@
 #define NETWORK_H
 
 #include "gobang.h"
+#include "type.h"
+#include "config.h"
 #include <stdbool.h>
 
 #ifdef _WIN32
@@ -27,44 +29,6 @@
 #define SOCKET_ERROR -1
 #define closesocket close
 #endif
-
-// 网络配置
-#define DEFAULT_PORT 8888
-#define BUFFER_SIZE 1024
-#define MAX_IP_LENGTH 16
-
-// 消息类型
-#define MSG_MOVE 1          // 落子消息
-#define MSG_CHAT 2          // 聊天消息
-#define MSG_SURRENDER 3     // 认输消息
-#define MSG_UNDO_REQUEST 4  // 悔棋请求
-#define MSG_UNDO_RESPONSE 5 // 悔棋回应
-#define MSG_GAME_START 6    // 游戏开始
-#define MSG_GAME_END 7      // 游戏结束
-#define MSG_HEARTBEAT 8     // 心跳包
-#define MSG_DISCONNECT 9    // 断线消息
-
-// 网络消息结构
-typedef struct {
-    int type;           // 消息类型
-    int player_id;      // 玩家ID
-    int x, y;          // 坐标（用于落子）
-    char message[256]; // 消息内容（用于聊天等）
-    time_t timestamp;  // 时间戳
-} NetworkMessage;
-
-// 网络游戏状态
-typedef struct {
-    SOCKET socket;          // 套接字
-    bool is_server;         // 是否为服务器
-    bool is_connected;      // 是否已连接
-    int local_player_id;    // 本地玩家ID
-    int remote_player_id;   // 远程玩家ID
-    char remote_ip[MAX_IP_LENGTH]; // 远程IP地址
-    int port;              // 端口号
-} NetworkGameState;
-
-// 全局变量声明现在在globals.h中
 
 // 函数声明
 

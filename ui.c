@@ -24,7 +24,7 @@ void display_main_menu()
     printf("5. 游戏设置\n");
     printf("6. 游戏规则\n");
     printf("7. 关于游戏\n");
-    printf("8. 退出游戏\n");
+    printf("0. 退出游戏\n");
     printf("=====================\n");
 }
 

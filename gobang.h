@@ -10,33 +10,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "config.h"
+#include "type.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <math.h>
-
-// 数据结构
-
-/**
- * @brief 记录一步棋的详细信息
- */
-typedef struct
-{
-    int player; // 执行该步的玩家标识
-    int x;      // 落子的行坐标 (0-based)
-    int y;      // 落子的列坐标 (0-based)
-} Step;
-
-/**
- * @brief 存储在特定方向上棋子连续性的信息
- * @details 用于评估棋形，例如判断活三、冲四等关键形态。
- */
-typedef struct
-{
-    int continuous_chess; // 连续同色棋子的数量
-    bool check_start;     // 棋子序列的起始端是否为空位（即是否开放）
-    bool check_end;       // 棋子序列的末尾端是否为空位（即是否开放）
-} DirInfo;
 
 // 函数原型
 

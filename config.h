@@ -37,8 +37,8 @@
 #define DEFAULT_TIME_LIMIT 30              // 默认时间限制为30秒(内部存储)
 
 //---------- AI参数 ----------//
-#define DEFAULT_AI_DEPTH 3                 // 默认AI搜索深度
-#define DEFAULT_DEFENSE_COEFFICIENT 1.2    // 默认防守系数
+#define DEFAULT_AI_DEPTH 5                 // 默认AI搜索深度（从3提升到5）
+#define DEFAULT_DEFENSE_COEFFICIENT 1.5    // 默认防守系数（从1.2提升到1.5）
 
 //---------- 网络参数 ----------//
 #define DEFAULT_NETWORK_PORT 8888          // 默认网络端口
@@ -46,6 +46,22 @@
 #define MAX_NETWORK_PORT 65535             // 最大网络端口
 #define NETWORK_TIMEOUT_MS 5000            // 网络超时时间(毫秒)
 #define NETWORK_BUFFER_SIZE 1024           // 网络缓冲区大小
+
+// 网络配置
+#define DEFAULT_PORT 8888                  // 默认端口（与DEFAULT_NETWORK_PORT保持一致）
+#define BUFFER_SIZE 1024                   // 缓冲区大小（与NETWORK_BUFFER_SIZE保持一致）
+#define MAX_IP_LENGTH 16                   // 最大IP地址长度
+
+// 网络消息类型
+#define MSG_MOVE 1                         // 落子消息
+#define MSG_CHAT 2                         // 聊天消息
+#define MSG_SURRENDER 3                    // 认输消息
+#define MSG_UNDO_REQUEST 4                 // 悔棋请求
+#define MSG_UNDO_RESPONSE 5                // 悔棋回应
+#define MSG_GAME_START 6                   // 游戏开始
+#define MSG_GAME_END 7                     // 游戏结束
+#define MSG_HEARTBEAT 8                    // 心跳包
+#define MSG_DISCONNECT 9                   // 断线消息
 
 //---------- 评分参数 ----------//
 // 棋型评分 - 用于calculate_step_score函数
@@ -87,8 +103,14 @@
 // 搜索算法参数
 #define SEARCH_MAX_SCORE 1000000        // 搜索最大分数
 #define SEARCH_WIN_BONUS 1000000        // 获胜奖励分数
-#define AI_NEARBY_RANGE 2               // AI搜索的邻近范围
-#define AI_SEARCH_RANGE_THRESHOLD 10    // AI开始限制搜索范围的步数阈值
+#define AI_NEARBY_RANGE 3               // AI搜索的邻近范围
+#define AI_SEARCH_RANGE_THRESHOLD 8     // AI开始限制搜索范围的步数阈值
+
+// 组合棋型评分 - AI增强新增
+#define AI_SCORE_DOUBLE_THREE 50000     // 双三
+#define AI_SCORE_FOUR_THREE 200000      // 四三
+#define AI_SCORE_THREAT_SEQUENCE 80000  // 威胁序列
+#define AI_SCORE_POTENTIAL_FIVE 300000  // 潜在五连
 
 // 评分权重参数
 #define TIME_WEIGHT_FACTOR 0.5          // 时间权重因子
@@ -144,7 +166,5 @@ void config_network();
  * @brief 配置管理主菜单
  */
 void config_management_menu();
-
-//---------- 网络配置全局变量声明 ----------// 全局变量声明现在在globals.h中
 
 #endif // CONFIG_H

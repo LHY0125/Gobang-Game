@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+// ==================== 辅助函数声明 ====================
+static int compare_moves(const void *a, const void *b);
+
 /**
  * @brief 评估一个落子位置的综合得分（结合进攻和防守）
  * @param x 行坐标
@@ -158,53 +161,55 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
 
     int best_score = is_maximizing ? -1000000 : 1000000;
 
-    // 遍历所有可能落子位置
-    for (int i = 0; i < BOARD_SIZE; i++)
+    // 使用移动排序优化搜索效率
+    ScoredMove candidate_moves[BOARD_SIZE * BOARD_SIZE];
+    int move_count = generate_candidate_moves(candidate_moves, player);
+    
+    // 限制搜索的候选移动数量以提高性能
+    int max_candidates = (depth >= 3) ? 15 : 25; // 深度越大，候选移动越少
+    if (move_count > max_candidates)
     {
-        for (int j = 0; j < BOARD_SIZE; j++)
+        move_count = max_candidates;
+    }
+
+    // 遍历排序后的候选移动
+    for (int idx = 0; idx < move_count; idx++)
+    {
+        int i = candidate_moves[idx].x;
+        int j = candidate_moves[idx].y;
+
+        // 模拟当前玩家落子
+        board[i][j] = player;
+        step_count++;
+
+        // 递归搜索(切换玩家和搜索深度)
+        int current_score = dfs(i, j, (player == AI) ? PLAYER : AI, depth - 1, alpha, beta, !is_maximizing);
+
+        // 撤销落子
+        board[i][j] = EMPTY;
+        step_count--;
+
+        // 极大值玩家(AI)逻辑
+        if (is_maximizing)
         {
-            if (board[i][j] != EMPTY)
+            best_score = (current_score > best_score) ? current_score : best_score;
+            alpha = (best_score > alpha) ? best_score : alpha;
+            // α剪枝
+            if (beta <= alpha)
             {
-                continue;
-            }
-
-            // 模拟当前玩家落子
-            board[i][j] = player;
-            step_count++;
-
-            // 递归搜索(切换玩家和搜索深度)
-            int current_score = dfs(i, j, (player == AI) ? PLAYER : AI, depth - 1, alpha, beta, !is_maximizing);
-
-            // 撤销落子
-            board[i][j] = EMPTY;
-            step_count--;
-
-            // 极大值玩家(AI)逻辑
-            if (is_maximizing)
-            {
-                best_score = (current_score > best_score) ? current_score : best_score;
-                alpha = (best_score > alpha) ? best_score : alpha;
-                // α剪枝
-                if (beta <= alpha)
-                {
-                    break;
-                }
-            }
-            // 极小值玩家(人类)逻辑
-            else
-            {
-                best_score = (current_score < best_score) ? current_score : best_score;
-                beta = (best_score < beta) ? best_score : beta;
-                // β剪枝
-                if (beta <= alpha)
-                {
-                    break;
-                }
+                break;
             }
         }
-        if ((is_maximizing && best_score >= beta) || (!is_maximizing && best_score <= alpha))
+        // 极小值玩家(人类)逻辑
+        else
         {
-            break; // 提前退出外层循环
+            best_score = (current_score < best_score) ? current_score : best_score;
+            beta = (best_score < beta) ? best_score : beta;
+            // β剪枝
+            if (beta <= alpha)
+            {
+                break;
+            }
         }
     }
 
@@ -233,112 +238,352 @@ void ai_move(int depth)
         return;
     }
 
-    // 1. 首先检查是否需要阻止玩家的四子连棋或三子活棋
-    for (int i = 0; i < BOARD_SIZE; i++)
+    // 1. 使用增强的威胁检测系统
+    ScoredMove candidate_moves[BOARD_SIZE * BOARD_SIZE];
+    int move_count = generate_candidate_moves(candidate_moves, AI);
+    
+    // 首先检查是否有直接获胜的机会
+    for (int idx = 0; idx < move_count; idx++)
     {
-        for (int j = 0; j < BOARD_SIZE; j++)
+        int i = candidate_moves[idx].x;
+        int j = candidate_moves[idx].y;
+        
+        ThreatLevel ai_threat = detect_threat(i, j, AI);
+        if (ai_threat == THREAT_WIN)
         {
-            if (board[i][j] != EMPTY)
-            {
-                continue;
-            }
-
-            // 模拟玩家在此位置落子
-            board[i][j] = PLAYER;
-            bool need_block = false;
-
-            // 检查四个方向
-            for (int k = 0; k < 4; k++)
-            {
-                DirInfo info = count_specific_direction(i, j, direction[k][0], direction[k][1], PLAYER);
-
-                // 如果玩家能形成四子连棋且至少一端开放
-                if (info.continuous_chess >= 4 && (info.check_start || info.check_end))
-                {
-                    need_block = true;
-                    break;
-                }
-
-                // 如果玩家能形成三子活棋且两端开放
-                if (info.continuous_chess == 3 && info.check_start && info.check_end)
-                {
-                    need_block = true;
-                    break;
-                }
-            }
-
-            board[i][j] = EMPTY; // 恢复棋盘
-
-            if (need_block)
-            {
-                // 必须在此位置落子阻止
-                board[i][j] = AI;
-                steps[step_count++] = (Step){AI, i, j};
-                printf("AI落子(%d, %d)\n", i + 1, j + 1);
-                return;
-            }
+            // 直接获胜
+            board[i][j] = AI;
+            steps[step_count++] = (Step){AI, i, j};
+            printf("AI落子(%d, %d) - 获胜!\n", i + 1, j + 1);
+            return;
+        }
+    }
+    
+    // 检查是否需要阻止玩家的威胁
+    for (int idx = 0; idx < move_count; idx++)
+    {
+        int i = candidate_moves[idx].x;
+        int j = candidate_moves[idx].y;
+        
+        ThreatLevel player_threat = detect_threat(i, j, PLAYER);
+        if (player_threat >= THREAT_FOUR)
+        {
+            // 必须阻止玩家的四子威胁
+            board[i][j] = AI;
+            steps[step_count++] = (Step){AI, i, j};
+            printf("AI落子(%d, %d) - 防守!\n", i + 1, j + 1);
+            return;
+        }
+    }
+    
+    // 检查是否需要阻止玩家的活三威胁
+    for (int idx = 0; idx < move_count; idx++)
+    {
+        int i = candidate_moves[idx].x;
+        int j = candidate_moves[idx].y;
+        
+        ThreatLevel player_threat = detect_threat(i, j, PLAYER);
+        if (player_threat == THREAT_THREE)
+        {
+            // 阻止玩家的活三
+            board[i][j] = AI;
+            steps[step_count++] = (Step){AI, i, j};
+            printf("AI落子(%d, %d) - 阻止活三!\n", i + 1, j + 1);
+            return;
         }
     }
 
-    // 2. 如果没有需要立即阻止的情况，则正常评估
-    int best_score = -SEARCH_WIN_BONUS;
-    int best_x = -1, best_y = -1;
-
-    // 遍历棋盘所有空位
-    for (int i = 0; i < BOARD_SIZE; i++)
+    // 2. 寻找最佳进攻位置
+    // 优先考虑能形成威胁的位置
+    for (int idx = 0; idx < move_count; idx++)
     {
-        for (int j = 0; j < BOARD_SIZE; j++)
+        int i = candidate_moves[idx].x;
+        int j = candidate_moves[idx].y;
+        
+        ThreatLevel ai_threat = detect_threat(i, j, AI);
+        if (ai_threat >= THREAT_FOUR)
         {
-            if (board[i][j] != EMPTY)
-            {
-                continue;
-            }
-
-            // 只考虑已有棋子附近(AI_NEARBY_RANGE格范围内)
-            bool has_nearby_stone = false;
-            for (int di = -AI_NEARBY_RANGE; di <= AI_NEARBY_RANGE; di++)
-            {
-                for (int dj = -AI_NEARBY_RANGE; dj <= AI_NEARBY_RANGE; dj++)
-                {
-                    int ni = i + di;
-                    int nj = j + dj;
-                    if (ni >= 0 && ni < BOARD_SIZE && nj >= 0 && nj < BOARD_SIZE)
-                    {
-                        if (board[ni][nj] != EMPTY)
-                        {
-                            has_nearby_stone = true;
-                            break;
-                        }
-                    }
-                }
-                if (has_nearby_stone)
-                {
-                    break;
-                }
-            }
-            if (!has_nearby_stone && step_count > AI_SEARCH_RANGE_THRESHOLD)
-            {
-                continue;
-            }
-
-            // 使用评估函数获取综合得分
-            int current_score = evaluate_move(i, j);
-
-            // 更新最佳位置
-            if (current_score > best_score)
-            {
-                best_score = current_score;
-                best_x = i;
-                best_y = j;
-            }
+            // 形成四子威胁
+            board[i][j] = AI;
+            steps[step_count++] = (Step){AI, i, j};
+            printf("AI落子(%d, %d) - 形成威胁!\n", i + 1, j + 1);
+            return;
         }
     }
-
-    // 执行最佳落子
-    if (best_x != -1 && best_y != -1)
+    
+    // 寻找能形成活三的位置
+    for (int idx = 0; idx < move_count; idx++)
     {
+        int i = candidate_moves[idx].x;
+        int j = candidate_moves[idx].y;
+        
+        ThreatLevel ai_threat = detect_threat(i, j, AI);
+        if (ai_threat == THREAT_THREE)
+        {
+            // 形成活三
+            board[i][j] = AI;
+            steps[step_count++] = (Step){AI, i, j};
+            printf("AI落子(%d, %d) - 形成活三!\n", i + 1, j + 1);
+            return;
+        }
+    }
+    
+    // 3. 如果没有明显的威胁机会，选择评分最高的位置
+    if (move_count > 0)
+    {
+        // candidate_moves已经按分数排序，直接选择第一个
+        int best_x = candidate_moves[0].x;
+        int best_y = candidate_moves[0].y;
+        
         board[best_x][best_y] = AI;
         steps[step_count++] = (Step){AI, best_x, best_y};
-        printf("AI落子(%d, %d)\n", best_x + 1, best_y + 1);
+        printf("AI落子(%d, %d) - 最佳位置!\n", best_x + 1, best_y + 1);
     }
+    else
+    {
+        // 备用方案：如果没有候选移动，随机选择一个位置
+        for (int i = 0; i < BOARD_SIZE; i++)
+        {
+            for (int j = 0; j < BOARD_SIZE; j++)
+            {
+                if (board[i][j] == EMPTY)
+                {
+                    board[i][j] = AI;
+                    steps[step_count++] = (Step){AI, i, j};
+                    printf("AI落子(%d, %d) - 备用位置!\n", i + 1, j + 1);
+                    return;
+                }
+            }
+        }
+    }
+}
+
+// ==================== AI增强：辅助函数实现 ====================
+
+/**
+ * @brief 比较函数，用于移动排序（按分数降序）
+ */
+static int compare_moves(const void *a, const void *b)
+{
+    const ScoredMove *move_a = (const ScoredMove *)a;
+    const ScoredMove *move_b = (const ScoredMove *)b;
+    return move_b->score - move_a->score; // 降序排列
+}
+
+/**
+ * @brief 生成候选移动并按评估分数排序
+ * @param moves 存储候选移动的数组
+ * @param player 当前玩家
+ * @return 候选移动数量
+ */
+int generate_candidate_moves(ScoredMove *moves, int player)
+{
+    int count = 0;
+    
+    for (int i = 0; i < BOARD_SIZE; i++)
+    {
+        for (int j = 0; j < BOARD_SIZE; j++)
+        {
+            if (board[i][j] != EMPTY)
+            {
+                continue;
+            }
+            
+            // 只考虑有意义的位置（附近有棋子）
+            if (step_count > AI_SEARCH_RANGE_THRESHOLD && !is_near_stones(i, j))
+            {
+                continue;
+            }
+            
+            // 计算该位置的评估分数
+            moves[count].x = i;
+            moves[count].y = j;
+            
+            // 结合威胁检测和位置评估
+            ThreatLevel threat = detect_threat(i, j, player);
+            int base_score = evaluate_move(i, j);
+            
+            // 根据威胁等级调整分数
+            switch (threat)
+            {
+                case THREAT_WIN:
+                    moves[count].score = base_score + 10000;
+                    break;
+                case THREAT_FOUR:
+                    moves[count].score = base_score + 5000;
+                    break;
+                case THREAT_THREE:
+                    moves[count].score = base_score + 2000;
+                    break;
+                case THREAT_DOUBLE:
+                    moves[count].score = base_score + 1000;
+                    break;
+                case THREAT_POTENTIAL:
+                    moves[count].score = base_score + 500;
+                    break;
+                default:
+                    moves[count].score = base_score;
+                    break;
+            }
+            
+            count++;
+        }
+    }
+    
+    // 按分数降序排序
+    qsort(moves, count, sizeof(ScoredMove), compare_moves);
+    
+    return count;
+}
+
+/**
+ * @brief 检查位置是否在已有棋子附近
+ * @param x, y 要检查的位置
+ * @return 如果附近有棋子返回true
+ */
+bool is_near_stones(int x, int y)
+{
+    for (int di = -AI_NEARBY_RANGE; di <= AI_NEARBY_RANGE; di++)
+    {
+        for (int dj = -AI_NEARBY_RANGE; dj <= AI_NEARBY_RANGE; dj++)
+        {
+            int ni = x + di;
+            int nj = y + dj;
+            if (ni >= 0 && ni < BOARD_SIZE && nj >= 0 && nj < BOARD_SIZE)
+            {
+                if (board[ni][nj] != EMPTY)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief 检测在指定位置落子的威胁等级
+ * @param x, y 落子位置
+ * @param player 落子玩家
+ * @return 威胁等级
+ */
+ThreatLevel detect_threat(int x, int y, int player)
+{
+    // 模拟落子
+    board[x][y] = player;
+    
+    ThreatLevel max_threat = THREAT_NONE;
+    int threat_count = 0;
+    
+    // 检查四个方向
+    for (int k = 0; k < 4; k++)
+    {
+        DirInfo info = count_specific_direction(x, y, direction[k][0], direction[k][1], player);
+        ThreatLevel current_threat = THREAT_NONE;
+        
+        // 检查是否形成五子连珠（获胜）
+        if (info.continuous_chess >= 5)
+        {
+            current_threat = THREAT_WIN;
+        }
+        // 检查是否形成活四或冲四
+        else if (info.continuous_chess == 4)
+        {
+            if (info.check_start && info.check_end)
+            {
+                current_threat = THREAT_FOUR; // 活四
+            }
+            else if (info.check_start || info.check_end)
+            {
+                current_threat = THREAT_FOUR; // 冲四
+            }
+        }
+        // 检查是否形成活三
+        else if (info.continuous_chess == 3 && info.check_start && info.check_end)
+        {
+            current_threat = THREAT_THREE;
+        }
+        // 检查潜在威胁
+        else if (info.continuous_chess >= 2)
+        {
+            current_threat = THREAT_POTENTIAL;
+        }
+        
+        if (current_threat > max_threat)
+        {
+            max_threat = current_threat;
+        }
+        
+        if (current_threat >= THREAT_THREE)
+        {
+            threat_count++;
+        }
+    }
+    
+    // 恢复棋盘
+    board[x][y] = EMPTY;
+    
+    // 如果有多个威胁，提升威胁等级
+    if (threat_count >= 2 && max_threat >= THREAT_THREE)
+    {
+        max_threat = THREAT_DOUBLE;
+    }
+    
+    return max_threat;
+}
+
+/**
+ * @brief 计算指定方向的威胁数量
+ * @param x, y 起始位置
+ * @param dx, dy 方向向量
+ * @param player 玩家
+ * @return 威胁数量
+ */
+int count_threats_in_direction(int x, int y, int dx, int dy, int player)
+{
+    int threats = 0;
+    
+    // 向前搜索
+    for (int i = 1; i < 5; i++)
+    {
+        int nx = x + i * dx;
+        int ny = y + i * dy;
+        
+        if (nx < 0 || nx >= BOARD_SIZE || ny < 0 || ny >= BOARD_SIZE)
+        {
+            break;
+        }
+        
+        if (board[nx][ny] == player)
+        {
+            threats++;
+        }
+        else if (board[nx][ny] != EMPTY)
+        {
+            break;
+        }
+    }
+    
+    // 向后搜索
+    for (int i = 1; i < 5; i++)
+    {
+        int nx = x - i * dx;
+        int ny = y - i * dy;
+        
+        if (nx < 0 || nx >= BOARD_SIZE || ny < 0 || ny >= BOARD_SIZE)
+        {
+            break;
+        }
+        
+        if (board[nx][ny] == player)
+        {
+            threats++;
+        }
+        else if (board[nx][ny] != EMPTY)
+        {
+            break;
+        }
+    }
+    
+    return threats;
 }
