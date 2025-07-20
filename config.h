@@ -37,8 +37,8 @@
 #define DEFAULT_TIME_LIMIT 30              // 默认时间限制为30秒(内部存储)
 
 //---------- AI参数 ----------//
-#define DEFAULT_AI_DEPTH 5                 // 默认AI搜索深度（从3提升到5）
-#define DEFAULT_DEFENSE_COEFFICIENT 1.5    // 默认防守系数（从1.2提升到1.5）
+#define DEFAULT_AI_DEPTH 5                 // 默认AI搜索深度
+#define DEFAULT_DEFENSE_COEFFICIENT 1.5    // 默认防守系数
 
 //---------- 网络参数 ----------//
 #define DEFAULT_NETWORK_PORT 8888          // 默认网络端口

@@ -349,18 +349,18 @@ void run_ai_game()
     scores_calculated = 0;
 
     // AI对战模式
-    int AI_DEPTH = 3;
+    int AI_DEPTH = DEFAULT_AI_DEPTH;
     AI_DEPTH = get_integer_input("请选择AI难度(1~5), 数字越大越强，注意数字越大AI思考时间越长！):", 1, 5);
 
     /**
      * @brief AI的防守系数，系数越大越倾向于防守
-     * @note 1~1.2
-     *       2~1.3
-     *       3~1.4
-     *       4~1.5
-     *       5~1.6
+     * @note 1~1.5
+     *       2~1.6
+     *       3~1.7
+     *       4~1.8
+     *       5~1.9
      */
-    defense_coefficient = 1.2 + (AI_DEPTH - 1) * 0.1;
+    defense_coefficient = DEFAULT_DEFENSE_COEFFICIENT + (AI_DEPTH - 1) * 0.1;
 
     empty_board();
     int current_player = determine_first_player(PLAYER, AI);
