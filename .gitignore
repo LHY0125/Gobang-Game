@@ -40,3 +40,7 @@ Thumbs.db
 *.dll
 *.so
 *.dylib
+
+# 资源文件
+*.res
+*.ico
