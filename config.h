@@ -32,36 +32,36 @@
 #define INPUT_SURRENDER -4              // 认输
 
 //---------- 游戏设置默认值 ----------//
-#define DEFAULT_USE_FORBIDDEN_MOVES false  // 默认不启用禁手规则
-#define DEFAULT_USE_TIMER 0                // 默认不启用计时器
-#define DEFAULT_TIME_LIMIT 30              // 默认时间限制为30秒(内部存储)
+#define DEFAULT_USE_FORBIDDEN_MOVES false   // 默认不启用禁手规则
+#define DEFAULT_USE_TIMER 0                 // 默认不启用计时器
+#define DEFAULT_TIME_LIMIT 30               // 默认时间限制为30秒(内部存储)
 
 //---------- AI参数 ----------//
-#define DEFAULT_AI_DEPTH 5                 // 默认AI搜索深度
-#define DEFAULT_DEFENSE_COEFFICIENT 1.5    // 默认防守系数
+#define DEFAULT_AI_DEPTH 5              // 默认AI搜索深度
+#define DEFAULT_DEFENSE_COEFFICIENT 1.5 // 默认防守系数
 
 //---------- 网络参数 ----------//
-#define DEFAULT_NETWORK_PORT 8888          // 默认网络端口
-#define MIN_NETWORK_PORT 1024              // 最小网络端口
-#define MAX_NETWORK_PORT 65535             // 最大网络端口
-#define NETWORK_TIMEOUT_MS 5000            // 网络超时时间(毫秒)
-#define NETWORK_BUFFER_SIZE 1024           // 网络缓冲区大小
+#define DEFAULT_NETWORK_PORT 8888       // 默认网络端口
+#define MIN_NETWORK_PORT 1024           // 最小网络端口
+#define MAX_NETWORK_PORT 65535          // 最大网络端口
+#define NETWORK_TIMEOUT_MS 5000         // 网络超时时间(毫秒)
+#define NETWORK_BUFFER_SIZE 1024        // 网络缓冲区大小
 
 // 网络配置
-#define DEFAULT_PORT 8888                  // 默认端口（与DEFAULT_NETWORK_PORT保持一致）
-#define BUFFER_SIZE 1024                   // 缓冲区大小（与NETWORK_BUFFER_SIZE保持一致）
-#define MAX_IP_LENGTH 16                   // 最大IP地址长度
+#define DEFAULT_PORT 8888               // 默认端口（与DEFAULT_NETWORK_PORT保持一致）
+#define BUFFER_SIZE 1024                // 缓冲区大小（与NETWORK_BUFFER_SIZE保持一致）
+#define MAX_IP_LENGTH 16                // 最大IP地址长度
 
 // 网络消息类型
-#define MSG_MOVE 1                         // 落子消息
-#define MSG_CHAT 2                         // 聊天消息
-#define MSG_SURRENDER 3                    // 认输消息
-#define MSG_UNDO_REQUEST 4                 // 悔棋请求
-#define MSG_UNDO_RESPONSE 5                // 悔棋回应
-#define MSG_GAME_START 6                   // 游戏开始
-#define MSG_GAME_END 7                     // 游戏结束
-#define MSG_HEARTBEAT 8                    // 心跳包
-#define MSG_DISCONNECT 9                   // 断线消息
+#define MSG_MOVE 1                      // 落子消息
+#define MSG_CHAT 2                      // 聊天消息
+#define MSG_SURRENDER 3                 // 认输消息
+#define MSG_UNDO_REQUEST 4              // 悔棋请求
+#define MSG_UNDO_RESPONSE 5             // 悔棋回应
+#define MSG_GAME_START 6                // 游戏开始
+#define MSG_GAME_END 7                  // 游戏结束
+#define MSG_HEARTBEAT 8                 // 心跳包
+#define MSG_DISCONNECT 9                // 断线消息
 
 //---------- 评分参数 ----------//
 // 棋型评分 - 用于calculate_step_score函数

@@ -123,7 +123,7 @@ void display_settings_menu()
     printf("3. 计时器设置\n");
     printf("4. 网络配置设置\n");
     printf("5. AI难度设置\n");
-    printf("6. 返回主菜单\n");
+    printf("0. 返回主菜单\n");
     printf("==================\n");
 }
 

@@ -289,10 +289,8 @@ void display_game_scores(int game_mode)
  */
 void handle_save_record(int game_mode)
 {
-    int save_choice = 0;
     printf("===== 游戏结束 =====\n");
-    printf("是否保存游戏记录? (1-是, 0-否): ");
-    scanf("%d", &save_choice);
+    int save_choice = get_integer_input("是否保存游戏记录? (1-是, 0-否): ", 0, 1);
 
     if (save_choice == 1)
     {

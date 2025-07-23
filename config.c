@@ -146,27 +146,10 @@ void display_current_config()
 void config_board_size()
 {
     printf("\n当前棋盘大小: %d x %d\n", BOARD_SIZE, BOARD_SIZE);
-    printf("请输入新的棋盘大小 (%d-%d): ", MIN_BOARD_SIZE, MAX_BOARD_SIZE);
     
-    int new_size;
-    if (scanf("%d", &new_size) == 1)
-    {
-        if (new_size >= MIN_BOARD_SIZE && new_size <= MAX_BOARD_SIZE)
-        {
-            BOARD_SIZE = new_size;
-            printf("棋盘大小已设置为: %d x %d\n", BOARD_SIZE, BOARD_SIZE);
-        }
-        else
-        {
-            printf("无效的棋盘大小！\n");
-        }
-    }
-    else
-    {
-        printf("输入格式错误！\n");
-        // 清除输入缓冲区
-        while (getchar() != '\n');
-    }
+    int new_size = get_integer_input("请输入新的棋盘大小: ", MIN_BOARD_SIZE, MAX_BOARD_SIZE);
+    BOARD_SIZE = new_size;
+    printf("棋盘大小已设置为: %d x %d\n", BOARD_SIZE, BOARD_SIZE);
 }
 
 /**
@@ -175,19 +158,10 @@ void config_board_size()
 void config_forbidden_moves()
 {
     printf("\n当前禁手规则: %s\n", use_forbidden_moves ? "开启" : "关闭");
-    printf("是否启用禁手规则？(1=开启, 0=关闭): ");
     
-    int choice;
-    if (scanf("%d", &choice) == 1)
-    {
-        use_forbidden_moves = (choice != 0);
-        printf("禁手规则已%s\n", use_forbidden_moves ? "开启" : "关闭");
-    }
-    else
-    {
-        printf("输入格式错误！\n");
-        while (getchar() != '\n');
-    }
+    int choice = get_integer_input("是否启用禁手规则？(1=开启, 0=关闭): ", 0, 1);
+    use_forbidden_moves = (choice != 0);
+    printf("禁手规则已%s\n", use_forbidden_moves ? "开启" : "关闭");
 }
 
 /**
@@ -196,36 +170,18 @@ void config_forbidden_moves()
 void config_timer()
 {
     printf("\n当前计时器: %s\n", use_timer ? "开启" : "关闭");
-    printf("是否启用计时器？(1=开启, 0=关闭): ");
     
-    int choice;
-    if (scanf("%d", &choice) == 1)
+    int choice = get_integer_input("是否启用计时器？(1=开启, 0=关闭): ", 0, 1);
+    use_timer = choice;
+    if (use_timer)
     {
-        use_timer = choice;
-        if (use_timer)
-        {
-            printf("请输入时间限制(分钟): ");
-            int new_limit;
-            if (scanf("%d", &new_limit) == 1 && new_limit > 0)
-             {
-                 time_limit = new_limit * 60;  // 转换为秒数存储
-                 printf("计时器已开启，时间限制: %d 分钟\n", time_limit / 60);
-            }
-            else
-            {
-                printf("无效的时间限制！\n");
-                while (getchar() != '\n');
-            }
-        }
-        else
-        {
-            printf("计时器已关闭\n");
-        }
+        int new_limit = get_integer_input("请输入时间限制(分钟): ", 1, 999);
+        time_limit = new_limit * 60;  // 转换为秒数存储
+        printf("计时器已开启，时间限制: %d 分钟\n", time_limit / 60);
     }
     else
     {
-        printf("输入格式错误！\n");
-        while (getchar() != '\n');
+        printf("计时器已关闭\n");
     }
 }
 
@@ -238,45 +194,13 @@ void config_network()
     printf("当前网络端口: %d\n", network_port);
     printf("当前网络超时: %d 毫秒\n", network_timeout);
     
-    printf("\n请输入新的网络端口 (%d-%d): ", MIN_NETWORK_PORT, MAX_NETWORK_PORT);
-    int new_port;
-    if (scanf("%d", &new_port) == 1)
-    {
-        if (new_port >= MIN_NETWORK_PORT && new_port <= MAX_NETWORK_PORT)
-        {
-            network_port = new_port;
-            printf("网络端口已设置为: %d\n", network_port);
-        }
-        else
-        {
-            printf("无效的端口号！端口范围: %d-%d\n", MIN_NETWORK_PORT, MAX_NETWORK_PORT);
-        }
-    }
-    else
-    {
-        printf("输入格式错误！\n");
-        while (getchar() != '\n');
-    }
+    int new_port = get_integer_input("请输入新的网络端口: ", MIN_NETWORK_PORT, MAX_NETWORK_PORT);
+    network_port = new_port;
+    printf("网络端口已设置为: %d\n", network_port);
     
-    printf("\n请输入网络超时时间(毫秒, 建议1000-10000): ");
-    int new_timeout;
-    if (scanf("%d", &new_timeout) == 1)
-    {
-        if (new_timeout > 0)
-        {
-            network_timeout = new_timeout;
-            printf("网络超时已设置为: %d 毫秒\n", network_timeout);
-        }
-        else
-        {
-            printf("无效的超时时间！\n");
-        }
-    }
-    else
-    {
-        printf("输入格式错误！\n");
-        while (getchar() != '\n');
-    }
+    int new_timeout = get_integer_input("请输入网络超时时间(毫秒, 建议1000-10000): ", 1000, 60000);
+    network_timeout = new_timeout;
+    printf("网络超时已设置为: %d 毫秒\n", network_timeout);
 }
 
 /**
@@ -292,14 +216,7 @@ void config_management_menu()
         display_settings_menu();
         display_current_config();
         
-        printf("请选择操作: ");
-        if (scanf("%d", &choice) != 1)
-        {
-            printf("输入格式错误！\n");
-            while (getchar() != '\n');
-            pause_for_input("按任意键继续...");
-            continue;
-        }
+        choice = get_integer_input("请选择操作(0-5): ", 0, 5);
         
         switch (choice)
         {
@@ -318,7 +235,7 @@ void config_management_menu()
             case 5:
                 printf("AI难度设置功能开发中...\n");
                 break;
-            case 6:
+            case 0:
                 save_game_config();
                 return;
             default:
