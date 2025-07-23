@@ -4,6 +4,7 @@
  * @note 本文件定义了初始化游戏棋盘的相关函数和全局变量。
  * 它负责设置游戏的初始状态，包括棋盘大小、玩家标识、游戏规则等。
  */
+
 #ifndef INIT_BOARD_H
 #define INIT_BOARD_H
 

@@ -6,6 +6,7 @@
  * 2. 评估指定位置的价值
  * 3. 评估棋盘价值
  */
+
 #ifndef AI_H
 #define AI_H
 

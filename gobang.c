@@ -1,3 +1,10 @@
+/**
+ * @file gobang.c
+ * @brief 五子棋游戏源文件
+ * @note 本文件定义了五子棋游戏的主要数据结构、函数和全局变量。
+ * 它包含了游戏棋盘的表示、玩家操作、规则检查以及AI决策等功能。
+ */
+
 #include "game_mode.h"
 #include "init_board.h"
 #include "gobang.h"

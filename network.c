@@ -2,10 +2,6 @@
  * @file network.c
  * @author 刘航宇(3364451258@qq.com、15236416560@163.com、lhy3364451258@outlook.com)
  * @brief 五子棋网络对战模块实现
- * @version 6.0
- * @date 2025-07-10
- *
- * @copyright Copyright (c) 2025
  */
 
 #include "network.h"

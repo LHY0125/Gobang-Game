@@ -1,3 +1,10 @@
+/**
+ * @file ui.c
+ * @brief
+ * @note 本文件定义了用户界面相关的函数和数据结构。
+ * 它负责处理用户输入、显示游戏界面、提示信息等与用户交互的功能。
+ */
+
 #include "ui.h"
 #include "gobang.h"
 #include "config.h"

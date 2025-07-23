@@ -1,3 +1,13 @@
+/**
+ * @file game_mode.c
+ * @brief 五子棋游戏框架源文件
+ * @note 本文件定义了五子棋游戏的四种主要模式：
+ * 1. AI对战模式
+ * 2. 双人对战模式
+ * 3. 网络对战模式
+ * 4. 复盘模式
+ */
+
 #include "game_mode.h"
 #include "init_board.h"
 #include "gobang.h"

@@ -1,3 +1,9 @@
+/**
+ * @file config.c
+ * @brief 五子棋游戏参数配置源文件
+ * @note 本文件集中定义了五子棋游戏的所有参数配置，便于统一管理和修改
+ */
+
 #include "config.h"
 #include "ui.h"
 #include "game_mode.h"

@@ -1,3 +1,12 @@
+/**
+ * @file ai.c
+ * @note 本文件定义了AI模块的函数和变量
+ * @note 包括：
+ * 1. 评估一个落子位置的综合得分（结合进攻和防守）
+ * 2. 评估指定位置的价值
+ * 3. 评估棋盘价值
+ */
+
 #include "gobang.h"
 #include "ai.h"
 #include "config.h"

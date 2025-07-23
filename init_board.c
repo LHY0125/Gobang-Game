@@ -1,3 +1,10 @@
+/**
+ * @file init_board.c
+ * @brief 初始化游戏棋盘源文件
+ * @note 本文件定义了初始化游戏棋盘的相关函数。
+ * 它负责设置游戏的初始状态，包括棋盘大小、玩家标识、游戏规则等。
+ */
+
 #include "init_board.h"
 #include "gobang.h"
 #include "game_mode.h"
