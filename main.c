@@ -1,3 +1,15 @@
+/**
+ * @file main.c
+ * @brief 五子棋游戏主函数文件
+ * @note 本文件包含了游戏的主循环、模式选择和游戏初始化等功能
+ * @brief 将以下指令复制到powershell
+ * gcc -std=c17 -o gobang.exe *.c -lws2_32
+   .\gobang.exe 
+ * @detail gcc 为编译器，添加了-lws2_32链接Windows网络库
+ * @detail 编译指令：gcc -std=c17 -o gobang.exe *.c -lws2_32
+ * @detail 运行指令：.\gobang.exe
+ */
+
 #include "game_mode.h"
 #include "ui.h"
 #include "config.h"
@@ -6,13 +18,6 @@
 #include <windows.h>
 #include <direct.h>
 #endif
-
-/**
- * @brief 将指令复制到powershell
- * gcc -std=c17 -o gobang.exe *.c -lws2_32
-   .\gobang.exe
- * gcc 为编译器，添加了-lws2_32链接Windows网络库
- */
 
 int main(int argc, char *argv[])
 {
