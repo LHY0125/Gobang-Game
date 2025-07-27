@@ -3,7 +3,7 @@
 
 ; Basic Information
 Name "Gobang Game"
-OutFile "Gobang_Setup.exe"
+OutFile "..\\Gobang_Setup.exe"
 InstallDir "$PROGRAMFILES\Gobang"
 RequestExecutionLevel admin
 
@@ -22,41 +22,13 @@ RequestExecutionLevel admin
 Section "Main"
     SetOutPath "$INSTDIR"
     
-    ; Copy all C source files
-    File "ai.c"
-    File "config.c"
-    File "game_mode.c"
-    File "globals.c"
-    File "gobang.c"
-    File "init_board.c"
-    File "main.c"
-    File "network.c"
-    File "record.c"
-    File "ui.c"
-    
-    ; Copy all header files
-    File "ai.h"
-    File "config.h"
-    File "game_mode.h"
-    File "globals.h"
-    File "gobang.h"
-    File "init_board.h"
-    File "network.h"
-    File "record.h"
-    File "type.h"
-    File "ui.h"
-    
     ; Copy configuration and documentation files
-    File "gobang_config.ini"
-    File "README.md"
-    
-    ; Copy directories
-    File /r "MD"
-    File /r "TXT"
+    File "..\\gobang_config.ini"
+    File "..\\README.md"
     
     ; Copy executable file if exists
-    IfFileExists "gobang.exe" 0 +2
-    File "gobang.exe"
+    IfFileExists "..\\gobang.exe" 0 +2
+    File "..\\gobang.exe"
     
     ; Create program group directory
     CreateDirectory "$SMPROGRAMS\Gobang"

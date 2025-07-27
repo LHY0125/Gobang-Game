@@ -8,8 +8,8 @@
  * @detail gcc 为编译器，添加了-lws2_32链接Windows网络库
  * @detail 编译指令：gcc -std=c17 -o gobang.exe *.c -lws2_32
  * @detail 运行指令：.\gobang.exe
- * @brief & "D:\Program Files (x86)\NSIS\makensis.exe"  "d:\Code\doing_exercises\gobang\installer.nsi"
- * @detail 安装指令：makensis installer.nsi
+ * @brief & "D:\Program Files (x86)\NSIS\makensis.exe" "installer\\installer.nsi"
+ * @brief & "D:\Program Files (x86)\Inno Setup 6\iscc.exe" installer\\setup.iss 
  */
 
 #include "game_mode.h"

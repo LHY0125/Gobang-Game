@@ -44,3 +44,5 @@ Thumbs.db
 # 资源文件
 *.res
 *.ico
+
+# 打包文件
