@@ -4,10 +4,12 @@
  * @note 本文件包含了游戏的主循环、模式选择和游戏初始化等功能
  * @brief 将以下指令复制到powershell
  * gcc -std=c17 -o gobang.exe *.c -lws2_32
-   .\gobang.exe 
+   .\gobang.exe
  * @detail gcc 为编译器，添加了-lws2_32链接Windows网络库
  * @detail 编译指令：gcc -std=c17 -o gobang.exe *.c -lws2_32
  * @detail 运行指令：.\gobang.exe
+ * @brief & "D:\Program Files (x86)\NSIS\makensis.exe"  "d:\Code\doing_exercises\gobang\installer.nsi"
+ * @detail 安装指令：makensis installer.nsi
  */
 
 #include "game_mode.h"
