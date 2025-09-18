@@ -20,14 +20,16 @@ WizardStyle=modern
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-; 可执行文件
-Source: "..\\gobang.exe"; DestDir: "{app}"; Flags: ignoreversion
+; GUI可执行文件
+Source: "..\\gobang_gui.exe"; DestDir: "{app}"; Flags: ignoreversion
+
+; SDL3动态库
+Source: "..\\SDL3.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; 配置文件
 Source: "..\\gobang_config.ini"; DestDir: "{app}"; Flags: ignoreversion
@@ -43,15 +45,11 @@ Source: "..\\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Name: "{app}\records"
 
 [Icons]
-Name: "{group}\Gobang Game"; Filename: "{app}\gobang.exe"; Check: FileExists(ExpandConstant('{app}\gobang.exe'))
+Name: "{group}\Gobang Game"; Filename: "{app}\gobang_gui.exe"
 Name: "{group}\{cm:UninstallProgram,Gobang Game}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\Gobang Game"; Filename: "{app}\gobang.exe"; Tasks: desktopicon; Check: FileExists(ExpandConstant('{app}\gobang.exe'))
+Name: "{autodesktop}\Gobang Game"; Filename: "{app}\gobang_gui.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\gobang.exe"; Description: "{cm:LaunchProgram,Gobang Game}"; Flags: nowait postinstall skipifsilent; Check: FileExists(ExpandConstant('{app}\gobang.exe'))
+Filename: "{app}\gobang_gui.exe"; Description: "{cm:LaunchProgram,Gobang Game}"; Flags: nowait postinstall skipifsilent
 
-[Code]
-function FileExists(const FileName: string): Boolean;
-begin
-  Result := FileExists(FileName);
-end;
+

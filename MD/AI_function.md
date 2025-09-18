@@ -1,7 +1,7 @@
-# 🧠 五子棋AI实现详解
+# 🧠 五子棋AI实现详解 (v8.0)
 
 ## 📜 算法概述
-本五子棋AI采用α-β剪枝优化的极小极大算法，结合专业的棋型评估系统和多层次的威胁检测机制。支持人机对战、双人对战和网络对战多种模式。
+本五子棋AI采用α-β剪枝优化的极小极大算法，结合专业的棋型评估系统和多层次的威胁检测机制。v8.0版本新增SDL3图形化界面支持，提供可视化AI决策过程和双版本架构（控制台+GUI）。支持人机对战、双人对战和网络对战多种模式。
 
 ```mermaid
 graph TD
@@ -46,6 +46,16 @@ typedef struct {
 void network_ai_move(int depth, int player_id);
 // 同步AI决策到网络对手
 void sync_ai_decision(int x, int y);
+```
+
+### 🎨 GUI界面AI支持 (v8.0新增)
+```c
+// GUI模式下的AI可视化决策
+void gui_ai_move_with_animation(int x, int y);
+// 显示AI思考过程
+void show_ai_thinking_process(SDL_Renderer* renderer);
+// AI决策结果的图形化展示
+void render_ai_decision_info(SDL_Renderer* renderer, int score, int depth);
 ```
 
 ## ⚙️ 核心函数

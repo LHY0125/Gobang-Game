@@ -26,17 +26,21 @@ Section "Main"
     File "..\\gobang_config.ini"
     File "..\\README.md"
     
-    ; Copy executable file if exists
-    IfFileExists "..\\gobang.exe" 0 +2
-    File "..\\gobang.exe"
+    ; Copy GUI executable file if exists
+    IfFileExists "..\\gobang_gui.exe" 0 +2
+    File "..\\gobang_gui.exe"
+    
+    ; Copy SDL3 library if exists
+    IfFileExists "..\\SDL3.dll" 0 +2
+    File "..\\SDL3.dll"
     
     ; Create program group directory
     CreateDirectory "$SMPROGRAMS\Gobang"
     
     ; Create shortcuts (only if executable exists)
-    IfFileExists "$INSTDIR\gobang.exe" 0 +3
-    CreateShortCut "$DESKTOP\Gobang.lnk" "$INSTDIR\gobang.exe"
-    CreateShortCut "$SMPROGRAMS\Gobang\Gobang.lnk" "$INSTDIR\gobang.exe"
+    IfFileExists "$INSTDIR\gobang_gui.exe" 0 +3
+    CreateShortCut "$DESKTOP\Gobang.lnk" "$INSTDIR\gobang_gui.exe"
+    CreateShortCut "$SMPROGRAMS\Gobang\Gobang.lnk" "$INSTDIR\gobang_gui.exe"
     
     ; Write uninstall information
     WriteUninstaller "$INSTDIR\Uninstall.exe"
