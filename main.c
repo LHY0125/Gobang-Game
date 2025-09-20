@@ -5,14 +5,14 @@
  * @brief 将以下指令复制到powershell
  *
  * !控制台版本编译：
- * gcc -std=c17 -o gobang.exe *.c -lws2_32
-   .\gobang.exe
+ * gcc -std=c17 -o gobang_console.exe *.c -lws2_32
+   .\gobang_console.exe
  *
  * !图形化版本编译（需要SDL3）：
  * gcc -std=c17 -o gobang_gui.exe *.c -ID:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\include -LD:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\lib -lSDL3 -lws2_32
    copy "D:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\bin\SDL3.dll" .
    .\gobang_gui.exe
- * 
+ *
  * @detail gcc 为编译器，添加了-lws2_32链接Windows网络库
  * @detail SDL3 的路径：D:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32
  * @brief & "D:\Program Files (x86)\NSIS\makensis.exe" "installer\\installer.nsi"

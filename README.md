@@ -2,12 +2,20 @@
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Version](https://img.shields.io/badge/version-v8.0-blue)
+![Version](https://img.shields.io/badge/version-v8.2-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
 
-> 🎯 **最新版本 v8.0** - GUI图形化界面更新，实现SDL3图形化界面、现代化用户体验、可视化棋盘操作等重大功能升级
+> 🎯 **最新版本 v8.2** - 编译脚本优化更新，完善批处理脚本功能、增强用户编译体验、优化开发工作流程
 
 ## 📋 大版本更新
+
+### v8.2 (2025-01-20) - 编译脚本优化更新
+- 🔧 **交互式编译脚本** - compile_gui.bat支持选择编译控制台或GUI版本
+- 📋 **用户友好界面** - 提供清晰的编译选项菜单和操作指引
+- ⚡ **编译流程优化** - 统一编译参数，解决SDL3依赖问题
+- 🌐 **多语言支持** - 英文界面避免编码问题，确保兼容性
+- ✅ **错误处理完善** - 添加无效输入处理和详细错误提示
+- 🎯 **开发体验提升** - 简化编译流程，提高开发效率
 
 ### v8.0 (2025-01-18) - GUI图形化界面更新
 - 🖥️ **SDL3图形化界面** - 全新的现代化图形用户界面
