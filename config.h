@@ -116,7 +116,23 @@
 #define TIME_WEIGHT_FACTOR 0.5          // 时间权重因子
 #define WIN_BONUS 2000                  // 胜利奖励分数
 
-// 文件路径参数
+//---------- GUI界面参数 ----------//
+// 窗口和棋盘配置
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 600
+#define BOARD_OFFSET_X 50
+#define BOARD_OFFSET_Y 50
+#define CELL_SIZE 30
+#define STONE_RADIUS 12
+
+// 颜色定义
+#define GUI_COLOR_BACKGROUND {240, 217, 181, 255}
+#define GUI_COLOR_BOARD_LINE {0, 0, 0, 255}
+#define GUI_COLOR_BLACK_STONE {0, 0, 0, 255}
+#define GUI_COLOR_WHITE_STONE {255, 255, 255, 255}
+#define GUI_COLOR_STONE_BORDER {100, 100, 100, 255}
+
+//---------- 文件路径参数 ----------//
 #define RECORDS_DIR "records"           // 记录文件目录
 #define CONFIG_FILE "gobang_config.ini" // 配置文件路径
 #define MAX_PATH_LENGTH 256             // 最大路径长度

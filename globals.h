@@ -11,6 +11,7 @@
 #include "gobang.h"
 #include "network.h"
 #include <stdbool.h>
+#include <SDL3/SDL.h>
 
 // ==================== 游戏核心变量 ====================
 extern int BOARD_SIZE;                              // 当前实际使用的棋盘尺寸
@@ -31,6 +32,14 @@ extern double defense_coefficient;                  // 防守系数
 
 // ==================== 网络相关变量 ====================
 extern NetworkGameState network_state;              // 网络游戏状态
+
+// ==================== GUI相关变量 ====================
+extern SDL_Window* window;                           // SDL窗口指针
+extern SDL_Renderer* renderer;                      // SDL渲染器指针
+extern int gui_running;                              // GUI运行状态标志
+extern int current_player_gui;                       // GUI当前玩家
+extern int game_over;                                // 游戏结束标志
+extern char status_message[256];                    // 状态消息
 
 // ==================== 记录相关变量 ====================
 extern int player1_final_score;                     // 玩家1最终得分
