@@ -16,6 +16,7 @@
 #include "config.h"
 #include "network.h"
 #include "ui.h"
+#include "gui.h"
 #include "globals.h"
 #include <stdio.h>
 #include <time.h>
@@ -704,6 +705,51 @@ void run_network_game()
     // 清理网络连接
     disconnect_network();
     pause_for_input("按任意键返回主菜单...");
+}
+
+/**
+ * @brief 显示游戏规则
+ */
+void show_game_rules()
+{
+    clear_screen();
+    display_game_rules();
+    pause_for_input("\n按任意键返回主菜单...");
+}
+
+/**
+ * @brief 显示关于游戏信息
+ */
+void show_about_game()
+{
+    clear_screen();
+    display_about();
+    pause_for_input("\n按任意键返回主菜单...");
+}
+
+/**
+ * @brief 启动图形化界面
+ */
+void run_gui_mode()
+{
+    if (init_gui() == 0)
+    {
+        printf("启动图形化界面...\n");
+        printf("图形化界面已启动，窗口应该可见\n");
+        printf("如果看不到窗口，请检查任务栏或按Alt+Tab切换\n");
+        while (gui_running && handle_events())
+        {
+            render_game();
+            SDL_Delay(16); // 约60FPS
+        }
+        printf("退出图形化界面\n");
+        cleanup_gui();
+    }
+    else
+    {
+        printf("图形化界面启动失败！请检查SDL3库是否正确安装。\n");
+        pause_for_input("按任意键返回主菜单...");
+    }
 }
 
 /**

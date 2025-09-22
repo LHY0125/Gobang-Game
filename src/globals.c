@@ -31,14 +31,14 @@ NetworkGameState network_state = {0};                          // 网络游戏�
 
 // ==================== GUI相关变量定义 ====================
 SDL_Window* window = NULL;                                     // SDL窗口指针
-SDL_Renderer* renderer = NULL;                                // SDL渲染器指针
+SDL_Renderer* renderer = NULL;                                 // SDL渲染器指针
 int gui_running = 1;                                           // GUI运行状态标志
 int current_player_gui = PLAYER;                               // GUI当前玩家
 int game_over = 0;                                             // 游戏结束标志
-char status_message[256] = "五子棋游戏 - 黑子先行";              // 状态消息
+char status_message[256] = "五子棋游戏 - 黑子先行";               // 状态消息
 
 // ==================== 记录相关变量定义 ====================
-int player1_final_score = 0;                                  // 玩家1最终得分
-int player2_final_score = 0;                                  // 玩家2最终得分
+int player1_final_score = 0;                                   // 玩家1最终得分
+int player2_final_score = 0;                                   // 玩家2最终得分
 int scores_calculated = 0;                                     // 评分计算标志
-char winner_info[50] = "平局或未完成";                          // 存储胜负信息
+char winner_info[50] = "平局或未完成";                           // 存储胜负信息

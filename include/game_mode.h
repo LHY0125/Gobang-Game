@@ -86,8 +86,23 @@ bool handle_network_player_turn(int current_player, bool is_local_turn);
 /**
  * @brief 网络游戏主循环
  * @return true 游戏正常结束
- * @return false 网络错误或异常退出
+ * @return false 网络错误
  */
 bool network_game_loop();
+
+/**
+ * @brief 显示游戏规则
+ */
+void show_game_rules();
+
+/**
+ * @brief 显示关于游戏信息
+ */
+void show_about_game();
+
+/**
+ * @brief 启动图形化界面
+ */
+void run_gui_mode();
 
 #endif // GAME_MODE_H

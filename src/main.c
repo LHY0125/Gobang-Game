@@ -21,7 +21,6 @@
 
 #include "game_mode.h"
 #include "ui.h"
-#include "gui.h"
 #include "config.h"
 #include <stdio.h>
 #ifdef _WIN32
@@ -73,36 +72,15 @@ int main(int argc, char *argv[])
             break;
         // 6. 游戏规则
         case 6:
-            clear_screen();
-            display_game_rules();
-            pause_for_input("\n按任意键返回主菜单...");
+            show_game_rules();
             break;
         // 7. 关于游戏
         case 7:
-            clear_screen();
-            display_about();
-            pause_for_input("\n按任意键返回主菜单...");
+            show_about_game();
             break;
         // 8. 图形化界面
         case 8:
-            if (init_gui() == 0)
-            {
-                printf("启动图形化界面...\n");
-                printf("图形化界面已启动，窗口应该可见\n");
-                printf("如果看不到窗口，请检查任务栏或按Alt+Tab切换\n");
-                while (gui_running && handle_events())
-                {
-                    render_game();
-                    SDL_Delay(16); // 约60FPS
-                }
-                printf("退出图形化界面\n");
-                cleanup_gui();
-            }
-            else
-            {
-                printf("图形化界面启动失败！请检查SDL3库是否正确安装。\n");
-                pause_for_input("按任意键返回主菜单...");
-            }
+            run_gui_mode();
             break;
         // 0. 退出游戏
         case 0:

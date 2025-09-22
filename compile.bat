@@ -21,7 +21,7 @@ exit /b 1
 echo.
 echo Compiling console version...
 echo.
-gcc -std=c17 -o gobang_console.exe *.c -ID:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\include -LD:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\lib -lSDL3 -lws2_32
+gcc -std=c17 -o gobang_console.exe src/*.c -Iinclude -ID:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\include -LD:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\lib -lSDL3 -lws2_32
 if %ERRORLEVEL% EQU 0 (
     echo.
     echo Compilation successful! Generated: gobang_console.exe
@@ -44,7 +44,7 @@ if not exist "D:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\include" (
     echo Please ensure SDL3 is extracted to: D:\settings\SDL\SDL3-3.2.22\
     goto :end
 )
-gcc -std=c17 -o gobang_gui.exe *.c -ID:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\include -LD:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\lib -lSDL3 -lws2_32
+gcc -std=c17 -o gobang_gui.exe src/*.c -Iinclude -ID:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\include -LD:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\lib -lSDL3 -lws2_32
 if %ERRORLEVEL% EQU 0 (
     echo.
     echo Compilation successful! Generated: gobang_gui.exe
@@ -68,7 +68,7 @@ echo.
 echo Compiling all versions...
 echo.
 echo [1/2] Compiling console version...
-gcc -std=c17 -o gobang_console.exe *.c -ID:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\include -LD:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\lib -lSDL3 -lws2_32
+gcc -std=c17 -o gobang_console.exe src/*.c -Iinclude -ID:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\include -LD:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\lib -lSDL3 -lws2_32
 if %ERRORLEVEL% EQU 0 (
     echo Console version compilation successful!
 ) else (
@@ -80,7 +80,7 @@ if not exist "D:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\include" (
     echo Error: SDL3 library not found! Skipping GUI version compilation
     goto :end
 )
-gcc -std=c17 -o gobang_gui.exe *.c -ID:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\include -LD:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\lib -lSDL3 -lws2_32
+gcc -std=c17 -o gobang_gui.exe src/*.c -Iinclude -ID:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\include -LD:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\lib -lSDL3 -lws2_32
 if %ERRORLEVEL% EQU 0 (
     echo GUI version compilation successful!
     copy "D:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\bin\SDL3.dll" . >nul 2>&1
