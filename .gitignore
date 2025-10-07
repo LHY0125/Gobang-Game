@@ -48,3 +48,6 @@ Thumbs.db
 
 # 打包文件
 dist/
+
+# 临时游戏存档
+*.csv
