@@ -50,7 +50,7 @@
 void review_process(int game_mode)
 {
     int review_choice = get_integer_input("是否要复盘本局比赛? (1-是, 0-否): ", 0, 1);
-    
+
     // 如果评分尚未计算，则计算评分
     if (!scores_calculated)
     {
@@ -61,7 +61,7 @@ void review_process(int game_mode)
         // 评分已从文件中加载，直接使用
         printf("从记录文件中加载评分数据\n");
     }
-    
+
     if (review_choice == 1)
     {
         printf("\n===== 复盘记录(总步数：%d) =====\n", step_count);
@@ -115,7 +115,7 @@ void review_process(int game_mode)
             for (int col = 0; col < BOARD_SIZE; col++)
             {
                 printf("%2d", col + 1); // 列号
-            }           
+            }
             printf("\n");
 
             for (int row = 0; row < BOARD_SIZE; row++)
@@ -147,7 +147,7 @@ void review_process(int game_mode)
                     ; // 等待回车
             }
         }
-        
+
         // 显示胜负结果（直接使用文件中的信息）
         printf("\n===== 对局结果 =====");
         if (strcmp(winner_info, "玩家获胜") == 0)
@@ -170,7 +170,7 @@ void review_process(int game_mode)
         {
             printf("\n?? 对局平局或未完成\n");
         }
-        
+
         printf("\n复盘结束！按Enter查看评分...");
         getchar(); // 等待用户按键
     }
@@ -195,7 +195,7 @@ void calculate_game_scores()
     {
         // 计算时间权重因子：步数越靠后，权重越大
         double time_weight = 1.0 + (double)i / step_count * TIME_WEIGHT_FACTOR; // 最后的步骤权重是开始步骤的(1+TIME_WEIGHT_FACTOR)倍
-        
+
         if (steps[i].player == PLAYER || steps[i].player == PLAYER1)
         {
             player1_final_score += (int)(calculate_step_score(steps[i].x, steps[i].y, steps[i].player) * time_weight);
@@ -205,7 +205,7 @@ void calculate_game_scores()
             player2_final_score += (int)(calculate_step_score(steps[i].x, steps[i].y, steps[i].player) * time_weight);
         }
     }
-    
+
     // 胜负加权：获胜方获得额外的评分奖励
     if (step_count > 0)
     {
@@ -223,7 +223,7 @@ void calculate_game_scores()
             }
         }
     }
-    
+
     scores_calculated = 1; // 标记评分已计算
 }
 
@@ -421,14 +421,14 @@ int save_game_to_file(const char *filename, int game_mode)
             }
         }
     }
-    
+
     // 写入CSV文件头部
     if (fprintf(file, "游戏模式,棋盘大小,玩家1得分,玩家2得分,对局结果\n%d,%d,%d,%d,%s\n\n", game_mode, BOARD_SIZE, player1_final_score, player2_final_score, winner_info) < 0)
     {
         fclose(file);
         return 3; // 文件写入失败
     }
-    
+
     // 写入CSV表头
     if (fprintf(file, "步数,玩家,行坐标,列坐标\n") < 0)
     {
@@ -439,7 +439,7 @@ int save_game_to_file(const char *filename, int game_mode)
     // 写入所有落子步骤（CSV格式）
     for (int i = 0; i < step_count; i++)
     {
-        if (fprintf(file, "%d,%d,%d,%d\n", i+1, steps[i].player, steps[i].x+1, steps[i].y+1) < 0)
+        if (fprintf(file, "%d,%d,%d,%d\n", i + 1, steps[i].player, steps[i].x + 1, steps[i].y + 1) < 0)
         {
             fclose(file);
             return 3; // 文件写入失败
@@ -481,10 +481,10 @@ int load_game_from_file(const char *filename)
 
     // 读取游戏模式、棋盘大小和评分结果
     int game_mode, size;
-    
+
     // 尝试读取新格式（包含胜负信息）
     int read_count = fscanf(file, "%d,%d,%d,%d,%49s", &game_mode, &size, &player1_final_score, &player2_final_score, winner_info);
-    
+
     if (read_count == 4)
     {
         // 旧格式文件，没有胜负信息
@@ -496,7 +496,7 @@ int load_game_from_file(const char *filename)
         fclose(file);
         return 0;
     }
-    
+
     if (game_mode != GAME_MODE_AI && game_mode != GAME_MODE_PVP && game_mode != GAME_MODE_NETWORK)
     {
         fclose(file);
@@ -507,7 +507,7 @@ int load_game_from_file(const char *filename)
         fclose(file);
         return false;
     }
-    
+
     // 设置评分已计算标志
     scores_calculated = 1;
 

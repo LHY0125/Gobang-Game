@@ -265,12 +265,12 @@ int calculate_step_score(int x, int y, int player)
             break;
         }
     }
-    
+
     // 位置奖励：越靠近中心分数越高
     int center_x = BOARD_SIZE / 2;
     int center_y = BOARD_SIZE / 2;
-    int distance = abs(x - center_x) + abs(y - center_y); // 曼哈顿距离
+    int distance = abs(x - center_x) + abs(y - center_y);                 // 曼哈顿距离
     int position_bonus = POSITION_BONUS_FACTOR * (BOARD_SIZE - distance); // 距离中心越近奖励越高
-    
+
     return step_score + position_bonus;
 }

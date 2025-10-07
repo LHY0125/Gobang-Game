@@ -47,3 +47,4 @@ Thumbs.db
 *.ico
 
 # 打包文件
+dist/

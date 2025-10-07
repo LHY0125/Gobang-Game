@@ -69,7 +69,7 @@ int evaluate_pos(int x, int y, int player)
         // 直接形成五连珠为必胜
         if (info.continuous_chess >= 5)
         {
-            board[x][y] = original; // 还原棋盘
+            board[x][y] = original;  // 还原棋盘
             return SEARCH_WIN_BONUS; // 返回最大分
         }
 
@@ -130,8 +130,8 @@ int evaluate_pos(int x, int y, int player)
     // 位置奖励：越靠近中心分数越高
     int center_x = BOARD_SIZE / 2;
     int center_y = BOARD_SIZE / 2;
-    int distance = abs(x - center_x) + abs(y - center_y); // 曼哈顿距离
-    int position_bonus = AI_POSITION_BONUS_FACTOR * (BOARD_SIZE - distance);    // 距离中心越近奖励越高
+    int distance = abs(x - center_x) + abs(y - center_y);                    // 曼哈顿距离
+    int position_bonus = AI_POSITION_BONUS_FACTOR * (BOARD_SIZE - distance); // 距离中心越近奖励越高
 
     board[x][y] = original;              // 还原棋盘状态
     return total_score + position_bonus; // 返回总评估分
@@ -173,7 +173,7 @@ int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximi
     // 使用移动排序优化搜索效率
     ScoredMove candidate_moves[BOARD_SIZE * BOARD_SIZE];
     int move_count = generate_candidate_moves(candidate_moves, player);
-    
+
     // 限制搜索的候选移动数量以提高性能
     int max_candidates = (depth >= 3) ? 15 : 25; // 深度越大，候选移动越少
     if (move_count > max_candidates)
@@ -250,13 +250,13 @@ void ai_move(int depth)
     // 1. 使用增强的威胁检测系统
     ScoredMove candidate_moves[BOARD_SIZE * BOARD_SIZE];
     int move_count = generate_candidate_moves(candidate_moves, AI);
-    
+
     // 首先检查是否有直接获胜的机会
     for (int idx = 0; idx < move_count; idx++)
     {
         int i = candidate_moves[idx].x;
         int j = candidate_moves[idx].y;
-        
+
         ThreatLevel ai_threat = detect_threat(i, j, AI);
         if (ai_threat == THREAT_WIN)
         {
@@ -267,13 +267,13 @@ void ai_move(int depth)
             return;
         }
     }
-    
+
     // 检查是否需要阻止玩家的威胁
     for (int idx = 0; idx < move_count; idx++)
     {
         int i = candidate_moves[idx].x;
         int j = candidate_moves[idx].y;
-        
+
         ThreatLevel player_threat = detect_threat(i, j, PLAYER);
         if (player_threat >= THREAT_FOUR)
         {
@@ -284,13 +284,13 @@ void ai_move(int depth)
             return;
         }
     }
-    
+
     // 检查是否需要阻止玩家的活三威胁
     for (int idx = 0; idx < move_count; idx++)
     {
         int i = candidate_moves[idx].x;
         int j = candidate_moves[idx].y;
-        
+
         ThreatLevel player_threat = detect_threat(i, j, PLAYER);
         if (player_threat == THREAT_THREE)
         {
@@ -308,7 +308,7 @@ void ai_move(int depth)
     {
         int i = candidate_moves[idx].x;
         int j = candidate_moves[idx].y;
-        
+
         ThreatLevel ai_threat = detect_threat(i, j, AI);
         if (ai_threat >= THREAT_FOUR)
         {
@@ -319,13 +319,13 @@ void ai_move(int depth)
             return;
         }
     }
-    
+
     // 寻找能形成活三的位置
     for (int idx = 0; idx < move_count; idx++)
     {
         int i = candidate_moves[idx].x;
         int j = candidate_moves[idx].y;
-        
+
         ThreatLevel ai_threat = detect_threat(i, j, AI);
         if (ai_threat == THREAT_THREE)
         {
@@ -336,14 +336,14 @@ void ai_move(int depth)
             return;
         }
     }
-    
+
     // 3. 如果没有明显的威胁机会，选择评分最高的位置
     if (move_count > 0)
     {
         // candidate_moves已经按分数排序，直接选择第一个
         int best_x = candidate_moves[0].x;
         int best_y = candidate_moves[0].y;
-        
+
         board[best_x][best_y] = AI;
         steps[step_count++] = (Step){AI, best_x, best_y};
         printf("AI落子(%d, %d) - 最佳位置!\n", best_x + 1, best_y + 1);
@@ -388,7 +388,7 @@ static int compare_moves(const void *a, const void *b)
 int generate_candidate_moves(ScoredMove *moves, int player)
 {
     int count = 0;
-    
+
     for (int i = 0; i < BOARD_SIZE; i++)
     {
         for (int j = 0; j < BOARD_SIZE; j++)
@@ -397,51 +397,51 @@ int generate_candidate_moves(ScoredMove *moves, int player)
             {
                 continue;
             }
-            
+
             // 只考虑有意义的位置（附近有棋子）
             if (step_count > AI_SEARCH_RANGE_THRESHOLD && !is_near_stones(i, j))
             {
                 continue;
             }
-            
+
             // 计算该位置的评估分数
             moves[count].x = i;
             moves[count].y = j;
-            
+
             // 结合威胁检测和位置评估
             ThreatLevel threat = detect_threat(i, j, player);
             int base_score = evaluate_move(i, j);
-            
+
             // 根据威胁等级调整分数
             switch (threat)
             {
-                case THREAT_WIN:
-                    moves[count].score = base_score + 10000;
-                    break;
-                case THREAT_FOUR:
-                    moves[count].score = base_score + 5000;
-                    break;
-                case THREAT_THREE:
-                    moves[count].score = base_score + 2000;
-                    break;
-                case THREAT_DOUBLE:
-                    moves[count].score = base_score + 1000;
-                    break;
-                case THREAT_POTENTIAL:
-                    moves[count].score = base_score + 500;
-                    break;
-                default:
-                    moves[count].score = base_score;
-                    break;
+            case THREAT_WIN:
+                moves[count].score = base_score + 10000;
+                break;
+            case THREAT_FOUR:
+                moves[count].score = base_score + 5000;
+                break;
+            case THREAT_THREE:
+                moves[count].score = base_score + 2000;
+                break;
+            case THREAT_DOUBLE:
+                moves[count].score = base_score + 1000;
+                break;
+            case THREAT_POTENTIAL:
+                moves[count].score = base_score + 500;
+                break;
+            default:
+                moves[count].score = base_score;
+                break;
             }
-            
+
             count++;
         }
     }
-    
+
     // 按分数降序排序
     qsort(moves, count, sizeof(ScoredMove), compare_moves);
-    
+
     return count;
 }
 
@@ -480,16 +480,16 @@ ThreatLevel detect_threat(int x, int y, int player)
 {
     // 模拟落子
     board[x][y] = player;
-    
+
     ThreatLevel max_threat = THREAT_NONE;
     int threat_count = 0;
-    
+
     // 检查四个方向
     for (int k = 0; k < 4; k++)
     {
         DirInfo info = count_specific_direction(x, y, direction[k][0], direction[k][1], player);
         ThreatLevel current_threat = THREAT_NONE;
-        
+
         // 检查是否形成五子连珠（获胜）
         if (info.continuous_chess >= 5)
         {
@@ -517,27 +517,27 @@ ThreatLevel detect_threat(int x, int y, int player)
         {
             current_threat = THREAT_POTENTIAL;
         }
-        
+
         if (current_threat > max_threat)
         {
             max_threat = current_threat;
         }
-        
+
         if (current_threat >= THREAT_THREE)
         {
             threat_count++;
         }
     }
-    
+
     // 恢复棋盘
     board[x][y] = EMPTY;
-    
+
     // 如果有多个威胁，提升威胁等级
     if (threat_count >= 2 && max_threat >= THREAT_THREE)
     {
         max_threat = THREAT_DOUBLE;
     }
-    
+
     return max_threat;
 }
 
@@ -551,18 +551,18 @@ ThreatLevel detect_threat(int x, int y, int player)
 int count_threats_in_direction(int x, int y, int dx, int dy, int player)
 {
     int threats = 0;
-    
+
     // 向前搜索
     for (int i = 1; i < 5; i++)
     {
         int nx = x + i * dx;
         int ny = y + i * dy;
-        
+
         if (nx < 0 || nx >= BOARD_SIZE || ny < 0 || ny >= BOARD_SIZE)
         {
             break;
         }
-        
+
         if (board[nx][ny] == player)
         {
             threats++;
@@ -572,18 +572,18 @@ int count_threats_in_direction(int x, int y, int dx, int dy, int player)
             break;
         }
     }
-    
+
     // 向后搜索
     for (int i = 1; i < 5; i++)
     {
         int nx = x - i * dx;
         int ny = y - i * dy;
-        
+
         if (nx < 0 || nx >= BOARD_SIZE || ny < 0 || ny >= BOARD_SIZE)
         {
             break;
         }
-        
+
         if (board[nx][ny] == player)
         {
             threats++;
@@ -593,6 +593,6 @@ int count_threats_in_direction(int x, int y, int dx, int dy, int player)
             break;
         }
     }
-    
+
     return threats;
 }

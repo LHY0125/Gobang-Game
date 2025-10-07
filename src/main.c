@@ -13,10 +13,10 @@
    copy "D:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32\bin\SDL3.dll" .
    .\gobang_gui.exe
  *
- * @detail gcc 为编译器，添加了-lws2_32链接Windows网络库
- * @detail SDL3 的路径：D:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32
+ * @note gcc 为编译器，添加了-lws2_32链接Windows网络库
+ * @note SDL3 的路径：D:\settings\SDL\SDL3-3.2.22\x86_64-w64-mingw32
  * @brief & "D:\Program Files (x86)\NSIS\makensis.exe" "installer\\installer.nsi"
- * @brief & "D:\Program Files (x86)\Inno Setup 6\iscc.exe" installer\\setup.iss
+ * @brief & "D:\Program Files (x86)\Inno Setup 6\iscc.exe" installer\\installer.iss
  */
 
 #include "game_mode.h"

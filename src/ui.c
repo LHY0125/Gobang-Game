@@ -48,7 +48,7 @@ void display_board()
         printf("%2d", j);
     }
     printf("\n");
-    
+
     // 打印棋盘内容
     for (int i = 0; i < BOARD_SIZE; i++)
     {
@@ -151,7 +151,7 @@ void clear_screen()
  * @brief 暂停等待用户输入
  * @param prompt 提示信息
  */
-void pause_for_input(const char* prompt)
+void pause_for_input(const char *prompt)
 {
     printf("%s", prompt);
 #ifdef _WIN32
