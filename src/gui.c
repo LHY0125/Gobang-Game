@@ -29,7 +29,7 @@
  */
 int init_gui()
 {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    if (!SDL_Init(SDL_INIT_VIDEO))
     {
         printf("SDL初始化失败: %s\n", SDL_GetError());
         return -1;

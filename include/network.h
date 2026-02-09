@@ -18,7 +18,9 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#ifdef _MSC_VER
 #pragma comment(lib, "ws2_32.lib")
+#endif
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -59,7 +61,7 @@ bool create_server(int port);
  * @return true 连接成功
  * @return false 连接失败
  */
-bool connect_to_server(const char* ip, int port);
+bool connect_to_server(const char *ip, int port);
 
 /**
  * @brief 发送网络消息
@@ -67,7 +69,7 @@ bool connect_to_server(const char* ip, int port);
  * @return true 发送成功
  * @return false 发送失败
  */
-bool send_network_message(const NetworkMessage* msg);
+bool send_network_message(const NetworkMessage *msg);
 
 /**
  * @brief 接收网络消息
@@ -76,7 +78,7 @@ bool send_network_message(const NetworkMessage* msg);
  * @return true 接收成功
  * @return false 接收失败或超时
  */
-bool receive_network_message(NetworkMessage* msg, int timeout_ms);
+bool receive_network_message(NetworkMessage *msg, int timeout_ms);
 
 /**
  * @brief 断开网络连接
@@ -97,7 +99,7 @@ bool is_network_connected();
  * @return true 获取成功
  * @return false 获取失败
  */
-bool get_local_ip(char* ip_buffer, int buffer_size);
+bool get_local_ip(char *ip_buffer, int buffer_size);
 
 /**
  * @brief 发送落子消息
@@ -115,7 +117,7 @@ bool send_move(int x, int y, int player_id);
  * @return true 发送成功
  * @return false 发送失败
  */
-bool send_chat_message(const char* message);
+bool send_chat_message(const char *message);
 
 /**
  * @brief 发送认输消息
