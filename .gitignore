@@ -1,8 +1,6 @@
 # 编译生成的可执行文件
-*.exe
 *.out
 *.app
-*.o
 
 # IDE配置文件
 .idea/
@@ -30,21 +28,7 @@ Thumbs.db
 *.ilk
 
 # 对象文件
-*.o
 *.obj
-
-# 静态库文件
-*.lib
-*.a
-
-# 动态库文件
-*.dll
-*.so
-*.dylib
-
-# 资源文件
-*.res
-*.ico
 
 # 打包文件
 dist/
@@ -53,4 +37,4 @@ dist/
 obj/
 
 # 临时游戏存档
-*.csv
+records/
