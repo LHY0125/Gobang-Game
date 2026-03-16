@@ -88,13 +88,15 @@ static void draw_stones_iup(Ihandle *ih)
                 int cy = BOARD_OFFSET_Y + i * CELL_SIZE; // i是y坐标(行)
 
                 if (board[i][j] == PLAYER)
-                { // 黑子
+                { 
+                    // 黑子
                     set_draw_color(ih, 0, 0, 0);
                     IupSetAttribute(ih, "DRAWSTYLE", "FILL");
                     IupDrawArc(ih, cx - STONE_RADIUS, cy - STONE_RADIUS, cx + STONE_RADIUS, cy + STONE_RADIUS, 0.0, 360.0);
                 }
                 else
-                { // 白子
+                { 
+                    // 白子
                     set_draw_color(ih, 255, 255, 255);
                     IupSetAttribute(ih, "DRAWSTYLE", "FILL");
                     IupDrawArc(ih, cx - STONE_RADIUS, cy - STONE_RADIUS, cx + STONE_RADIUS, cy + STONE_RADIUS, 0.0, 360.0);

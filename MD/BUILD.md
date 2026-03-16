@@ -11,35 +11,45 @@
 ## 编译命令
 
 ### 查看所有可用命令
+
 ```bash
 make help
 ```
 
 ### 编译所有版本
+
 ```bash
 make all
 ```
+
 这将同时编译控制台版本和GUI版本。
 
 ### 只编译控制台版本
+
 ```bash
 make console
 ```
+
 生成 `gobang_console.exe`
 
 ### 只编译GUI版本
+
 ```bash
 make gui
 ```
+
 生成 `gobang_gui.exe`
 
 ### 清理编译文件
+
 ```bash
 make clean
 ```
+
 删除所有目标文件(.o)和可执行文件(.exe)
 
 ### 编译并运行
+
 ```bash
 # 编译并运行控制台版本
 make run-console

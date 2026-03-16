@@ -5,16 +5,15 @@
  * @brief 将以下指令复制到powershell
  *
  * !控制台版本编译：
- * gcc -std=c17 -o gobang_console.exe *.c -lws2_32
-   .\gobang_console.exe
+ * mingw32-make console
+   .\bin\gobang_console.exe
  *
  * !图形化版本编译（需要IUP库）：
- * gcc -std=c17 -o gobang_gui.exe *.c -ID:\settings\settings\libs\iup-3.31_Win64_dllw6_lib\include -LD:\settings\settings\libs\iup-3.31_Win64_dllw6_lib -liup -lws2_32
-   copy "D:\settings\settings\libs\iup-3.31_Win64_dllw6_lib\iup.dll" .
-   .\gobang_gui.exe
+ * mingw32-make gui
+   .\bin\gobang_gui.exe
  *
  * @note gcc 为编译器，添加了-lws2_32链接Windows网络库
- * @note IUP 的路径：D:\settings\settings\libs\iup-3.31_Win64_dllw6_lib
+ * @note IUP 的路径：libs\iup-3.31_Win64_dllw6_lib
  * @brief & "D:\Program Files (x86)\NSIS\makensis.exe" "installer\\installer.nsi"
  * @brief & "D:\Program Files (x86)\Inno Setup 6\iscc.exe" installer\\installer.iss
  */
