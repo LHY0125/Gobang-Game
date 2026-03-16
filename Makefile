@@ -1,54 +1,69 @@
 # 五子棋游戏 Makefile
-# 支持编译控制台版本和GUI版本
+# 支持编译控制台版本和GUI版本 (IUP)
 
 # 编译器设置
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c17 -O2 -Iinclude
+CFLAGS = -Wall -Wextra -std=c17 -O2 -Iinclude -finput-charset=UTF-8 -fexec-charset=UTF-8
 LDFLAGS = -lws2_32
 
-# SDL3路径设置
-SDL3_PATH = D:/settings/SDL/SDL3-3.2.22/x86_64-w64-mingw32
-SDL3_INCLUDE = -I$(SDL3_PATH)/include
-SDL3_LIBS = -L$(SDL3_PATH)/lib -lSDL3 -lmingw32
+# IUP路径设置
+IUP_PATH = libs/iup-3.31_Win64_dllw6_lib
+IUP_INCLUDE = -I$(IUP_PATH)/include
+# IUP链接库: iup, gdi32, comdlg32, comctl32, uuid, ole32
+IUP_LIBS = -L$(IUP_PATH) -liup -lgdi32 -lcomdlg32 -lcomctl32 -luuid -lole32
+
+# 目录设置
+SRC_DIR = src
+OBJ_DIR = obj
+BIN_DIR = bin
 
 # 源文件
-COMMON_SOURCES = src/main.c src/gobang.c src/ai.c src/config.c src/game_mode.c src/globals.c \
-                 src/init_board.c src/network.c src/record.c src/ui.c src/gui.c
+COMMON_SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/gobang.c $(SRC_DIR)/ai.c $(SRC_DIR)/config.c \
+                 $(SRC_DIR)/game_mode.c $(SRC_DIR)/globals.c $(SRC_DIR)/init_board.c \
+                 $(SRC_DIR)/network.c $(SRC_DIR)/record.c $(SRC_DIR)/ui.c $(SRC_DIR)/gui.c
 
 GUI_SOURCES = $(COMMON_SOURCES)
 CONSOLE_SOURCES = $(COMMON_SOURCES)
 
-# 目标文件
-COMMON_OBJECTS = $(patsubst src/%.c,src/%.o,$(filter %.c,$(COMMON_SOURCES)))
+# 目标文件 (src/xxx.c -> obj/xxx.o)
+COMMON_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(COMMON_SOURCES))
 
 # 可执行文件
-CONSOLE_TARGET = gobang_console.exe
-GUI_TARGET = gobang_gui.exe
+CONSOLE_TARGET = $(BIN_DIR)/gobang_console.exe
+GUI_TARGET = $(BIN_DIR)/gobang_gui.exe
 
 # 默认目标
-all: $(CONSOLE_TARGET) $(GUI_TARGET)
+all: directories $(CONSOLE_TARGET) $(GUI_TARGET)
+
+# 创建目录
+directories:
+	-mkdir $(OBJ_DIR)
+	-mkdir $(BIN_DIR)
 
 # 控制台版本
 $(CONSOLE_TARGET): $(COMMON_OBJECTS)
-	$(CC) $(CFLAGS) $(SDL3_INCLUDE) -o $@ $^ $(SDL3_LIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(IUP_INCLUDE) -o $@ $^ $(IUP_LIBS) $(LDFLAGS)
 
 # GUI版本
 $(GUI_TARGET): $(COMMON_OBJECTS)
-	$(CC) $(CFLAGS) $(SDL3_INCLUDE) -o $@ $^ $(SDL3_LIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(IUP_INCLUDE) -o $@ $^ $(IUP_LIBS) $(LDFLAGS)
+	copy $(subst /,\,$(IUP_PATH))\iup.dll $(BIN_DIR) 2>nul || echo Warning: Could not copy iup.dll
 
-# 通用目标文件编译规则（包含SDL3头文件路径，因为多个文件包含gui.h）
-src/%.o: src/%.c
-	$(CC) $(CFLAGS) $(SDL3_INCLUDE) -c -o $@ $<
+# 通用目标文件编译规则
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) $(IUP_INCLUDE) -c -o $@ $<
 
 # 清理规则
 clean:
-	del /Q src\*.o *.exe 2>nul || true
-
+	-del /Q $(OBJ_DIR)\*.o $(BIN_DIR)\*.exe $(BIN_DIR)\*.dll
+	-rmdir $(OBJ_DIR)
+	-rmdir $(BIN_DIR)
+	
 # 只编译控制台版本
-console: $(CONSOLE_TARGET)
+console: directories $(CONSOLE_TARGET)
 
 # 只编译GUI版本
-gui: $(GUI_TARGET)
+gui: directories $(GUI_TARGET)
 
 # 安装规则（可选）
 install: all
@@ -77,4 +92,4 @@ help:
 	@echo   help         - Show this help message
 
 # 声明伪目标
-.PHONY: all clean console gui install run-console run-gui help
+.PHONY: all clean console gui install run-console run-gui help directories

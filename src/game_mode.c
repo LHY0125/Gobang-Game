@@ -744,7 +744,6 @@ void run_gui_mode()
         while (gui_running && handle_events())
         {
             render_game();
-            SDL_Delay(16); // 约60FPS
         }
         printf("退出图形化界面\n");
         cleanup_gui();

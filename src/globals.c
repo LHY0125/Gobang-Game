@@ -7,7 +7,6 @@
 
 #include "globals.h"
 #include "config.h"
-#include <SDL3/SDL.h>
 
 // ==================== 游戏核心变量定义 ====================
 int BOARD_SIZE = DEFAULT_BOARD_SIZE;                           // 实际使用的棋盘尺寸
@@ -30,8 +29,6 @@ double defense_coefficient = DEFAULT_DEFENSE_COEFFICIENT; // 防守系数
 NetworkGameState network_state = {0}; // 网络游戏状态
 
 // ==================== GUI相关变量定义 ====================
-SDL_Window *window = NULL;                          // SDL窗口指针
-SDL_Renderer *renderer = NULL;                      // SDL渲染器指针
 int gui_running = 1;                                // GUI运行状态标志
 int current_player_gui = PLAYER;                    // GUI当前玩家
 int game_over = 0;                                  // 游戏结束标志
