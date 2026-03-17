@@ -81,4 +81,16 @@ void start_pve_game_gui();
  */
 void start_replay_gui();
 
+/**
+ * @brief 启动图形化界面模式
+ * @note 替代原来的 main 函数中的 GUI 分支逻辑
+ */
+int init_gui(); // Already declared
+
+/**
+ * @brief 运行图形化界面模式
+ * @details 主循环处理事件、渲染画面和更新状态
+ */
+void run_gui_mode();
+
 #endif // GUI_H

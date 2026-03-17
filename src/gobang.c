@@ -5,8 +5,6 @@
  * 它包含了游戏棋盘的表示、玩家操作、规则检查以及AI决策等功能。
  */
 
-#include "game_mode.h"
-#include "init_board.h"
 #include "gobang.h"
 #include "ai.h"
 #include "record.h"
@@ -15,6 +13,23 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <time.h>
+
+/**
+ * @brief 初始化棋盘为全空状态并重置步数计数器
+ * 清空棋盘数组并将所有位置设为EMPTY，同时将step_count重置为0
+ */
+void empty_board()
+{
+    // 初始化棋盘状态为全空
+    for (int i = 0; i < BOARD_SIZE; i++)
+    {
+        for (int j = 0; j < BOARD_SIZE; j++)
+        {
+            board[i][j] = EMPTY;
+        }
+    }
+    step_count = 0; // 重置步数计数器
+}
 
 /**
  * @brief 检查棋盘(x, y)位置是否为空

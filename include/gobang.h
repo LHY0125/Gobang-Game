@@ -21,6 +21,11 @@
 
 // --- 游戏核心逻辑 ---
 /**
+ * @brief 初始化棋盘，将所有位置设置为空(EMPTY)
+ */
+void empty_board();
+
+/**
  * @brief 检查指定坐标是否为有效落子点（在棋盘内且为空）
  * @param x 待检查的行坐标 (0-based)
  * @param y 待检查的列坐标 (0-based)

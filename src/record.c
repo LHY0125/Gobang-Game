@@ -6,10 +6,7 @@
  */
 
 #include "record.h"
-#include "game_mode.h"
 #include "gobang.h"
-#include "init_board.h"
-#include "ui.h"
 #include "config.h"
 #include "globals.h"
 #include <stdio.h>
@@ -47,139 +44,7 @@
  * - 包含输入缓冲区清理防止意外输入
  * - 评分环节调用calculate_final_score()函数
  */
-void review_process(int game_mode)
-{
-    int review_choice = get_integer_input("是否要复盘本局比赛? (1-是, 0-否): ", 0, 1);
-
-    // 如果评分尚未计算，则计算评分
-    if (!scores_calculated)
-    {
-        calculate_game_scores();
-    }
-    else
-    {
-        // 评分已从文件中加载，直接使用
-        printf("从记录文件中加载评分数据\n");
-    }
-
-    if (review_choice == 1)
-    {
-        printf("\n===== 复盘记录(总步数：%d) =====\n", step_count);
-        // 清空输入缓冲区
-        int c;
-        while ((c = getchar()) != '\n' && c != EOF)
-            ;
-
-        // 创建临时复盘棋盘
-        int temp_board[MAX_BOARD_SIZE][MAX_BOARD_SIZE];
-        memset(temp_board, EMPTY, sizeof(temp_board)); // 初始化为空棋盘
-
-        // 逐步重现游戏过程
-        for (int i = 0; i < step_count; i++)
-        {
-            Step s = steps[i];               // 获取当前步骤
-            temp_board[s.x][s.y] = s.player; // 在临时棋盘上落子
-
-            // 打印当前步骤信息
-            // 根据游戏模式显示不同的标题和玩家信息
-            if (game_mode == GAME_MODE_AI)
-            {
-                // 人机对战
-                printf("\n===== 五子棋人机对战(%dX%d棋盘) =====", BOARD_SIZE, BOARD_SIZE);
-                printf("\n    第%d步/%d步: %s 落子于(%d, %d)\n",
-                       i + 1, step_count,
-                       (s.player == PLAYER) ? "玩家" : "AI",
-                       s.x + 1, s.y + 1);
-            }
-            else if (game_mode == GAME_MODE_PVP)
-            {
-                // 双人对战
-                printf("\n===== 五子棋双人对战(%dX%d棋盘) =====", BOARD_SIZE, BOARD_SIZE);
-                printf("\n    第%d步/%d步: %s 落子于(%d, %d)\n",
-                       i + 1, step_count,
-                       (s.player == PLAYER1) ? "玩家1(黑棋)" : "玩家2(白棋)",
-                       s.x + 1, s.y + 1);
-            }
-            else if (game_mode == GAME_MODE_NETWORK)
-            {
-                // 网络对战
-                printf("\n===== 五子棋网络对战(%dX%d棋盘) =====", BOARD_SIZE, BOARD_SIZE);
-                printf("\n    第%d步/%d步: %s 落子于(%d, %d)\n",
-                       i + 1, step_count,
-                       (s.player == PLAYER1) ? "玩家1(黑棋)" : "玩家2(白棋)",
-                       s.x + 1, s.y + 1);
-            }
-
-            // 打印当前复盘棋盘
-            printf("  ");
-            for (int col = 0; col < BOARD_SIZE; col++)
-            {
-                printf("%2d", col + 1); // 列号
-            }
-            printf("\n");
-
-            for (int row = 0; row < BOARD_SIZE; row++)
-            {
-                printf("%2d ", row + 1); // 行号
-                for (int col = 0; col < BOARD_SIZE; col++)
-                {
-                    if (temp_board[row][col] == PLAYER || temp_board[row][col] == PLAYER1)
-                    {
-                        printf("x ");
-                    }
-                    else if (temp_board[row][col] == AI || temp_board[row][col] == PLAYER2)
-                    {
-                        printf("○ ");
-                    }
-                    else
-                    {
-                        printf("· ");
-                    }
-                }
-                printf("\n"); // 行结束换行
-            }
-
-            // 如果不是最后一步，等待用户按键继续
-            if (i < step_count - 1)
-            {
-                printf("\n按Enter继续下一步...");
-                while (getchar() != '\n')
-                    ; // 等待回车
-            }
-        }
-
-        // 显示胜负结果（直接使用文件中的信息）
-        printf("\n===== 对局结果 =====");
-        if (strcmp(winner_info, "玩家获胜") == 0)
-        {
-            printf("\n? 恭喜！玩家获胜！\n");
-        }
-        else if (strcmp(winner_info, "AI获胜") == 0)
-        {
-            printf("\n? AI获胜！\n");
-        }
-        else if (strcmp(winner_info, "玩家1获胜") == 0)
-        {
-            printf("\n? 恭喜！玩家1(黑棋)获胜！\n");
-        }
-        else if (strcmp(winner_info, "玩家2获胜") == 0)
-        {
-            printf("\n? 恭喜！玩家2(白棋)获胜！\n");
-        }
-        else
-        {
-            printf("\n?? 对局平局或未完成\n");
-        }
-
-        printf("\n复盘结束！按Enter查看评分...");
-        getchar(); // 等待用户按键
-    }
-
-    // 显示评分结果
-    display_game_scores(game_mode);
-
-    getchar();
-}
+void calculate_game_scores();
 
 /**
  * @brief 计算游戏评分
@@ -291,56 +156,7 @@ void display_game_scores(int game_mode)
 }
 
 /**
- * @brief 处理游戏结束后的记录保存
- * @return int 保存状态码(0-成功, 1-目录创建失败, 2-文件打开失败, 3-文件写入失败)
- */
-void handle_save_record(int game_mode)
-{
-    printf("===== 游戏结束 =====\n");
-    int save_choice = get_integer_input("是否保存游戏记录? (1-是, 0-否): ", 0, 1);
-
-    if (save_choice == 1)
-    {
-        time_t now = time(NULL);
-        struct tm *t = localtime(&now);
-        char filename[256];
-        strftime(filename, sizeof(filename), "%Y%m%d_%H%M%S.csv", t);
-
-        int save_status = save_game_to_file(filename, game_mode);
-        switch (save_status)
-        {
-        case 0: // 成功
-            printf("\n游戏记录已成功保存至: %s (CSV格式)\n", filename);
-            printf("您可以使用以下命令进行复盘: .\\gobang.exe -l %s\n", filename);
-            printf("CSV格式文件可以直接用Excel打开查看和分析\n");
-            break;
-        case 1: // 目录创建失败
-            printf("\n游戏记录保存失败: 无法创建 'records' 目录。\n");
-            printf("请检查程序是否具有足够的写入权限或磁盘空间是否充足。\n");
-            break;
-        case 2: // 文件打开失败
-            printf("\n游戏记录保存失败: 无法在路径 '%s' 创建文件。\n", filename);
-            printf("请检查路径是否有效以及程序是否具有写入权限。\n");
-            break;
-        case 3: // 文件写入失败
-            printf("\n游戏记录保存失败: 写入文件时发生错误。\n");
-            printf("请检查磁盘空间是否已满。\n");
-            break;
-        default:
-            printf("\n游戏记录保存失败: 发生未知错误。\n");
-            break;
-        }
-    }
-}
-
-/**
  * @brief 将当前游戏记录保存到文件
- * @param filename 要保存的文件名
- * @return int 错误码:
- *   0: 成功
- *   1: 目录创建失败
- *   2: 文件打开失败
- *   3: 文件写入失败
  */
 int save_game_to_file(const char *filename, int game_mode)
 {

@@ -11,16 +11,20 @@ static Ihandle *menu_dlg = NULL;
 static int btn_pvp_cb(Ihandle *ih)
 {
     (void)ih;
-    hide_main_menu();
+    printf("DEBUG: Starting PvP Game\n");
+    // hide_main_menu(); // DO NOT HIDE MAIN MENU YET
     start_pvp_game_gui();
+    IupHide(menu_dlg); // Hide main menu manually AFTER game window created
     return IUP_DEFAULT;
 }
 
 static int btn_pve_cb(Ihandle *ih)
 {
     (void)ih;
-    hide_main_menu();
+    printf("DEBUG: Starting PvE Game\n");
+    // hide_main_menu(); // DO NOT HIDE MAIN MENU YET
     start_pve_game_gui();
+    IupHide(menu_dlg); // Hide main menu manually AFTER game window created
     return IUP_DEFAULT;
 }
 
@@ -35,38 +39,44 @@ static int btn_replay_cb(Ihandle *ih)
 static int btn_save_settings_cb(Ihandle *ih)
 {
     Ihandle *dlg = IupGetDialog(ih);
-    
+
     // Get values
     Ihandle *txt_board_size = IupGetDialogChild(dlg, "BOARD_SIZE");
     Ihandle *tgl_forbidden = IupGetDialogChild(dlg, "FORBIDDEN");
     Ihandle *tgl_timer = IupGetDialogChild(dlg, "TIMER");
     Ihandle *txt_time_limit = IupGetDialogChild(dlg, "TIME_LIMIT");
     Ihandle *lst_ai = IupGetDialogChild(dlg, "AI_DIFFICULTY");
-    
+
     // Update globals
     int new_size = IupGetInt(txt_board_size, "VALUE");
-    if (new_size < MIN_BOARD_SIZE) new_size = MIN_BOARD_SIZE;
-    if (new_size > MAX_BOARD_SIZE) new_size = MAX_BOARD_SIZE;
+    if (new_size < MIN_BOARD_SIZE)
+        new_size = MIN_BOARD_SIZE;
+    if (new_size > MAX_BOARD_SIZE)
+        new_size = MAX_BOARD_SIZE;
     BOARD_SIZE = new_size;
-    
+
     use_forbidden_moves = IupGetInt(tgl_forbidden, "VALUE");
-    
+
     use_timer = IupGetInt(tgl_timer, "VALUE");
-    if (use_timer) {
+    if (use_timer)
+    {
         int minutes = IupGetInt(txt_time_limit, "VALUE");
-        if (minutes < 1) minutes = 1;
+        if (minutes < 1)
+            minutes = 1;
         time_limit = minutes * 60;
     }
-    
+
     int ai_level = IupGetInt(lst_ai, "VALUE");
-    if (ai_level < 1) ai_level = 1;
-    if (ai_level > 5) ai_level = 5;
+    if (ai_level < 1)
+        ai_level = 1;
+    if (ai_level > 5)
+        ai_level = 5;
     ai_difficulty = ai_level;
     defense_coefficient = DEFAULT_DEFENSE_COEFFICIENT + (ai_difficulty - 1) * 0.1;
-    
+
     // Save config
     save_game_config();
-    
+
     IupHide(dlg);
     return IUP_DEFAULT;
 }
@@ -89,7 +99,7 @@ static int tgl_timer_cb(Ihandle *ih, int state)
 static int btn_settings_cb(Ihandle *ih)
 {
     (void)ih;
-    
+
     // 1. Board Size
     Ihandle *lbl_board_size = IupLabel("棋盘大小 (5-25):");
     Ihandle *txt_board_size = IupText(NULL);
@@ -99,18 +109,18 @@ static int btn_settings_cb(Ihandle *ih)
     IupSetAttribute(txt_board_size, "SPINMAX", "25");
     IupSetInt(txt_board_size, "VALUE", BOARD_SIZE);
     IupSetAttribute(txt_board_size, "SIZE", "50x");
-    
+
     // 2. Forbidden Moves
     Ihandle *tgl_forbidden = IupToggle("启用禁手规则", NULL);
     IupSetAttribute(tgl_forbidden, "NAME", "FORBIDDEN");
     IupSetInt(tgl_forbidden, "VALUE", use_forbidden_moves);
-    
+
     // 3. Timer
     Ihandle *tgl_timer = IupToggle("启用计时器", NULL);
     IupSetAttribute(tgl_timer, "NAME", "TIMER");
     IupSetInt(tgl_timer, "VALUE", use_timer);
     IupSetCallback(tgl_timer, "ACTION", (Icallback)tgl_timer_cb);
-    
+
     // 4. Time Limit
     Ihandle *lbl_time_limit = IupLabel("时间限制 (分钟):");
     Ihandle *txt_time_limit = IupText(NULL);
@@ -139,11 +149,11 @@ static int btn_settings_cb(Ihandle *ih)
     Ihandle *btn_save = IupButton("保存", NULL);
     IupSetCallback(btn_save, "ACTION", (Icallback)btn_save_settings_cb);
     IupSetAttribute(btn_save, "SIZE", "60x");
-    
+
     Ihandle *btn_cancel = IupButton("取消", NULL);
     IupSetCallback(btn_cancel, "ACTION", (Icallback)btn_cancel_settings_cb);
     IupSetAttribute(btn_cancel, "SIZE", "60x");
-    
+
     // Layout
     Ihandle *hbox_board = IupHbox(lbl_board_size, txt_board_size, NULL);
     IupSetAttribute(hbox_board, "ALIGNMENT", "ACENTER");
@@ -161,7 +171,7 @@ static int btn_settings_cb(Ihandle *ih)
     IupSetAttribute(hbox_btns, "GAP", "20");
     IupSetAttribute(hbox_btns, "MARGIN", "10x0");
     IupSetAttribute(hbox_btns, "ALIGNMENT", "ACENTER");
-    
+
     Ihandle *vbox = IupVbox(
         hbox_board,
         tgl_forbidden,
@@ -171,19 +181,19 @@ static int btn_settings_cb(Ihandle *ih)
         IupLabel(NULL), // Spacer
         hbox_btns,
         NULL);
-        
+
     IupSetAttribute(vbox, "GAP", "15");
     IupSetAttribute(vbox, "MARGIN", "30x30");
-    
+
     Ihandle *dlg = IupDialog(vbox);
     IupSetAttribute(dlg, "TITLE", "游戏设置");
     IupSetAttribute(dlg, "RESIZE", "NO");
     IupSetAttribute(dlg, "MINBOX", "NO");
     IupSetAttribute(dlg, "MAXBOX", "NO");
-    
+
     IupPopup(dlg, IUP_CENTER, IUP_CENTER);
     IupDestroy(dlg);
-    
+
     return IUP_DEFAULT;
 }
 
@@ -197,7 +207,9 @@ static int btn_exit_cb(Ihandle *ih)
 
 void create_main_menu()
 {
-    if (menu_dlg) return;
+    if (menu_dlg)
+        return;
+    printf("DEBUG: create_main_menu\n");
 
     Ihandle *lbl_title = IupLabel("五子棋 (Gobang)");
     IupSetAttribute(lbl_title, "FONT", "SimHei, 24");
@@ -245,16 +257,22 @@ void create_main_menu()
     IupSetAttribute(menu_dlg, "RESIZE", "NO");
     IupSetAttribute(menu_dlg, "MINBOX", "NO");
     IupSetAttribute(menu_dlg, "MAXBOX", "NO");
-    
+
     // 设置对话框关闭回调 (点X关闭程序)
     IupSetCallback(menu_dlg, "CLOSE_CB", (Icallback)btn_exit_cb);
+    IupMap(menu_dlg); // Map immediately
 }
 
 void show_main_menu()
 {
+    printf("DEBUG: show_main_menu start\n");
     if (!menu_dlg)
+    {
+        printf("DEBUG: Creating main menu\n");
         create_main_menu();
+    }
     IupShowXY(menu_dlg, IUP_CENTER, IUP_CENTER);
+    printf("DEBUG: show_main_menu end\n");
 }
 
 void hide_main_menu()

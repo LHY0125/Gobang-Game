@@ -9,9 +9,7 @@
 #include "gui.h"
 #include <iup.h>
 #include <iupdraw.h>
-#include "ui.h"
 #include "globals.h"
-#include "init_board.h"
 #include "gobang.h"
 #include "gui_menu.h"
 #include "ai.h"
@@ -26,13 +24,15 @@ static Ihandle *lbl_player = NULL;
 static Ihandle *lbl_status = NULL;
 static int gui_loop_running = 0;
 static int gui_game_mode = 0;      // 0: PvP, 1: PvE, 2: Replay
-static int replay_total_steps = 0; // For Replay Mode
+static int replay_total_steps = 0; // 为了复盘而记录的总步数
 
 // 回调函数
 static int action_cb(Ihandle *ih);
 static int button_cb(Ihandle *ih, int button, int pressed, int x, int y, char *status);
 static int k_any_cb(Ihandle *ih, int c);
 void create_game_window(); // 移除前向声明
+static int btn_replay_sel_ok_cb(Ihandle *ih);
+static int btn_replay_sel_cancel_cb(Ihandle *ih);
 
 // 辅助函数：设置绘图颜色
 static void set_draw_color(Ihandle *ih, unsigned char r, unsigned char g, unsigned char b)
@@ -123,7 +123,7 @@ static void draw_stones_iup(Ihandle *ih)
     }
 
     // 标记最后落子位置 (红色小点)
-    if (step_count > 0)
+    if (step_count > 0 && step_count <= MAX_STEPS)
     {
         // 绘制最后一步的标记
         // 最后一步的坐标是 steps[step_count-1]
@@ -177,6 +177,17 @@ static void update_ui_labels()
     {
         IupSetAttribute(lbl_status, "TITLE", status_message);
     }
+}
+
+/**
+ * @brief 显示消息
+ */
+void show_message(const char *message)
+{
+    strncpy(status_message, message, sizeof(status_message) - 1);
+    status_message[sizeof(status_message) - 1] = '\0';
+    update_ui_labels();
+    printf("%s\n", message);
 }
 
 // ACTION 回调：负责重绘
@@ -294,7 +305,7 @@ static int btn_replay_prev_cb(Ihandle *ih)
 static int btn_replay_next_cb(Ihandle *ih)
 {
     (void)ih;
-    if (step_count < replay_total_steps)
+    if (step_count < replay_total_steps && step_count >= 0) // Ensure step_count is valid
     {
         Step s = steps[step_count];
         board[s.x][s.y] = s.player;
@@ -310,12 +321,29 @@ static int btn_replay_next_cb(Ihandle *ih)
 static int btn_back_cb(Ihandle *ih)
 {
     (void)ih;
+    printf("DEBUG: Back to Menu clicked\n");
+
+    // 1. Show main menu FIRST
+    show_main_menu();
+    printf("DEBUG: Main menu shown\n");
+
+    // 2. Destroy game window
+    // Important: We must destroy the game window to free resources and potentially stop its event loop contribution.
+    // But we must NOT close the application.
+    // If we only Hide, it stays in memory.
+    // If we Destroy, it's gone.
+
     if (dlg)
     {
-        IupHide(dlg);
-        show_main_menu();
+        // IupHide(dlg); // Hiding is safer if Destroy causes loop exit
+        // printf("DEBUG: Hiding game window\n");
+        Ihandle *old_dlg = dlg;
+        dlg = NULL; // Clear global pointer first
+        IupDestroy(old_dlg);
+        printf("DEBUG: Destroyed game window\n");
     }
-    return IUP_DEFAULT;
+
+    return IUP_IGNORE; // Return IUP_IGNORE to prevent default processing (like closing if CLOSE_CB)
 }
 
 // 鼠标点击回调
@@ -421,20 +449,33 @@ static int k_any_cb(Ihandle *ih, int c)
 // 创建游戏窗口
 void create_game_window()
 {
+    printf("DEBUG: create_game_window start\n");
+    // if (dlg)
+    // {
+    //    IupDestroy(dlg); // 销毁旧窗口
+    //    dlg = NULL;
+    // }
+    // Only destroy if it exists and is not the current dialog?
+    // Actually, creating a new dialog while old one is valid is fine, but we should destroy old one to save memory.
+    // However, if destroying dlg causes main loop to exit because it was the last visible window (if main menu was hidden)...
+
     if (dlg)
     {
-        IupDestroy(dlg); // 销毁旧窗口
+        IupDestroy(dlg);
         dlg = NULL;
     }
 
     // 创建Canvas (Board)
     board_canvas = IupCanvas(NULL);
+    if (!board_canvas)
+        printf("ERROR: Failed to create board_canvas\n");
+
     IupSetAttribute(board_canvas, "ACTION", "action_cb");
     IupSetCallback(board_canvas, "ACTION", (Icallback)action_cb);
     IupSetCallback(board_canvas, "BUTTON_CB", (Icallback)button_cb);
     IupSetCallback(board_canvas, "K_ANY", (Icallback)k_any_cb);
 
-    // 
+    //
     int board_pixel_size = BOARD_SIZE * CELL_SIZE + BOARD_OFFSET_X * 2;
     char size[32];
     sprintf(size, "%dx%d", board_pixel_size, board_pixel_size);
@@ -443,10 +484,10 @@ void create_game_window()
 
     // 创建标签 (玩家信息和游戏状态)
     lbl_player = IupLabel("当前玩家: 黑子");
-    IupSetAttribute(lbl_player, "FONT", "SimHei, 14");
+    // IupSetAttribute(lbl_player, "FONT", "SimHei, 14"); // Comment out potentially problematic font setting
 
     lbl_status = IupLabel("准备开始");
-    IupSetAttribute(lbl_status, "FONT", "SimHei, 12");
+    // IupSetAttribute(lbl_status, "FONT", "SimHei, 12");
 
     Ihandle *vbox_controls;
 
@@ -509,10 +550,14 @@ void create_game_window()
 
     // 创建Dialog
     dlg = IupDialog(hbox_main);
+    if (!dlg)
+        printf("ERROR: Failed to create dialog\n");
+
     IupSetAttribute(dlg, "TITLE", "五子棋 - IUP版本");
     IupSetAttribute(dlg, "RESIZE", "NO");
 
     IupMap(dlg);
+    printf("DEBUG: create_game_window end\n");
 }
 
 void start_pvp_game_gui()
@@ -533,6 +578,7 @@ void start_pvp_game_gui()
 
 void start_pve_game_gui()
 {
+    printf("DEBUG: start_pve_game_gui start\n");
     gui_game_mode = 1;
     // ai_difficulty is global
     empty_board();
@@ -540,67 +586,162 @@ void start_pve_game_gui()
     game_over = 0;
 
     create_game_window();
+    printf("DEBUG: create_game_window returned\n");
 
-    IupShowXY(dlg, IUP_CENTER, IUP_CENTER);
+    if (dlg)
+    {
+        IupShowXY(dlg, IUP_CENTER, IUP_CENTER);
+        printf("DEBUG: IupShowXY called\n");
+    }
+    else
+    {
+        printf("ERROR: dlg is NULL in start_pve_game_gui\n");
+        return;
+    }
+
     sprintf(status_message, "人机对战模式 - 玩家执黑先行");
     update_ui_labels();
+    printf("DEBUG: update_ui_labels returned\n");
+
+    // Force initial draw
     if (board_canvas)
+    {
         IupUpdate(board_canvas);
+        // IupFlush(); // Comment out to check if this caused the crash
+    }
+    printf("DEBUG: start_pve_game_gui end\n");
 }
 
-void start_replay_gui()
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+// 选择复盘文件
+static void select_replay_file_gui()
 {
-    // Open file dialog
-    Ihandle *file_dlg = IupFileDlg();
-    IupSetAttribute(file_dlg, "DIALOGTYPE", "OPEN");
-    IupSetAttribute(file_dlg, "TITLE", "选择复盘文件");
-    IupSetAttribute(file_dlg, "FILTER", "*.csv");
-    IupSetAttribute(file_dlg, "FILTERINFO", "CSV Files");
+    // List files in records/ directory
+    char record_files[100][100];
+    int file_count = 0;
 
-    IupPopup(file_dlg, IUP_CENTER, IUP_CENTER);
-
-    if (IupGetInt(file_dlg, "STATUS") != -1)
+#ifdef _WIN32
+    WIN32_FIND_DATA ffd;
+    HANDLE hFind = FindFirstFile("records\\*.csv", &ffd);
+    if (hFind != INVALID_HANDLE_VALUE)
     {
-        char *filename = IupGetAttribute(file_dlg, "VALUE");
+        do
+        {
+            if (!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+            {
+                strcpy(record_files[file_count++], ffd.cFileName);
+                if (file_count >= 100)
+                    break;
+            }
+        } while (FindNextFile(hFind, &ffd) != 0);
+        FindClose(hFind);
+    }
+#endif
 
-        char *base_name = strrchr(filename, '\\');
-        if (!base_name)
-            base_name = strrchr(filename, '/');
-        if (base_name)
-            base_name++;
-        else
-            base_name = filename;
+    if (file_count == 0)
+    {
+        IupMessage("提示", "未找到复盘记录文件 (records/*.csv)");
+        show_main_menu();
+        return;
+    }
 
-        if (load_game_from_file(base_name)) // returns game_mode (non-zero) on success
+    // 创建列表框
+    Ihandle *list = IupList(NULL);
+    IupSetAttribute(list, "EXPAND", "YES");
+    IupSetAttribute(list, "VISIBLELINES", "10");
+
+    for (int i = 0; i < file_count; i++)
+    {
+        IupSetAttributeId(list, "", i + 1, record_files[i]);
+    }
+    IupSetAttribute(list, "VALUE", "1");
+
+    // 创建确定和取消按钮
+    Ihandle *btn_ok = IupButton("确定", NULL);
+    IupSetCallback(btn_ok, "ACTION", (Icallback)btn_replay_sel_ok_cb);
+    IupSetAttribute(btn_ok, "SIZE", "60x30");
+
+    Ihandle *btn_cancel = IupButton("取消", NULL);
+    IupSetCallback(btn_cancel, "ACTION", (Icallback)btn_replay_sel_cancel_cb);
+    IupSetAttribute(btn_cancel, "SIZE", "60x30");
+
+    Ihandle *vbox = IupVbox(
+        IupLabel("请选择复盘文件:"),
+        list,
+        IupHbox(btn_ok, btn_cancel, NULL),
+        NULL);
+    IupSetAttribute(vbox, "MARGIN", "10x10");
+    IupSetAttribute(vbox, "GAP", "10");
+    IupSetAttribute(vbox, "ALIGNMENT", "ACENTER");
+
+    Ihandle *dlg_sel = IupDialog(vbox);
+    IupSetAttribute(dlg_sel, "TITLE", "选择复盘文件");
+    IupSetAttribute(dlg_sel, "MINBOX", "NO");
+    IupSetAttribute(dlg_sel, "MAXBOX", "NO");
+    IupSetAttribute(dlg_sel, "RESIZE", "NO");
+
+    // 存储列表框句柄到对话框属性
+    IupSetAttribute(dlg_sel, "MY_LIST", (char *)list);
+}
+
+static int btn_replay_sel_ok_cb(Ihandle *ih)
+{
+    Ihandle *dlg = IupGetDialog(ih);
+    Ihandle *list = (Ihandle *)IupGetAttribute(dlg, "MY_LIST");
+    char *filename = IupGetAttribute(list, "VALUE"); // Returns index
+    int index = atoi(filename);
+    char *selected_file = IupGetAttributeId(list, "", index);
+
+    if (selected_file)
+    {
+        if (load_game_from_file(selected_file))
         {
             replay_total_steps = step_count;
             step_count = 0;
-            // load_game_from_file already cleared board when reading steps, but steps were read into array
-            // wait, load_game_from_file calls empty_board() then reads steps.
-            // But it doesn't set board array.
-            // So board is empty.
-
             gui_game_mode = 2; // Replay
             create_game_window();
+            IupShowXY(dlg, IUP_CENTER, IUP_CENTER); // 展示
+
+            Ihandle *dlg_sel = dlg;
+            IupHide(dlg_sel);
+            IupDestroy(dlg_sel);
 
             IupShowXY(dlg, IUP_CENTER, IUP_CENTER);
-            sprintf(status_message, "复盘模式 - %s", base_name);
+
+            sprintf(status_message, "复盘模式 - %s", selected_file);
             update_ui_labels();
             if (board_canvas)
                 IupUpdate(board_canvas);
+
+            return IUP_DEFAULT;
         }
         else
         {
             IupMessage("错误", "无法加载复盘文件");
-            show_main_menu();
         }
     }
-    else
-    {
-        show_main_menu();
-    }
 
-    IupDestroy(file_dlg);
+    IupHide(dlg);
+    IupDestroy(dlg);
+    show_main_menu();
+    return IUP_DEFAULT;
+}
+
+static int btn_replay_sel_cancel_cb(Ihandle *ih)
+{
+    Ihandle *dlg = IupGetDialog(ih);
+    IupHide(dlg);
+    IupDestroy(dlg);
+    show_main_menu();
+    return IUP_DEFAULT;
+}
+
+void start_replay_gui()
+{
+    select_replay_file_gui();
 }
 
 /**
@@ -691,12 +832,14 @@ void draw_ui_elements()
 }
 
 /**
- * @brief 显示消息
+ * @brief 运行图形化界面模式
+ * @note 包含初始化、主循环和清理
  */
-void show_message(const char *message)
+void run_gui_mode()
 {
-    strncpy(status_message, message, sizeof(status_message) - 1);
-    status_message[sizeof(status_message) - 1] = '\0';
-    update_ui_labels();
-    printf("%s\n", message);
+    if (init_gui() == 0)
+    {
+        IupMainLoop(); // 使用IUP的主循环
+        cleanup_gui();
+    }
 }

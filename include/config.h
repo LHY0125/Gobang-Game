@@ -153,34 +153,4 @@ void save_game_config();
  */
 void reset_to_default_config();
 
-/**
- * @brief 显示当前配置
- */
-void display_current_config();
-
-/**
- * @brief 配置棋盘大小
- */
-void config_board_size();
-
-/**
- * @brief 配置禁手规则
- */
-void config_forbidden_moves();
-
-/**
- * @brief 配置计时器
- */
-void config_timer();
-
-/**
- * @brief 配置网络参数
- */
-void config_network();
-
-/**
- * @brief 配置管理主菜单
- */
-void config_management_menu();
-
 #endif // CONFIG_H
