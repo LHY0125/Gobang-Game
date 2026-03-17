@@ -27,6 +27,7 @@ extern int network_timeout;      // 网络超时时间
 
 // ==================== AI相关变量 ====================
 extern double defense_coefficient; // 防守系数
+extern int ai_difficulty;          // AI难度 (1-5)
 
 // ==================== 网络相关变量 ====================
 extern NetworkGameState network_state; // 网络游戏状态

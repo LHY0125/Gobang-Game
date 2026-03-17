@@ -118,8 +118,8 @@
 
 //---------- GUI界面参数 ----------//
 // 窗口和棋盘配置
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+#define WINDOW_WIDTH 1000
+#define WINDOW_HEIGHT 800
 #define BOARD_OFFSET_X 50
 #define BOARD_OFFSET_Y 50
 #define CELL_SIZE 30

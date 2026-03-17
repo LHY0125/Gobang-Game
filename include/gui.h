@@ -66,4 +66,19 @@ int screen_to_board(int screen_x, int screen_y, int *board_x, int *board_y);
  */
 void show_message(const char *message);
 
+/**
+ * @brief 启动玩家对战模式
+ */
+void start_pvp_game_gui();
+
+/**
+ * @brief 启动人机对战模式
+ */
+void start_pve_game_gui();
+
+/**
+ * @brief 启动复盘模式
+ */
+void start_replay_gui();
+
 #endif // GUI_H

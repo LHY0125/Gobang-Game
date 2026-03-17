@@ -73,8 +73,8 @@ void load_game_config()
             int difficulty = atoi(line + 14);
             if (difficulty >= 1 && difficulty <= 5)
             {
-                // 根据难度设置AI搜索深度
-                // 这里可以添加AI难度相关的配置
+                ai_difficulty = difficulty;
+                defense_coefficient = DEFAULT_DEFENSE_COEFFICIENT + (ai_difficulty - 1) * 0.1;
             }
         }
     }
@@ -109,6 +109,9 @@ void save_game_config()
     fprintf(file, "\n# 网络超时时间 (毫秒)\n");
     fprintf(file, "NETWORK_TIMEOUT=%d\n", network_timeout);
 
+    fprintf(file, "\n# AI难度 (1-5)\n");
+    fprintf(file, "AI_DIFFICULTY=%d\n", ai_difficulty);
+
     fclose(file);
     printf("配置保存完成\n");
 }
@@ -124,6 +127,8 @@ void reset_to_default_config()
     time_limit = DEFAULT_TIME_LIMIT;
     network_port = DEFAULT_NETWORK_PORT;
     network_timeout = NETWORK_TIMEOUT_MS;
+    ai_difficulty = 3; // 默认AI难度
+    defense_coefficient = DEFAULT_DEFENSE_COEFFICIENT + (ai_difficulty - 1) * 0.1;
 
     printf("已重置为默认配置\n");
 }
