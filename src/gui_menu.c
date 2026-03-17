@@ -31,8 +31,10 @@ static int btn_pve_cb(Ihandle *ih)
 static int btn_replay_cb(Ihandle *ih)
 {
     (void)ih;
-    hide_main_menu();
+    printf("DEBUG: Starting Replay Mode\n");
+    // hide_main_menu(); // Don't hide main menu yet, wait for file selection
     start_replay_gui();
+    IupHide(menu_dlg); // Hide main menu
     return IUP_DEFAULT;
 }
 

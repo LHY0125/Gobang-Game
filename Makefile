@@ -24,7 +24,9 @@ BIN_DIR = bin
 # 源文件
 COMMON_SOURCES = $(SRC_DIR)/gobang.c $(SRC_DIR)/ai.c $(SRC_DIR)/config.c \
                  $(SRC_DIR)/globals.c \
-                 $(SRC_DIR)/network.c $(SRC_DIR)/record.c $(SRC_DIR)/gui.c \
+                 $(SRC_DIR)/network.c $(SRC_DIR)/record.c \
+                 $(SRC_DIR)/gui_core.c $(SRC_DIR)/gui_draw.c \
+                 $(SRC_DIR)/gui_game.c $(SRC_DIR)/gui_replay.c \
                  $(SRC_DIR)/gui_menu.c
 
 # 目标文件 (src/xxx.c -> obj/xxx.o)

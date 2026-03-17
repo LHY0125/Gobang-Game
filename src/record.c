@@ -298,8 +298,22 @@ int load_game_from_file(const char *filename)
     // 读取游戏模式、棋盘大小和评分结果
     int game_mode, size;
 
+    // 读取数据行
+    if (fgets(buffer, sizeof(buffer), file) == NULL)
+    {
+        fclose(file);
+        return 0;
+    }
+
     // 尝试读取新格式（包含胜负信息）
-    int read_count = fscanf(file, "%d,%d,%d,%d,%49s", &game_mode, &size, &player1_final_score, &player2_final_score, winner_info);
+    // Use sscanf instead of fscanf to handle line buffers safely
+    // format: mode,size,score1,score2,winner_info
+    // Note: winner_info might contain newlines if not stripped, but sscanf %s stops at whitespace.
+    // However, CSV usually doesn't have spaces unless in quotes.
+    // Our winner_info is like "Player 1 Wins" or "Draw".
+    // If we use %[^,\n] it reads until comma or newline.
+
+    int read_count = sscanf(buffer, "%d,%d,%d,%d,%49[^,\n]", &game_mode, &size, &player1_final_score, &player2_final_score, winner_info);
 
     if (read_count == 4)
     {
@@ -321,16 +335,39 @@ int load_game_from_file(const char *filename)
     if (size < 5 || size > MAX_BOARD_SIZE)
     {
         fclose(file);
-        return false;
+        return 0;
     }
 
     // 设置评分已计算标志
     scores_calculated = 1;
 
     // 跳过空行和表头行
-    fgets(buffer, sizeof(buffer), file); // 跳过换行
-    fgets(buffer, sizeof(buffer), file); // 跳过空行
-    fgets(buffer, sizeof(buffer), file); // 跳过"步数,玩家,行坐标,列坐标"
+    // The previous fgets consumed the line with data and its newline.
+    // Next line should be empty or headers.
+
+    // Check next line
+    if (fgets(buffer, sizeof(buffer), file) != NULL)
+    {
+        // If it's just a newline (empty line)
+        if (buffer[0] == '\n' || buffer[0] == '\r')
+        {
+            // Consume one more line for headers
+            fgets(buffer, sizeof(buffer), file);
+        }
+        else if (strncmp(buffer, "步数", 4) != 0)
+        {
+            // If it's not headers, maybe we consumed the empty line already?
+            // Let's be flexible. If it doesn't start with "步数", try reading one more.
+            if (fgets(buffer, sizeof(buffer), file) == NULL)
+            {
+                fclose(file);
+                return 0;
+            }
+        }
+    }
+
+    // Now buffer should contain headers "步数..." or we are ready to read data?
+    // Actually, let's just loop until we find a digit or EOF
 
     // 初始化棋盘
     BOARD_SIZE = size;
@@ -339,12 +376,16 @@ int load_game_from_file(const char *filename)
     // 读取所有落子步骤
     step_count = 0;
     int step_num; // 用于存储步数，但不使用
-    while (fscanf(file, "%d,%d,%d,%d", &step_num, &steps[step_count].player, &steps[step_count].x, &steps[step_count].y) == 4)
+
+    while (fgets(buffer, sizeof(buffer), file) != NULL)
     {
-        // 将1-based坐标转换为0-based坐标
-        steps[step_count].x--;
-        steps[step_count].y--;
-        step_count++;
+        if (sscanf(buffer, "%d,%d,%d,%d", &step_num, &steps[step_count].player, &steps[step_count].x, &steps[step_count].y) == 4)
+        {
+            // 将1-based坐标转换为0-based坐标
+            steps[step_count].x--;
+            steps[step_count].y--;
+            step_count++;
+        }
     }
 
     fclose(file);
