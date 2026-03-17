@@ -8,7 +8,6 @@ AppUpdatesURL=https://github.com/LHY0125/gobang.git
 DefaultDirName={autopf}\Gobang
 DefaultGroupName=五子棋游戏
 AllowNoIcons=yes
-LicenseFile=..\README.md
 OutputDir=dist
 OutputBaseFilename=Gobang_Inno_Setup
 SetupIconFile=
@@ -24,33 +23,21 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\gobang_console.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\gobang_gui.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\SDL3.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\include\*"; DestDir: "{app}\include"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\src\*"; DestDir: "{app}\src"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\MD\*"; DestDir: "{app}\MD"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\TXT\*"; DestDir: "{app}\TXT"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\records\*"; DestDir: "{app}\records"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\installer\*"; DestDir: "{app}\installer"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\compile.bat"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\gobang_config.ini"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\Makefile"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\bin\gobang_gui.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\bin\iup.dll"; DestDir: "{app}"; Flags: ignoreversion
+; 允许文件夹为空时不报错
+Source: "..\bin\records\*"; DestDir: "{app}\records"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 
 [Icons]
-Name: "{group}\五子棋游戏(控制台版)"; Filename: "{app}\gobang_console.exe"
-Name: "{group}\五子棋游戏(图形界面版)"; Filename: "{app}\gobang_gui.exe"
+Name: "{group}\五子棋游戏(图形界面版)"; Filename: "{app}\gobang_gui.exe"; WorkingDir: "{app}"
 Name: "{group}\{cm:UninstallProgram,五子棋游戏}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\五子棋游戏"; Filename: "{app}\gobang_gui.exe"; Tasks: desktopicon
+Name: "{autodesktop}\五子棋游戏"; Filename: "{app}\gobang_gui.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\gobang_gui.exe"; Description: "{cm:LaunchProgram,五子棋游戏}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\gobang_gui.exe"; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,五子棋游戏}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\records"
-Type: filesandordirs; Name: "{app}\include"
-Type: filesandordirs; Name: "{app}\src"
-Type: filesandordirs; Name: "{app}\MD"
-Type: filesandordirs; Name: "{app}\TXT"
-Type: filesandordirs; Name: "{app}\installer"
+Type: files; Name: "{app}\gobang_gui.exe"
+Type: files; Name: "{app}\iup.dll"
+Type: dirifempty; Name: "{app}"
