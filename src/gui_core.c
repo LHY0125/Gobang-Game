@@ -12,7 +12,7 @@ Ihandle *board_canvas = NULL;
 Ihandle *lbl_player = NULL;
 Ihandle *lbl_status = NULL;
 int gui_loop_running = 0;
-int gui_game_mode = 0;      // 0: PvP, 1: PvE, 2: Replay
+int gui_game_mode = 0;      // 0: PvP, 1: PvE, 2: Replay, 3: Network
 int replay_total_steps = 0; // 复盘总步数
 
 /**

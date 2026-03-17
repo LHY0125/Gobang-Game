@@ -10,27 +10,16 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include "gobang.h"
 #include "type.h"
 #include "config.h"
 #include <stdbool.h>
+#include <enet/enet.h> // 引入 ENet 头文件
 
-#ifdef _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#ifdef _MSC_VER
-#pragma comment(lib, "ws2_32.lib")
-#endif
-#else
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#define SOCKET int
-#define INVALID_SOCKET -1
-#define SOCKET_ERROR -1
-#define closesocket close
-#endif
+// 网络状态结构体在 type.h 中定义，我们需要修改 type.h 来包含 ENet 类型
+// 或者在这里重新定义（如果 type.h 中可以移除旧的定义）
+
+// 全局网络状态
+extern NetworkGameState network_state;
 
 // 函数声明
 
@@ -74,7 +63,7 @@ bool send_network_message(const NetworkMessage *msg);
 /**
  * @brief 接收网络消息
  * @param msg 接收消息的缓冲区
- * @param timeout_ms 超时时间（毫秒），0表示阻塞等待
+ * @param timeout_ms 超时时间（毫秒），0表示不阻塞等待
  * @return true 接收成功
  * @return false 接收失败或超时
  */

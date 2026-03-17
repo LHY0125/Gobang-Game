@@ -1,12 +1,15 @@
 #include <iup.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "gui_menu.h"
 #include "gui.h"
+#include "gui_internal.h"
 #include "globals.h"
 #include "config.h"
+#include "network.h"
 
-static Ihandle *menu_dlg = NULL;
+Ihandle *menu_dlg = NULL;
 
 static int btn_pvp_cb(Ihandle *ih)
 {
@@ -27,6 +30,107 @@ static int btn_pve_cb(Ihandle *ih)
     IupHide(menu_dlg); // Hide main menu manually AFTER game window created
     return IUP_DEFAULT;
 }
+
+// --- 网络对战相关回调 ---
+static int btn_network_host_cb(Ihandle *ih)
+{
+    Ihandle *dlg = IupGetDialog(ih);
+    Ihandle *txt_port = IupGetDialogChild(dlg, "NET_PORT");
+    int port = IupGetInt(txt_port, "VALUE");
+    if (port <= 0 || port > 65535) port = DEFAULT_PORT;
+
+    if (create_server(port))
+    {
+        IupMessage("成功", "房间创建成功，等待玩家加入...");
+        IupHide(dlg);
+        start_network_game_gui();
+        IupHide(menu_dlg);
+    }
+    else
+    {
+        IupMessage("错误", "创建房间失败，可能是端口被占用");
+    }
+    return IUP_DEFAULT;
+}
+
+static int btn_network_join_cb(Ihandle *ih)
+{
+    Ihandle *dlg = IupGetDialog(ih);
+    Ihandle *txt_ip = IupGetDialogChild(dlg, "NET_IP");
+    Ihandle *txt_port = IupGetDialogChild(dlg, "NET_PORT");
+    
+    char *ip = IupGetAttribute(txt_ip, "VALUE");
+    int port = IupGetInt(txt_port, "VALUE");
+    if (port <= 0 || port > 65535) port = DEFAULT_PORT;
+
+    if (connect_to_server(ip, port))
+    {
+        IupMessage("成功", "成功加入房间！");
+        IupHide(dlg);
+        start_network_game_gui();
+        IupHide(menu_dlg);
+    }
+    else
+    {
+        IupMessage("错误", "加入房间失败，请检查IP和端口");
+    }
+    return IUP_DEFAULT;
+}
+
+static int btn_network_cancel_cb(Ihandle *ih)
+{
+    Ihandle *dlg = IupGetDialog(ih);
+    IupHide(dlg);
+    return IUP_DEFAULT;
+}
+
+static int btn_network_cb(Ihandle *ih)
+{
+    (void)ih;
+    printf("DEBUG: Opening Network Menu\n");
+
+    Ihandle *txt_ip = IupText(NULL);
+    IupSetAttribute(txt_ip, "NAME", "NET_IP");
+    IupSetAttribute(txt_ip, "VALUE", "127.0.0.1");
+    IupSetAttribute(txt_ip, "SIZE", "100x");
+
+    Ihandle *txt_port = IupText(NULL);
+    IupSetAttribute(txt_port, "NAME", "NET_PORT");
+    char port_str[16];
+    sprintf(port_str, "%d", DEFAULT_PORT);
+    IupSetAttribute(txt_port, "VALUE", port_str);
+    IupSetAttribute(txt_port, "SIZE", "50x");
+
+    Ihandle *btn_host = IupButton("创建房间", NULL);
+    IupSetCallback(btn_host, "ACTION", (Icallback)btn_network_host_cb);
+    
+    Ihandle *btn_join = IupButton("加入房间", NULL);
+    IupSetCallback(btn_join, "ACTION", (Icallback)btn_network_join_cb);
+
+    Ihandle *btn_cancel = IupButton("取消", NULL);
+    IupSetCallback(btn_cancel, "ACTION", (Icallback)btn_network_cancel_cb);
+
+    Ihandle *vbox = IupVbox(
+        IupHbox(IupLabel("目标 IP: "), txt_ip, NULL),
+        IupHbox(IupLabel("端口: "), txt_port, NULL),
+        IupLabel(""),
+        IupHbox(btn_host, btn_join, btn_cancel, NULL),
+        NULL
+    );
+    IupSetAttribute(vbox, "MARGIN", "20x20");
+    IupSetAttribute(vbox, "GAP", "10");
+    IupSetAttribute(vbox, "ALIGNMENT", "ACENTER");
+
+    Ihandle *dlg = IupDialog(vbox);
+    IupSetAttribute(dlg, "TITLE", "局域网联机");
+    IupSetAttribute(dlg, "RESIZE", "NO");
+    
+    IupPopup(dlg, IUP_CENTER, IUP_CENTER);
+    IupDestroy(dlg);
+
+    return IUP_DEFAULT;
+}
+// --- 网络对战结束 ---
 
 static int btn_replay_cb(Ihandle *ih)
 {
@@ -227,6 +331,11 @@ void create_main_menu()
     IupSetAttribute(btn_pve, "SIZE", "120x30");
     IupSetAttribute(btn_pve, "FONT", "SimHei, 12");
 
+    Ihandle *btn_net = IupButton("局域网联机", NULL);
+    IupSetCallback(btn_net, "ACTION", (Icallback)btn_network_cb);
+    IupSetAttribute(btn_net, "SIZE", "120x30");
+    IupSetAttribute(btn_net, "FONT", "SimHei, 12");
+
     Ihandle *btn_replay = IupButton("复盘模式", NULL);
     IupSetCallback(btn_replay, "ACTION", (Icallback)btn_replay_cb);
     IupSetAttribute(btn_replay, "SIZE", "120x30");
@@ -246,6 +355,7 @@ void create_main_menu()
         lbl_title,
         btn_pvp,
         btn_pve,
+        btn_net,
         btn_replay,
         btn_settings,
         btn_exit,

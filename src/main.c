@@ -4,7 +4,7 @@
  * @note 本文件包含了游戏的主循环、模式选择和游戏初始化等功能
  * @brief 将以下指令复制到powershell
  *
- * !图形化版本编译（需要IUP库）：
+ * !编译（需要IUP库）：
  * mingw32-make gui
    .\bin\gobang_gui.exe
  *

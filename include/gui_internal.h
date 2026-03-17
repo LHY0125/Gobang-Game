@@ -23,6 +23,9 @@ int screen_to_board(int screen_x, int screen_y, int *board_x, int *board_y);
 
 // 游戏窗口 (在 gui_game.c 中定义)
 void create_game_window();
+void start_pvp_game_gui();
+void start_pve_game_gui();
+void start_network_game_gui(); // 新增：启动网络对战游戏窗口
 int action_cb(Ihandle *ih);
 int button_cb(Ihandle *ih, int button, int pressed, int x, int y, char *status);
 int k_any_cb(Ihandle *ih, int c);

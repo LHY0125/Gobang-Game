@@ -8,7 +8,12 @@ SHELL = D:/PowerShell/PowerShell-7.5.4/PowerShell.exe
 .SHELLFLAGS = -NoProfile -Command
 
 CFLAGS = -Wall -Wextra -std=c17 -O2 -Iinclude -finput-charset=UTF-8 -fexec-charset=UTF-8
-LDFLAGS = -lws2_32
+# ENet 包含路径
+ENET_INC = -Ilibs/enet/include
+CFLAGS += $(ENET_INC)
+
+LDFLAGS = -lws2_32 -lwinmm
+
 
 # IUP路径设置
 IUP_PATH = libs/iup-3.31_Win64_dllw6_lib
@@ -29,8 +34,14 @@ COMMON_SOURCES = $(SRC_DIR)/gobang.c $(SRC_DIR)/ai.c $(SRC_DIR)/config.c \
                  $(SRC_DIR)/gui_game.c $(SRC_DIR)/gui_replay.c \
                  $(SRC_DIR)/gui_menu.c
 
+# ENet 源文件
+ENET_SOURCES = libs/enet/callbacks.c libs/enet/compress.c libs/enet/host.c \
+               libs/enet/list.c libs/enet/packet.c libs/enet/peer.c \
+               libs/enet/protocol.c libs/enet/win32.c
+
 # 目标文件 (src/xxx.c -> obj/xxx.o)
 COMMON_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(COMMON_SOURCES))
+ENET_OBJECTS = $(patsubst libs/enet/%.c,$(OBJ_DIR)/enet_%.o,$(ENET_SOURCES))
 
 # 可执行文件
 GUI_TARGET = $(BIN_DIR)/gobang_gui.exe
@@ -44,13 +55,17 @@ directories:
 	if (!(Test-Path "$(BIN_DIR)")) { New-Item -ItemType Directory -Path "$(BIN_DIR)" | Out-Null }
 
 # GUI版本
-$(GUI_TARGET): $(COMMON_OBJECTS) $(OBJ_DIR)/main.o
+$(GUI_TARGET): $(COMMON_OBJECTS) $(ENET_OBJECTS) $(OBJ_DIR)/main.o
 	$(CC) $(CFLAGS) $(IUP_INCLUDE) -o $@ $^ $(IUP_LIBS) $(LDFLAGS)
 	Copy-Item -Path "$(subst /,\,$(IUP_PATH))\iup.dll" -Destination "$(BIN_DIR)" -Force
 
 # 通用目标文件编译规则
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) $(IUP_INCLUDE) -c -o $@ $<
+
+# 编译 ENet 源文件
+$(OBJ_DIR)/enet_%.o: libs/enet/%.c | directories
+	$(CC) $(CFLAGS) $(ENET_INC) -c -o $@ $<
 
 # 编译 main.c
 $(OBJ_DIR)/main.o: $(SRC_DIR)/main.c

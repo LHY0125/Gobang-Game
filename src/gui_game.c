@@ -5,11 +5,72 @@
 #include "gobang.h"
 #include "ai.h"
 #include "record.h"
+#include "network.h"
 #include <iup.h>
 #include <iupdraw.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+static Ihandle *timer = NULL; // 网络轮询定时器
+
+/**
+ * @brief 网络事件轮询回调
+ */
+static int timer_cb(Ihandle *ih)
+{
+    (void)ih;
+    if (gui_game_mode != 3 || game_over)
+        return IUP_DEFAULT;
+
+    NetworkMessage msg;
+    // 非阻塞接收消息
+    if (receive_network_message(&msg, 0))
+    {
+        if (msg.type == MSG_MOVE)
+        {
+            int bx = msg.x;
+            int by = msg.y;
+            int pid = msg.player_id;
+
+            if (have_space(bx, by))
+            {
+                player_move(bx, by, pid);
+                if (check_win(bx, by, pid))
+                {
+                    game_over = 1;
+                    sprintf(status_message, "对手获胜！");
+                    IupMessage("游戏结束", "对手获胜！");
+                }
+                else
+                {
+                    current_player_gui = network_state.local_player_id;
+                    sprintf(status_message, "轮到你落子");
+                }
+                update_ui_labels();
+                if (board_canvas)
+                    IupUpdate(board_canvas);
+            }
+        }
+        else if (msg.type == MSG_DISCONNECT || msg.type == MSG_SURRENDER)
+        {
+            game_over = 1;
+            sprintf(status_message, "对手已断开连接/认输");
+            IupMessage("游戏结束", "对手已退出游戏，你赢了！");
+            update_ui_labels();
+        }
+    }
+
+    if (!is_network_connected() && !game_over)
+    {
+        game_over = 1;
+        sprintf(status_message, "与服务器断开连接");
+        IupMessage("错误", "网络连接已断开");
+        update_ui_labels();
+    }
+
+    return IUP_DEFAULT;
+}
 
 /**
  * @brief ACTION 回调：负责重绘
@@ -46,6 +107,11 @@ int btn_undo_cb(Ihandle *ih)
     {
         steps_to_undo = 2; // 悔棋两步（玩家+AI）
     }
+    else if (gui_game_mode == 3) // Network
+    {
+        IupMessage("提示", "网络模式暂不支持悔棋");
+        return IUP_DEFAULT;
+    }
 
     if (step_count >= steps_to_undo)
     {
@@ -66,6 +132,7 @@ int btn_undo_cb(Ihandle *ih)
         sprintf(status_message, "无法悔棋");
         update_ui_labels();
     }
+
     return IUP_DEFAULT;
 }
 
@@ -120,6 +187,18 @@ int btn_back_cb(Ihandle *ih)
     (void)ih;
     printf("DEBUG: Back to Menu clicked\n");
 
+    // 如果是网络模式，断开连接
+    if (gui_game_mode == 3)
+    {
+        disconnect_network();
+        if (timer)
+        {
+            IupSetAttribute(timer, "RUN", "NO");
+            IupDestroy(timer);
+            timer = NULL;
+        }
+    }
+
     // 1. 先显示主菜单
     show_main_menu();
     printf("DEBUG: Main menu shown\n");
@@ -150,6 +229,11 @@ int button_cb(Ihandle *ih, int button, int pressed, int x, int y, char *status)
         if (game_over)
             return IUP_DEFAULT;
 
+        if (gui_game_mode == 3 && current_player_gui != network_state.local_player_id)
+        {
+            return IUP_DEFAULT; // 网络模式下，非自己回合不可落子
+        }
+
         int board_x, board_y;
         if (screen_to_board(x, y, &board_x, &board_y))
         {
@@ -162,6 +246,8 @@ int button_cb(Ihandle *ih, int button, int pressed, int x, int y, char *status)
                     if (check_win(board_x, board_y, current_player_gui))
                     {
                         game_over = 1;
+                        if (gui_game_mode == 3)
+                            send_move(board_x, board_y, current_player_gui); // 发送最后一步
                         if (current_player_gui == PLAYER)
                         {
                             sprintf(status_message, "黑子获胜！");
@@ -182,6 +268,12 @@ int button_cb(Ihandle *ih, int button, int pressed, int x, int y, char *status)
                                 sprintf(status_message, "轮到黑子");
                             else
                                 sprintf(status_message, "轮到白子");
+                        }
+                        else if (gui_game_mode == 3) // Network
+                        {
+                            send_move(board_x, board_y, current_player_gui);
+                            current_player_gui = network_state.remote_player_id;
+                            sprintf(status_message, "等待对手落子...");
                         }
                         else // PvE
                         {
@@ -395,4 +487,45 @@ void start_pve_game_gui()
         IupUpdate(board_canvas);
     }
     printf("DEBUG: start_pve_game_gui end\n");
+}
+
+void start_network_game_gui()
+{
+    printf("DEBUG: start_network_game_gui start\n");
+    gui_game_mode = 3;
+    empty_board();
+
+    // 主机执黑先行
+    current_player_gui = PLAYER1;
+    game_over = 0;
+
+    create_game_window();
+    printf("DEBUG: create_game_window returned\n");
+
+    if (dlg)
+    {
+        IupShowXY(dlg, IUP_CENTER, IUP_CENTER);
+        printf("DEBUG: IupShowXY called\n");
+    }
+
+    if (network_state.is_server)
+        sprintf(status_message, "局域网联机 - 你是主机(黑子)，轮到你落子");
+    else
+        sprintf(status_message, "局域网联机 - 你是客机(白子)，等待对手落子...");
+
+    update_ui_labels();
+
+    // 强制初始重绘
+    if (board_canvas)
+    {
+        IupUpdate(board_canvas);
+    }
+
+    // 启动网络轮询定时器
+    timer = IupTimer();
+    IupSetCallback(timer, "ACTION_CB", (Icallback)timer_cb);
+    IupSetAttribute(timer, "TIME", "50"); // 50ms 轮询一次
+    IupSetAttribute(timer, "RUN", "YES");
+
+    printf("DEBUG: start_network_game_gui end\n");
 }

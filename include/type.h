@@ -80,15 +80,18 @@ typedef struct
  * @brief 网络游戏状态结构
  * @details 用于管理网络游戏状态
  */
+// ENet 头文件需要前置声明或直接包含，但在 type.h 中包含可能引起循环依赖
+// 我们可以使用 void* 来避免在 type.h 中包含 enet.h
 typedef struct
 {
-    uintptr_t socket;     // 套接字 (使用uintptr_t代替SOCKET以避免引入winsock2.h)
-    bool is_server;       // 是否为服务器
-    bool is_connected;    // 是否已连接
-    int local_player_id;  // 本地玩家ID
+    void *host;          // ENetHost * (Server 或 Client)
+    void *peer;          // ENetPeer * (连接的对象)
+    bool is_server;      // 是否为服务器(主机)
+    bool is_connected;   // 是否已连接
+    int local_player_id; // 本地玩家ID
     int remote_player_id; // 远程玩家ID
-    char remote_ip[16];   // 远程IP地址（MAX_IP_LENGTH = 16）
-    int port;             // 端口号
+    char remote_ip[64];  // 远程IP
+    int port;            // 端口
 } NetworkGameState;
 
 #endif // TYPE_H

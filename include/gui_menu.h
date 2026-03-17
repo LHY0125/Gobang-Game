@@ -1,6 +1,11 @@
 #ifndef GUI_MENU_H
 #define GUI_MENU_H
 
+#include <iup.h>
+
+// 主菜单对话框句柄，需要暴露给其他模块（如返回菜单时）
+extern Ihandle *menu_dlg;
+
 /**
  * @brief 创建并显示主菜单
  */
