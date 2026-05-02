@@ -538,7 +538,7 @@ void create_main_menu()
     IupSetAttribute(menu_dlg, "MINBOX", "NO");
     IupSetAttribute(menu_dlg, "MAXBOX", "NO");
     IupSetAttribute(menu_dlg, "BGCOLOR", CLR_WINDOW_BG);
-    IupSetAttribute(menu_dlg, "SIZE", "360x480");
+    IupSetAttribute(menu_dlg, "SIZE", "380x520");
 
     // 设置对话框关闭回调 (点X关闭程序)
     IupSetCallback(menu_dlg, "CLOSE_CB", (Icallback)btn_exit_cb);
