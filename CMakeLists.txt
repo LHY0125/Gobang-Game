@@ -26,7 +26,7 @@ add_library(enet STATIC
 target_include_directories(enet PUBLIC ${ENET_DIR}/include)
 
 # === IUP（预构建导入库）===
-set(IUP_DIR ${CMAKE_SOURCE_DIR}/libs/iup-3.31_Win64_dllw6_lib)
+set(IUP_DIR ${CMAKE_SOURCE_DIR}/libs/IUP)
 add_library(iup SHARED IMPORTED)
 set_target_properties(iup PROPERTIES
     IMPORTED_IMPLIB   ${IUP_DIR}/libiup.a
