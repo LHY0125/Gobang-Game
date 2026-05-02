@@ -12,7 +12,7 @@ add_compile_options(-Wall -Wextra -O2)
 add_compile_options(-finput-charset=UTF-8 -fexec-charset=UTF-8)
 
 # === ENet（从源码编译静态库）===
-set(ENET_DIR ${CMAKE_SOURCE_DIR}/libs/enet)
+set(ENET_DIR ${CMAKE_SOURCE_DIR}/libs/ENET)
 add_library(enet STATIC
     ${ENET_DIR}/callbacks.c
     ${ENET_DIR}/compress.c
