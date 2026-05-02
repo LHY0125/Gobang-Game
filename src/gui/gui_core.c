@@ -28,6 +28,9 @@ int init_gui()
     // 启用UTF-8模式，确保中文正常显示
     IupSetGlobal("UTF8MODE", "YES");
 
+    // 设置全局默认字体
+    IupSetGlobal("DEFAULTFONT", "SimHei, 11");
+
     create_main_menu();
     show_main_menu();
 

@@ -147,7 +147,7 @@ static int map_cb(Ihandle *ih)
 }
 
 /**
- * @brief ACTION 回调：负责重绘
+ * @brief ACTION 回调：负责重绘（经典木纹风格）
  */
 int action_cb(Ihandle *ih)
 {
@@ -162,29 +162,48 @@ int action_cb(Ihandle *ih)
     RECT rc;
     GetClientRect(hwnd, &rc);
 
-    // 预创建所有 GDI 对象（避免循环内反复创建销毁）
-    HBRUSH bg_brush = CreateSolidBrush(RGB(240, 217, 181));
-    HBRUSH black_brush = CreateSolidBrush(RGB(0, 0, 0));
-    HBRUSH white_brush = CreateSolidBrush(RGB(255, 255, 255));
-    HBRUSH red_brush = CreateSolidBrush(RGB(255, 0, 0));
-    HPEN grid_pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-    HPEN stone_pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+    // === 预创建所有 GDI 对象 ===
+    HBRUSH bg_brush = CreateSolidBrush(RGB(CLR_BOARD_BG_R, CLR_BOARD_BG_G, CLR_BOARD_BG_B));
+    HBRUSH black_outer = CreateSolidBrush(RGB(CLR_BLACK_STONE_R, CLR_BLACK_STONE_G, CLR_BLACK_STONE_B));
+    HBRUSH black_core = CreateSolidBrush(RGB(0, 0, 0));
+    HBRUSH black_hl = CreateSolidBrush(RGB(CLR_BLACK_HIGHLIGHT_R, CLR_BLACK_HIGHLIGHT_G, CLR_BLACK_HIGHLIGHT_B));
+    HBRUSH white_outer = CreateSolidBrush(RGB(CLR_WHITE_BORDER_R, CLR_WHITE_BORDER_G, CLR_WHITE_BORDER_B));
+    HBRUSH white_core = CreateSolidBrush(RGB(CLR_WHITE_STONE_R, CLR_WHITE_STONE_G, CLR_WHITE_STONE_B));
+    HBRUSH white_hl = CreateSolidBrush(RGB(CLR_WHITE_HIGHLIGHT_R, CLR_WHITE_HIGHLIGHT_G, CLR_WHITE_HIGHLIGHT_B));
+    HBRUSH star_brush = CreateSolidBrush(RGB(CLR_STAR_POINT_R, CLR_STAR_POINT_G, CLR_STAR_POINT_B));
+    HPEN grid_pen = CreatePen(PS_SOLID, 1, RGB(CLR_GRID_LINE_R, CLR_GRID_LINE_G, CLR_GRID_LINE_B));
+    HPEN border_pen = CreatePen(PS_SOLID, 2, RGB(CLR_BOARD_BORDER_R, CLR_BOARD_BORDER_G, CLR_BOARD_BORDER_B));
+    HPEN last_move_pen = CreatePen(PS_SOLID, 2, RGB(CLR_LAST_MOVE_R, CLR_LAST_MOVE_G, CLR_LAST_MOVE_B));
+    HPEN null_pen = CreatePen(PS_NULL, 0, RGB(0, 0, 0));
+    HFONT hfont_coord = CreateFont(12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+                                   DEFAULT_CHARSET, 0, 0, 0, 0, "SimHei");
 
     // 1. 填充背景
     FillRect(hdc, &rc, bg_brush);
 
-    // 2. 绘制棋盘网格
-    HPEN prev_pen = (HPEN)SelectObject(hdc, grid_pen);
+    // 2. 绘制棋盘边框（深色外框）
+    HPEN prev_pen = (HPEN)SelectObject(hdc, border_pen);
+    HBRUSH prev_brush = (HBRUSH)SelectObject(hdc, (HBRUSH)GetStockObject(NULL_BRUSH));
+    int grid_left = BOARD_OFFSET_X;
+    int grid_top = BOARD_OFFSET_Y;
+    int grid_right = BOARD_OFFSET_X + (BOARD_SIZE - 1) * CELL_SIZE;
+    int grid_bottom = BOARD_OFFSET_Y + (BOARD_SIZE - 1) * CELL_SIZE;
+    Rectangle(hdc, grid_left - 2, grid_top - 2, grid_right + 3, grid_bottom + 3);
+
+    // 3. 绘制棋盘网格
+    SelectObject(hdc, grid_pen);
+    SelectObject(hdc, (HBRUSH)GetStockObject(NULL_BRUSH));
     for (int i = 0; i < BOARD_SIZE; i++)
     {
-        MoveToEx(hdc, BOARD_OFFSET_X, BOARD_OFFSET_Y + i * CELL_SIZE, NULL);
-        LineTo(hdc, BOARD_OFFSET_X + (BOARD_SIZE - 1) * CELL_SIZE, BOARD_OFFSET_Y + i * CELL_SIZE);
-        MoveToEx(hdc, BOARD_OFFSET_X + i * CELL_SIZE, BOARD_OFFSET_Y, NULL);
-        LineTo(hdc, BOARD_OFFSET_X + i * CELL_SIZE, BOARD_OFFSET_Y + (BOARD_SIZE - 1) * CELL_SIZE);
+        MoveToEx(hdc, grid_left, BOARD_OFFSET_Y + i * CELL_SIZE, NULL);
+        LineTo(hdc, grid_right, BOARD_OFFSET_Y + i * CELL_SIZE);
+        MoveToEx(hdc, BOARD_OFFSET_X + i * CELL_SIZE, grid_top, NULL);
+        LineTo(hdc, BOARD_OFFSET_X + i * CELL_SIZE, grid_bottom);
     }
 
-    // 3. 星位/天元
-    SelectObject(hdc, black_brush);
+    // 4. 星位/天元（实心圆）
+    SelectObject(hdc, null_pen);
+    SelectObject(hdc, star_brush);
     if (BOARD_SIZE == 15)
     {
         int stars[] = {3, 7, 11};
@@ -193,18 +212,44 @@ int action_cb(Ihandle *ih)
             {
                 int cx = BOARD_OFFSET_X + stars[si] * CELL_SIZE;
                 int cy = BOARD_OFFSET_Y + stars[sj] * CELL_SIZE;
-                Ellipse(hdc, cx - 3, cy - 3, cx + 4, cy + 4);
+                Ellipse(hdc, cx - 4, cy - 4, cx + 5, cy + 5);
             }
     }
-    else
+    else if (BOARD_SIZE >= 9)
     {
         int cx = BOARD_OFFSET_X + (BOARD_SIZE / 2) * CELL_SIZE;
         int cy = BOARD_OFFSET_Y + (BOARD_SIZE / 2) * CELL_SIZE;
-        Ellipse(hdc, cx - 3, cy - 3, cx + 4, cy + 4);
+        Ellipse(hdc, cx - 4, cy - 4, cx + 5, cy + 5);
     }
 
-    // 4. 绘制棋子
-    SelectObject(hdc, stone_pen);
+    // 5. 绘制坐标标注
+    {
+        HFONT prev_font = (HFONT)SelectObject(hdc, hfont_coord);
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(CLR_BOARD_BORDER_R, CLR_BOARD_BORDER_G, CLR_BOARD_BORDER_B));
+
+        // 列坐标 (A, B, C, ...)
+        for (int j = 0; j < BOARD_SIZE; j++)
+        {
+            char label[2] = {'A' + j, '\0'};
+            int tx = BOARD_OFFSET_X + j * CELL_SIZE - 4;
+            TextOut(hdc, tx, grid_top - 18, label, 1);
+            TextOut(hdc, tx, grid_bottom + 5, label, 1);
+        }
+        // 行坐标 (1, 2, 3, ...)
+        for (int i = 0; i < BOARD_SIZE; i++)
+        {
+            char label[4];
+            int len = snprintf(label, sizeof(label), "%d", i + 1);
+            int ty = BOARD_OFFSET_Y + i * CELL_SIZE - 7;
+            TextOut(hdc, grid_left - 18 - (len > 1 ? 4 : 0), ty, label, len);
+            TextOut(hdc, grid_right + 6, ty, label, len);
+        }
+        SelectObject(hdc, prev_font);
+    }
+
+    // 6. 绘制棋子（渐变效果：3层同心圆）
+    SelectObject(hdc, null_pen);
     for (int i = 0; i < BOARD_SIZE; i++)
         for (int j = 0; j < BOARD_SIZE; j++)
         {
@@ -215,34 +260,60 @@ int action_cb(Ihandle *ih)
             int cy = BOARD_OFFSET_Y + i * CELL_SIZE;
 
             if (board[i][j] == PLAYER)
-                SelectObject(hdc, black_brush);
+            {
+                // 黑子：外圈深灰 → 中圈黑 → 中心高光
+                SelectObject(hdc, black_outer);
+                Ellipse(hdc, cx - STONE_RADIUS, cy - STONE_RADIUS,
+                        cx + STONE_RADIUS + 1, cy + STONE_RADIUS + 1);
+                SelectObject(hdc, black_core);
+                Ellipse(hdc, cx - STONE_RADIUS + 2, cy - STONE_RADIUS + 2,
+                        cx + STONE_RADIUS - 1, cy + STONE_RADIUS - 1);
+                SelectObject(hdc, black_hl);
+                Ellipse(hdc, cx - 4, cy - 5, cx - 1, cy - 2);
+            }
             else
-                SelectObject(hdc, white_brush);
-
-            Ellipse(hdc, cx - STONE_RADIUS, cy - STONE_RADIUS,
-                    cx + STONE_RADIUS + 1, cy + STONE_RADIUS + 1);
+            {
+                // 白子：外圈灰边 → 中圈白 → 中心高光
+                SelectObject(hdc, white_outer);
+                Ellipse(hdc, cx - STONE_RADIUS, cy - STONE_RADIUS,
+                        cx + STONE_RADIUS + 1, cy + STONE_RADIUS + 1);
+                SelectObject(hdc, white_core);
+                Ellipse(hdc, cx - STONE_RADIUS + 2, cy - STONE_RADIUS + 2,
+                        cx + STONE_RADIUS - 1, cy + STONE_RADIUS - 1);
+                SelectObject(hdc, white_hl);
+                Ellipse(hdc, cx - 4, cy - 5, cx - 1, cy - 2);
+            }
         }
 
-    // 5. 标记最后落子位置（红色小方块）
+    // 7. 标记最后落子位置（蓝色圆环）
     if (step_count > 0 && step_count <= MAX_STEPS)
     {
         Step last = steps[step_count - 1];
         int cx = BOARD_OFFSET_X + last.y * CELL_SIZE;
         int cy = BOARD_OFFSET_Y + last.x * CELL_SIZE;
-        RECT mark = {cx - 3, cy - 3, cx + 4, cy + 4};
-        FillRect(hdc, &mark, red_brush);
+        SelectObject(hdc, last_move_pen);
+        SelectObject(hdc, (HBRUSH)GetStockObject(NULL_BRUSH));
+        Ellipse(hdc, cx - 5, cy - 5, cx + 6, cy + 6);
     }
 
     // 恢复原始 GDI 对象，然后清理
     SelectObject(hdc, prev_pen);
+    SelectObject(hdc, prev_brush);
     ReleaseDC(hwnd, hdc);
 
     DeleteObject(bg_brush);
-    DeleteObject(black_brush);
-    DeleteObject(white_brush);
-    DeleteObject(red_brush);
+    DeleteObject(black_outer);
+    DeleteObject(black_core);
+    DeleteObject(black_hl);
+    DeleteObject(white_outer);
+    DeleteObject(white_core);
+    DeleteObject(white_hl);
+    DeleteObject(star_brush);
     DeleteObject(grid_pen);
-    DeleteObject(stone_pen);
+    DeleteObject(border_pen);
+    DeleteObject(last_move_pen);
+    DeleteObject(null_pen);
+    DeleteObject(hfont_coord);
 
     return IUP_DEFAULT;
 }
@@ -526,85 +597,107 @@ void create_game_window()
     IupSetCallback(board_canvas, "K_ANY", (Icallback)k_any_cb);
     IupSetCallback(board_canvas, "MAP_CB", (Icallback)map_cb);
 
-    // 计算棋盘像素大小
-    int board_pixel_size = BOARD_SIZE * CELL_SIZE + BOARD_OFFSET_X * 2;
+    // 计算棋盘像素大小（含坐标标注区域）
+    int board_pixel_size = (BOARD_SIZE - 1) * CELL_SIZE + BOARD_OFFSET_X * 2 + 20;
     char size[32];
     sprintf(size, "%dx%d", board_pixel_size, board_pixel_size);
     IupSetAttribute(board_canvas, "RASTERSIZE", size);
     IupSetAttribute(board_canvas, "EXPAND", "NO");
     IupSetAttribute(board_canvas, "BORDER", "NO");
-    IupSetAttribute(board_canvas, "BGCOLOR", "240 217 181");
+    IupSetAttribute(board_canvas, "BGCOLOR", "212 165 116");
 
-    // 创建标签 (玩家信息和游戏状态)
+    // === 创建标签 ===
     lbl_player = IupLabel("当前玩家: 黑子");
+    IupSetAttribute(lbl_player, "FONT", "SimHei, 13");
+    IupSetAttribute(lbl_player, "FGCOLOR", CLR_TEXT_TITLE);
+
     lbl_status = IupLabel("准备开始");
+    IupSetAttribute(lbl_status, "FONT", "SimHei, 11");
+    IupSetAttribute(lbl_status, "FGCOLOR", CLR_TEXT_NORMAL);
+
+    // === 对局信息面板 ===
+    Ihandle *info_vbox = IupVbox(lbl_player, lbl_status, NULL);
+    IupSetAttribute(info_vbox, "GAP", "4");
+    IupSetAttribute(info_vbox, "MARGIN", "10x8");
+    Ihandle *frm_info = IupFrame(info_vbox);
+    IupSetAttribute(frm_info, "TITLE", "对局信息");
+    IupSetAttribute(frm_info, "FONT", "SimHei, 11");
+    IupSetAttribute(frm_info, "FGCOLOR", CLR_TEXT_NORMAL);
+
+    // === 按钮样式宏 ===
+#define SET_BTN_STYLE(btn, w, h, font)           \
+    IupSetAttribute(btn, "SIZE", #w "x" #h);    \
+    IupSetAttribute(btn, "FONT", font);          \
+    IupSetAttribute(btn, "BGCOLOR", CLR_BTN_NORMAL_BG); \
+    IupSetAttribute(btn, "FGCOLOR", CLR_BTN_NORMAL_FG); \
+    IupSetAttribute(btn, "FLAT", "YES")
 
     Ihandle *vbox_controls;
 
     if (gui_game_mode == 2) // 复盘模式
     {
-        Ihandle *btn_prev = IupButton("上一步 (Prev)", NULL);
+        Ihandle *btn_prev = IupButton("上一步", NULL);
         IupSetCallback(btn_prev, "ACTION", (Icallback)btn_replay_prev_cb);
-        IupSetAttribute(btn_prev, "SIZE", "100x30");
+        SET_BTN_STYLE(btn_prev, 120, 35, "SimHei, 11");
 
-        Ihandle *btn_next = IupButton("下一步 (Next)", NULL);
+        Ihandle *btn_next = IupButton("下一步", NULL);
         IupSetCallback(btn_next, "ACTION", (Icallback)btn_replay_next_cb);
-        IupSetAttribute(btn_next, "SIZE", "100x30");
+        SET_BTN_STYLE(btn_next, 120, 35, "SimHei, 11");
+
+        Ihandle *hbox_nav = IupHbox(btn_prev, btn_next, NULL);
+        IupSetAttribute(hbox_nav, "GAP", "8");
+        IupSetAttribute(hbox_nav, "ALIGNMENT", "ACENTER");
 
         Ihandle *btn_back = IupButton("返回菜单", NULL);
         IupSetCallback(btn_back, "ACTION", (Icallback)btn_back_cb);
-        IupSetAttribute(btn_back, "SIZE", "100x30");
+        SET_BTN_STYLE(btn_back, 120, 35, "SimHei, 11");
 
         vbox_controls = IupVbox(
-            lbl_player,
-            lbl_status,
-            IupLabel(NULL), // Spacer
-            btn_prev,
-            btn_next,
-            IupLabel(NULL), // Spacer
+            frm_info,
+            hbox_nav,
             btn_back,
             NULL);
     }
-    else // 游戏模式 (PvP / PvE)
+    else // 游戏模式 (PvP / PvE / Network)
     {
-        Ihandle *btn_undo = IupButton("悔棋 (Undo)", NULL);
+        Ihandle *btn_undo = IupButton("悔棋", NULL);
         IupSetCallback(btn_undo, "ACTION", (Icallback)btn_undo_cb);
-        IupSetAttribute(btn_undo, "SIZE", "100x30");
+        SET_BTN_STYLE(btn_undo, 120, 35, "SimHei, 11");
 
-        Ihandle *btn_save = IupButton("保存 (Save)", NULL);
+        Ihandle *btn_save = IupButton("保存棋谱", NULL);
         IupSetCallback(btn_save, "ACTION", (Icallback)btn_save_cb);
-        IupSetAttribute(btn_save, "SIZE", "100x30");
+        SET_BTN_STYLE(btn_save, 120, 35, "SimHei, 11");
 
         Ihandle *btn_back = IupButton("返回菜单", NULL);
         IupSetCallback(btn_back, "ACTION", (Icallback)btn_back_cb);
-        IupSetAttribute(btn_back, "SIZE", "100x30");
+        SET_BTN_STYLE(btn_back, 120, 35, "SimHei, 11");
 
         vbox_controls = IupVbox(
-            lbl_player,
-            lbl_status,
-            IupLabel(NULL), // Spacer
+            frm_info,
             btn_undo,
             btn_save,
-            IupLabel(NULL), // Spacer
             btn_back,
             NULL);
     }
 
-    IupSetAttribute(vbox_controls, "GAP", "15");
+#undef SET_BTN_STYLE
+
+    IupSetAttribute(vbox_controls, "GAP", "10");
     IupSetAttribute(vbox_controls, "MARGIN", "10x10");
     IupSetAttribute(vbox_controls, "ALIGNMENT", "ACENTER");
 
     Ihandle *hbox_main = IupHbox(board_canvas, vbox_controls, NULL);
     IupSetAttribute(hbox_main, "MARGIN", "10x10");
-    IupSetAttribute(hbox_main, "GAP", "10");
+    IupSetAttribute(hbox_main, "GAP", "8");
 
     // 创建Dialog
     dlg = IupDialog(hbox_main);
     if (!dlg)
         printf("ERROR: Failed to create dialog\n");
 
-    IupSetAttribute(dlg, "TITLE", "五子棋 - IUP版本");
+    IupSetAttribute(dlg, "TITLE", "五子棋");
     IupSetAttribute(dlg, "RESIZE", "NO");
+    IupSetAttribute(dlg, "BGCOLOR", CLR_WINDOW_BG);
 
     // 设置 CLOSE_CB 回调，确保点击X也能正确返回菜单
     IupSetCallback(dlg, "CLOSE_CB", (Icallback)btn_back_cb);

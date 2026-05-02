@@ -118,17 +118,53 @@
 // 窗口和棋盘配置
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 800
-#define BOARD_OFFSET_X 50
-#define BOARD_OFFSET_Y 50
+#define BOARD_OFFSET_X 45
+#define BOARD_OFFSET_Y 45
 #define CELL_SIZE 30
-#define STONE_RADIUS 12
+#define STONE_RADIUS 13
 
-// 颜色定义
-#define GUI_COLOR_BACKGROUND {240, 217, 181, 255}
-#define GUI_COLOR_BOARD_LINE {0, 0, 0, 255}
-#define GUI_COLOR_BLACK_STONE {0, 0, 0, 255}
-#define GUI_COLOR_WHITE_STONE {255, 255, 255, 255}
-#define GUI_COLOR_STONE_BORDER {100, 100, 100, 255}
+// 配色方案 - 经典木纹风格 (RGB)
+#define CLR_BOARD_BG_R       0xD4   // 棋盘背景 - 暖木色
+#define CLR_BOARD_BG_G       0xA5
+#define CLR_BOARD_BG_B       0x74
+#define CLR_BOARD_BORDER_R   0x8B   // 棋盘边框 - 深木色
+#define CLR_BOARD_BORDER_G   0x5E
+#define CLR_BOARD_BORDER_B   0x3C
+#define CLR_WINDOW_BG        "245 240 235"   // 窗口背景 - 米白
+#define CLR_PANEL_BG         "237 229 218"   // 面板背景 - 浅米色
+#define CLR_GRID_LINE_R      0x5C   // 网格线 - 深棕
+#define CLR_GRID_LINE_G      0x3D
+#define CLR_GRID_LINE_B      0x2E
+#define CLR_TEXT_TITLE        "60 36 21"      // 标题文字 - 深棕
+#define CLR_TEXT_NORMAL       "74 55 40"      // 正文文字 - 中棕
+#define CLR_TEXT_SECONDARY    "139 115 85"    // 次要文字 - 浅棕
+#define CLR_BTN_PRIMARY_BG    "139 94 60"     // 主按钮背景 - 深棕
+#define CLR_BTN_PRIMARY_FG    "255 255 255"   // 主按钮文字 - 白色
+#define CLR_BTN_NORMAL_BG     "237 229 218"   // 普通按钮背景 - 浅棕
+#define CLR_BTN_NORMAL_FG     "107 66 38"     // 普通按钮文字 - 深棕
+#define CLR_LAST_MOVE_R       0x2E   // 最后落子标记 - 蓝色
+#define CLR_LAST_MOVE_G       0x86
+#define CLR_LAST_MOVE_B       0xAB
+#define CLR_STAR_POINT_R      0x3C   // 星位/天元 - 深棕
+#define CLR_STAR_POINT_G      0x24
+#define CLR_STAR_POINT_B      0x15
+// 黑子渐变色
+#define CLR_BLACK_STONE_R     0x10   // 黑子外圈
+#define CLR_BLACK_STONE_G     0x10
+#define CLR_BLACK_STONE_B     0x10
+#define CLR_BLACK_HIGHLIGHT_R 0x50   // 黑子高光
+#define CLR_BLACK_HIGHLIGHT_G 0x50
+#define CLR_BLACK_HIGHLIGHT_B 0x50
+// 白子渐变色
+#define CLR_WHITE_STONE_R     0xF0   // 白子外圈
+#define CLR_WHITE_STONE_G     0xF0
+#define CLR_WHITE_STONE_B     0xF0
+#define CLR_WHITE_HIGHLIGHT_R 0xFF   // 白子高光
+#define CLR_WHITE_HIGHLIGHT_G 0xFF
+#define CLR_WHITE_HIGHLIGHT_B 0xFF
+#define CLR_WHITE_BORDER_R    0xA0   // 白子边框
+#define CLR_WHITE_BORDER_G    0xA0
+#define CLR_WHITE_BORDER_B    0xA0
 
 //---------- 文件路径参数 ----------//
 #define RECORDS_DIR "records"           // 记录文件目录

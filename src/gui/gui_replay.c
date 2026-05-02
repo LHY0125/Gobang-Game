@@ -4,6 +4,7 @@
 #include "globals.h"
 #include "gobang.h"
 #include "record.h"
+#include "config.h"
 #include <iup.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -173,20 +174,28 @@ void select_replay_file_gui()
     // 创建确定和取消按钮
     Ihandle *btn_ok = IupButton("确定", NULL);
     IupSetCallback(btn_ok, "ACTION", (Icallback)btn_replay_sel_ok_cb);
-    IupSetAttribute(btn_ok, "SIZE", "60x30");
+    IupSetAttribute(btn_ok, "SIZE", "80x32");
+    IupSetAttribute(btn_ok, "BGCOLOR", CLR_BTN_PRIMARY_BG);
+    IupSetAttribute(btn_ok, "FGCOLOR", CLR_BTN_PRIMARY_FG);
+    IupSetAttribute(btn_ok, "FLAT", "YES");
 
     Ihandle *btn_cancel = IupButton("取消", NULL);
     IupSetCallback(btn_cancel, "ACTION", (Icallback)btn_replay_sel_cancel_cb);
-    IupSetAttribute(btn_cancel, "SIZE", "60x30");
+    IupSetAttribute(btn_cancel, "SIZE", "80x32");
+    IupSetAttribute(btn_cancel, "BGCOLOR", CLR_BTN_NORMAL_BG);
+    IupSetAttribute(btn_cancel, "FGCOLOR", CLR_BTN_NORMAL_FG);
+    IupSetAttribute(btn_cancel, "FLAT", "YES");
 
-    Ihandle *vbox = IupVbox(
-        IupLabel("请选择复盘文件:"),
-        list,
-        IupHbox(btn_ok, btn_cancel, NULL),
-        NULL);
+    Ihandle *lbl_prompt = IupLabel("选择复盘文件:");
+    IupSetAttribute(lbl_prompt, "FGCOLOR", CLR_TEXT_NORMAL);
 
+    Ihandle *hbox_btns = IupHbox(btn_ok, btn_cancel, NULL);
+    IupSetAttribute(hbox_btns, "GAP", "10");
+    IupSetAttribute(hbox_btns, "ALIGNMENT", "ACENTER");
+
+    Ihandle *vbox = IupVbox(lbl_prompt, list, hbox_btns, NULL);
     IupSetAttribute(vbox, "GAP", "10");
-    IupSetAttribute(vbox, "MARGIN", "10x10");
+    IupSetAttribute(vbox, "MARGIN", "15x15");
     IupSetAttribute(vbox, "ALIGNMENT", "ACENTER");
 
     Ihandle *dlg_sel = IupDialog(vbox);
@@ -195,10 +204,11 @@ void select_replay_file_gui()
         printf("ERROR: Failed to create selection dialog\n");
         return;
     }
-    IupSetAttribute(dlg_sel, "TITLE", "选择复盘文件");
+    IupSetAttribute(dlg_sel, "TITLE", "复盘回放");
     IupSetAttribute(dlg_sel, "MINBOX", "NO");
     IupSetAttribute(dlg_sel, "MAXBOX", "NO");
     IupSetAttribute(dlg_sel, "RESIZE", "NO");
+    IupSetAttribute(dlg_sel, "BGCOLOR", CLR_WINDOW_BG);
 
     // 存储列表框句柄到对话框属性
     IupSetAttribute(dlg_sel, "MY_LIST", (char *)list);
