@@ -25,7 +25,6 @@ int main(int argc, char *argv[])
 {
     // 设置控制台编码为UTF-8
 #ifdef _WIN32
-    system("chcp 65001 > nul"); // 设置控制台编码为UTF-8
     SetConsoleOutputCP(65001);  // 设置控制台输出编码
     SetConsoleCP(65001);        // 设置控制台输入编码
     _mkdir("records");

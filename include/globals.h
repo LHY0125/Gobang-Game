@@ -33,8 +33,6 @@ extern int ai_difficulty;          // AI难度 (1-5)
 extern NetworkGameState network_state; // 网络游戏状态
 
 // ==================== GUI相关变量 ====================
-// Raylib 不需要暴露窗口和渲染器指针
-extern int gui_running;          // GUI运行状态标志
 extern int current_player_gui;   // GUI当前玩家
 extern int game_over;            // 游戏结束标志
 extern char status_message[256]; // 状态消息

@@ -8,7 +8,6 @@ extern Ihandle *dlg;
 extern Ihandle *board_canvas;
 extern Ihandle *lbl_player;
 extern Ihandle *lbl_status;
-extern int gui_loop_running;
 extern int gui_game_mode;      // 0: PvP, 1: PvE, 2: Replay
 extern int replay_total_steps; // 复盘总步数
 

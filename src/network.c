@@ -26,7 +26,7 @@ bool init_network()
     }
 
     memset(&network_state, 0, sizeof(NetworkGameState));
-    network_state.port = DEFAULT_PORT;
+    network_state.port = DEFAULT_NETWORK_PORT;
 
     return true;
 }

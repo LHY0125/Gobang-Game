@@ -48,7 +48,11 @@ void load_game_config()
         }
         else if (strncmp(line, "TIME_LIMIT=", 11) == 0)
         {
-            time_limit = atoi(line + 11);
+            int minutes = atoi(line + 11);
+            if (minutes > 0)
+            {
+                time_limit = minutes * 60; // 配置文件存分钟，内部转为秒
+            }
         }
         else if (strncmp(line, "NETWORK_PORT=", 13) == 0)
         {
@@ -101,7 +105,7 @@ void save_game_config()
     fprintf(file, "\n# 计时器 (0=关闭, 1=开启)\n");
     fprintf(file, "USE_TIMER=%d\n", use_timer);
     fprintf(file, "\n# 时间限制 (分钟)\n");
-    fprintf(file, "TIME_LIMIT=%d\n", time_limit);
+    fprintf(file, "TIME_LIMIT=%d\n", time_limit / 60); // 内部存秒，配置文件存分钟
     fprintf(file, "\n# 网络端口 (范围: %d-%d)\n", MIN_NETWORK_PORT, MAX_NETWORK_PORT);
     fprintf(file, "NETWORK_PORT=%d\n", network_port);
     fprintf(file, "\n# 网络超时时间 (毫秒)\n");

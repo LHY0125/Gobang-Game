@@ -30,7 +30,6 @@ int ai_difficulty = 3;                                    // AI难度 (1-5)
 NetworkGameState network_state = {0}; // 网络游戏状态
 
 // ==================== GUI相关变量定义 ====================
-int gui_running = 1;                                // GUI运行状态标志
 int current_player_gui = PLAYER;                    // GUI当前玩家
 int game_over = 0;                                  // 游戏结束标志
 char status_message[256] = "五子棋游戏 - 黑子先行"; // 状态消息

@@ -34,7 +34,7 @@
 //---------- 游戏设置默认值 ----------//
 #define DEFAULT_USE_FORBIDDEN_MOVES false   // 默认不启用禁手规则
 #define DEFAULT_USE_TIMER 0                 // 默认不启用计时器
-#define DEFAULT_TIME_LIMIT 30               // 默认时间限制为30秒(内部存储)
+#define DEFAULT_TIME_LIMIT 1800             // 默认时间限制为30分钟(内部以秒存储: 30*60)
 
 //---------- AI参数 ----------//
 #define DEFAULT_AI_DEPTH 5              // 默认AI搜索深度
@@ -48,8 +48,6 @@
 #define NETWORK_BUFFER_SIZE 1024        // 网络缓冲区大小
 
 // 网络配置
-#define DEFAULT_PORT 8888               // 默认端口（与DEFAULT_NETWORK_PORT保持一致）
-#define BUFFER_SIZE 1024                // 缓冲区大小（与NETWORK_BUFFER_SIZE保持一致）
 #define MAX_IP_LENGTH 16                // 最大IP地址长度
 
 // 网络消息类型
@@ -65,7 +63,7 @@
 
 //---------- 评分参数 ----------//
 // 棋型评分 - 用于calculate_step_score函数
-#define SCORE_FIVE 0                    // 五连
+#define SCORE_FIVE 5000                 // 五连
 #define SCORE_LIVE_FOUR 2000            // 活四
 #define SCORE_RUSH_FOUR 1000            // 冲四
 #define SCORE_DEAD_FOUR 300             // 死四

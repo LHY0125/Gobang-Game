@@ -37,7 +37,7 @@ static int btn_network_host_cb(Ihandle *ih)
     Ihandle *dlg = IupGetDialog(ih);
     Ihandle *txt_port = IupGetDialogChild(dlg, "NET_PORT");
     int port = IupGetInt(txt_port, "VALUE");
-    if (port <= 0 || port > 65535) port = DEFAULT_PORT;
+    if (port <= 0 || port > 65535) port = DEFAULT_NETWORK_PORT;
 
     if (create_server(port))
     {
@@ -61,7 +61,7 @@ static int btn_network_join_cb(Ihandle *ih)
     
     char *ip = IupGetAttribute(txt_ip, "VALUE");
     int port = IupGetInt(txt_port, "VALUE");
-    if (port <= 0 || port > 65535) port = DEFAULT_PORT;
+    if (port <= 0 || port > 65535) port = DEFAULT_NETWORK_PORT;
 
     if (connect_to_server(ip, port))
     {
@@ -97,7 +97,7 @@ static int btn_network_cb(Ihandle *ih)
     Ihandle *txt_port = IupText(NULL);
     IupSetAttribute(txt_port, "NAME", "NET_PORT");
     char port_str[16];
-    sprintf(port_str, "%d", DEFAULT_PORT);
+    sprintf(port_str, "%d", DEFAULT_NETWORK_PORT);
     IupSetAttribute(txt_port, "VALUE", port_str);
     IupSetAttribute(txt_port, "SIZE", "50x");
 

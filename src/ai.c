@@ -532,8 +532,9 @@ ThreatLevel detect_threat(int x, int y, int player)
     // 恢复棋盘
     board[x][y] = EMPTY;
 
-    // 如果有多个威胁，提升威胁等级
-    if (threat_count >= 2 && max_threat >= THREAT_THREE)
+    // 如果有多个活三威胁，升级为双威胁（如双三、四三等组合）
+    // 注意：不能把已经是活四的威胁降级为双威胁
+    if (threat_count >= 2 && max_threat == THREAT_THREE)
     {
         max_threat = THREAT_DOUBLE;
     }

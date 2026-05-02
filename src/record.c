@@ -24,29 +24,6 @@
 #endif
 
 /**
- * @brief 复盘游戏全过程并展示评分
- * @note 实现流程:
- * 1. 初始化临时复盘棋盘
- * 2. 按步数顺序逐步重现每个落子
- * 3. 每步显示:
- *    - 当前步数/总步数
- *    - 落子方(玩家/AI)
- *    - 落子位置(1-based坐标)
- *    - 当前棋盘状态
- * 4. 通过用户按Enter键控制步骤前进
- * 5. 复盘结束后自动进入评分环节:
- *    - 评估双方表现
- *    - 显示得分
- *    - 评选MVP
- * @note 技术细节:
- * - 使用独立临时棋盘避免影响主游戏状态
- * - 坐标显示转换为1-based方便用户理解
- * - 包含输入缓冲区清理防止意外输入
- * - 评分环节调用calculate_final_score()函数
- */
-void calculate_game_scores();
-
-/**
  * @brief 计算游戏评分
  */
 void calculate_game_scores()
@@ -99,7 +76,7 @@ void calculate_game_scores()
 void display_game_scores(int game_mode)
 {
     printf("\n===== 对局评分 =====\n");
-    double sum_score = (long double)player1_final_score + (long double)player2_final_score;
+    double sum_score = (double)player1_final_score + (double)player2_final_score;
 
     if (sum_score > 0)
     {
@@ -379,11 +356,21 @@ int load_game_from_file(const char *filename)
 
     while (fgets(buffer, sizeof(buffer), file) != NULL)
     {
+        if (step_count >= MAX_STEPS)
+        {
+            break; // 防止数组越界
+        }
         if (sscanf(buffer, "%d,%d,%d,%d", &step_num, &steps[step_count].player, &steps[step_count].x, &steps[step_count].y) == 4)
         {
             // 将1-based坐标转换为0-based坐标
             steps[step_count].x--;
             steps[step_count].y--;
+            // 验证坐标合法性
+            if (steps[step_count].x < 0 || steps[step_count].x >= size ||
+                steps[step_count].y < 0 || steps[step_count].y >= size)
+            {
+                continue; // 跳过非法坐标
+            }
             step_count++;
         }
     }

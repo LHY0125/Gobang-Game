@@ -11,7 +11,6 @@ Ihandle *dlg = NULL;
 Ihandle *board_canvas = NULL;
 Ihandle *lbl_player = NULL;
 Ihandle *lbl_status = NULL;
-int gui_loop_running = 0;
 int gui_game_mode = 0;      // 0: PvP, 1: PvE, 2: Replay, 3: Network
 int replay_total_steps = 0; // 复盘总步数
 
@@ -31,8 +30,6 @@ int init_gui()
 
     create_main_menu();
     show_main_menu();
-
-    gui_loop_running = 1;
 
     printf("图形化界面初始化成功！(IUP)\n");
     return 0;
