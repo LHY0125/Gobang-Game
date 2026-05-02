@@ -26,6 +26,12 @@ int network_timeout = NETWORK_TIMEOUT_MS;               // 网络超时时间
 double defense_coefficient = DEFAULT_DEFENSE_COEFFICIENT; // 防守系数
 int ai_difficulty = 3;                                    // AI难度 (1-5)
 
+// ==================== LLM大模型相关变量定义 ====================
+int llm_use = DEFAULT_LLM_USE;                                    // 是否使用LLM
+char llm_endpoint[MAX_LLM_ENDPOINT_LEN] = DEFAULT_LLM_ENDPOINT;  // API地址
+char llm_api_key[MAX_LLM_API_KEY_LEN] = DEFAULT_LLM_API_KEY;    // API Key
+char llm_model[MAX_LLM_MODEL_LEN] = DEFAULT_LLM_MODEL;          // 模型名
+
 // ==================== 网络相关变量定义 ====================
 NetworkGameState network_state = {0}; // 网络游戏状态
 

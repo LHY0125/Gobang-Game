@@ -135,6 +135,17 @@
 #define CONFIG_FILE "gobang_config.ini" // 配置文件路径
 #define MAX_PATH_LENGTH 256             // 最大路径长度
 
+//---------- LLM大模型参数 ----------//
+#define DEFAULT_LLM_USE 0                          // 默认不使用LLM (0=算法AI, 1=大模型)
+#define DEFAULT_LLM_ENDPOINT "https://api.minimax.chat/v1/chat/completions" // 默认API地址
+#define DEFAULT_LLM_API_KEY ""                     // 默认API Key (需用户填写)
+#define DEFAULT_LLM_MODEL "MiniMax-Text-01"        // 默认模型名
+#define MAX_LLM_ENDPOINT_LEN 256                   // API地址最大长度
+#define MAX_LLM_API_KEY_LEN 128                    // API Key最大长度
+#define MAX_LLM_MODEL_LEN 64                       // 模型名最大长度
+#define LLM_MAX_RETRIES 3                          // LLM返回非法坐标时最大重试次数
+#define LLM_TIMEOUT_MS 30000                       // LLM HTTP请求超时(毫秒)
+
 //---------- 配置管理函数声明 ----------//
 /**
  * @brief 加载游戏配置

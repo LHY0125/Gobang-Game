@@ -29,6 +29,12 @@ extern int network_timeout;      // 网络超时时间
 extern double defense_coefficient; // 防守系数
 extern int ai_difficulty;          // AI难度 (1-5)
 
+// ==================== LLM大模型相关变量 ====================
+extern int llm_use;                        // 是否使用LLM (0=算法AI, 1=大模型)
+extern char llm_endpoint[MAX_LLM_ENDPOINT_LEN]; // API地址
+extern char llm_api_key[MAX_LLM_API_KEY_LEN];   // API Key
+extern char llm_model[MAX_LLM_MODEL_LEN];       // 模型名
+
 // ==================== 网络相关变量 ====================
 extern NetworkGameState network_state; // 网络游戏状态
 

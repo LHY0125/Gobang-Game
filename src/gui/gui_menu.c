@@ -14,20 +14,16 @@ Ihandle *menu_dlg = NULL;
 static int btn_pvp_cb(Ihandle *ih)
 {
     (void)ih;
-    printf("DEBUG: Starting PvP Game\n");
-    // hide_main_menu(); // DO NOT HIDE MAIN MENU YET
     start_pvp_game_gui();
-    IupHide(menu_dlg); // Hide main menu manually AFTER game window created
+    IupHide(menu_dlg);
     return IUP_DEFAULT;
 }
 
 static int btn_pve_cb(Ihandle *ih)
 {
     (void)ih;
-    printf("DEBUG: Starting PvE Game\n");
-    // hide_main_menu(); // DO NOT HIDE MAIN MENU YET
     start_pve_game_gui();
-    IupHide(menu_dlg); // Hide main menu manually AFTER game window created
+    IupHide(menu_dlg);
     return IUP_DEFAULT;
 }
 
@@ -87,7 +83,6 @@ static int btn_network_cancel_cb(Ihandle *ih)
 static int btn_network_cb(Ihandle *ih)
 {
     (void)ih;
-    printf("DEBUG: Opening Network Menu\n");
 
     Ihandle *txt_ip = IupText(NULL);
     IupSetAttribute(txt_ip, "NAME", "NET_IP");
@@ -135,10 +130,8 @@ static int btn_network_cb(Ihandle *ih)
 static int btn_replay_cb(Ihandle *ih)
 {
     (void)ih;
-    printf("DEBUG: Starting Replay Mode\n");
-    // hide_main_menu(); // Don't hide main menu yet, wait for file selection
     start_replay_gui();
-    IupHide(menu_dlg); // Hide main menu
+    IupHide(menu_dlg);
     return IUP_DEFAULT;
 }
 
@@ -179,6 +172,36 @@ static int btn_save_settings_cb(Ihandle *ih)
         ai_level = 5;
     ai_difficulty = ai_level;
     defense_coefficient = DEFAULT_DEFENSE_COEFFICIENT + (ai_difficulty - 1) * 0.1;
+
+    // LLM 设置
+    Ihandle *lst_ai_mode = IupGetDialogChild(dlg, "AI_MODE");
+    Ihandle *txt_endpoint = IupGetDialogChild(dlg, "LLM_ENDPOINT");
+    Ihandle *txt_apikey = IupGetDialogChild(dlg, "LLM_API_KEY");
+    Ihandle *txt_model = IupGetDialogChild(dlg, "LLM_MODEL");
+
+    int ai_mode = IupGetInt(lst_ai_mode, "VALUE");
+    llm_use = (ai_mode == 2) ? 1 : 0;
+
+    char *endpoint = IupGetAttribute(txt_endpoint, "VALUE");
+    if (endpoint)
+    {
+        strncpy(llm_endpoint, endpoint, MAX_LLM_ENDPOINT_LEN - 1);
+        llm_endpoint[MAX_LLM_ENDPOINT_LEN - 1] = '\0';
+    }
+
+    char *apikey = IupGetAttribute(txt_apikey, "VALUE");
+    if (apikey)
+    {
+        strncpy(llm_api_key, apikey, MAX_LLM_API_KEY_LEN - 1);
+        llm_api_key[MAX_LLM_API_KEY_LEN - 1] = '\0';
+    }
+
+    char *model = IupGetAttribute(txt_model, "VALUE");
+    if (model)
+    {
+        strncpy(llm_model, model, MAX_LLM_MODEL_LEN - 1);
+        llm_model[MAX_LLM_MODEL_LEN - 1] = '\0';
+    }
 
     // Save config
     save_game_config();
@@ -251,6 +274,42 @@ static int btn_settings_cb(Ihandle *ih)
     IupSetInt(lst_ai, "VALUE", ai_difficulty);
     IupSetAttribute(lst_ai, "SIZE", "80x");
 
+    // === 大模型AI设置 ===
+    Ihandle *lbl_llm_sep = IupLabel("--- 大模型AI设置 ---");
+    IupSetAttribute(lbl_llm_sep, "ALIGNMENT", "ACENTER");
+
+    // 6. AI 模式选择
+    Ihandle *lbl_ai_mode = IupLabel("AI模式:");
+    Ihandle *lst_ai_mode = IupList(NULL);
+    IupSetAttribute(lst_ai_mode, "NAME", "AI_MODE");
+    IupSetAttribute(lst_ai_mode, "DROPDOWN", "YES");
+    IupSetAttribute(lst_ai_mode, "1", "算法AI (本地)");
+    IupSetAttribute(lst_ai_mode, "2", "大模型AI (在线)");
+    IupSetInt(lst_ai_mode, "VALUE", llm_use ? 2 : 1);
+    IupSetAttribute(lst_ai_mode, "SIZE", "120x");
+
+    // 7. LLM API 地址
+    Ihandle *lbl_endpoint = IupLabel("API地址:");
+    Ihandle *txt_endpoint = IupText(NULL);
+    IupSetAttribute(txt_endpoint, "NAME", "LLM_ENDPOINT");
+    IupSetAttribute(txt_endpoint, "VALUE", llm_endpoint);
+    IupSetAttribute(txt_endpoint, "SIZE", "250x");
+
+    // 8. LLM API Key
+    Ihandle *lbl_apikey = IupLabel("API Key:");
+    Ihandle *txt_apikey = IupText(NULL);
+    IupSetAttribute(txt_apikey, "NAME", "LLM_API_KEY");
+    IupSetAttribute(txt_apikey, "VALUE", llm_api_key);
+    IupSetAttribute(txt_apikey, "PASSWORD", "YES");
+    IupSetAttribute(txt_apikey, "SIZE", "200x");
+
+    // 9. LLM 模型名
+    Ihandle *lbl_model = IupLabel("模型名称:");
+    Ihandle *txt_model = IupText(NULL);
+    IupSetAttribute(txt_model, "NAME", "LLM_MODEL");
+    IupSetAttribute(txt_model, "VALUE", llm_model);
+    IupSetAttribute(txt_model, "SIZE", "150x");
+
     // Buttons
     Ihandle *btn_save = IupButton("保存", NULL);
     IupSetCallback(btn_save, "ACTION", (Icallback)btn_save_settings_cb);
@@ -273,6 +332,23 @@ static int btn_settings_cb(Ihandle *ih)
     IupSetAttribute(hbox_ai, "ALIGNMENT", "ACENTER");
     IupSetAttribute(hbox_ai, "GAP", "10");
 
+    // LLM 设置布局
+    Ihandle *hbox_ai_mode = IupHbox(lbl_ai_mode, lst_ai_mode, NULL);
+    IupSetAttribute(hbox_ai_mode, "ALIGNMENT", "ACENTER");
+    IupSetAttribute(hbox_ai_mode, "GAP", "10");
+
+    Ihandle *hbox_endpoint = IupHbox(lbl_endpoint, txt_endpoint, NULL);
+    IupSetAttribute(hbox_endpoint, "ALIGNMENT", "ACENTER");
+    IupSetAttribute(hbox_endpoint, "GAP", "10");
+
+    Ihandle *hbox_apikey = IupHbox(lbl_apikey, txt_apikey, NULL);
+    IupSetAttribute(hbox_apikey, "ALIGNMENT", "ACENTER");
+    IupSetAttribute(hbox_apikey, "GAP", "10");
+
+    Ihandle *hbox_model = IupHbox(lbl_model, txt_model, NULL);
+    IupSetAttribute(hbox_model, "ALIGNMENT", "ACENTER");
+    IupSetAttribute(hbox_model, "GAP", "10");
+
     Ihandle *hbox_btns = IupHbox(btn_save, btn_cancel, NULL);
     IupSetAttribute(hbox_btns, "GAP", "20");
     IupSetAttribute(hbox_btns, "MARGIN", "10x0");
@@ -285,11 +361,17 @@ static int btn_settings_cb(Ihandle *ih)
         hbox_time,
         hbox_ai,
         IupLabel(NULL), // Spacer
+        lbl_llm_sep,
+        hbox_ai_mode,
+        hbox_endpoint,
+        hbox_apikey,
+        hbox_model,
+        IupLabel(NULL), // Spacer
         hbox_btns,
         NULL);
 
-    IupSetAttribute(vbox, "GAP", "15");
-    IupSetAttribute(vbox, "MARGIN", "30x30");
+    IupSetAttribute(vbox, "GAP", "10");
+    IupSetAttribute(vbox, "MARGIN", "20x20");
 
     Ihandle *dlg = IupDialog(vbox);
     IupSetAttribute(dlg, "TITLE", "游戏设置");
@@ -315,7 +397,6 @@ void create_main_menu()
 {
     if (menu_dlg)
         return;
-    printf("DEBUG: create_main_menu\n");
 
     Ihandle *lbl_title = IupLabel("五子棋 (Gobang)");
     IupSetAttribute(lbl_title, "FONT", "SimHei, 24");
@@ -377,14 +458,9 @@ void create_main_menu()
 
 void show_main_menu()
 {
-    printf("DEBUG: show_main_menu start\n");
     if (!menu_dlg)
-    {
-        printf("DEBUG: Creating main menu\n");
         create_main_menu();
-    }
     IupShowXY(menu_dlg, IUP_CENTER, IUP_CENTER);
-    printf("DEBUG: show_main_menu end\n");
 }
 
 void hide_main_menu()

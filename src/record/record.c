@@ -261,7 +261,7 @@ int load_game_from_file(const char *filename)
     FILE *file = fopen(fullpath, "r");
     if (!file)
     {
-        return false;
+        return 0;
     }
 
     // 跳过CSV文件头部行

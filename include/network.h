@@ -13,13 +13,9 @@
 #include "type.h"
 #include "config.h"
 #include <stdbool.h>
-#include <enet/enet.h> // 引入 ENet 头文件
+#include <enet/enet.h>
 
-// 网络状态结构体在 type.h 中定义，我们需要修改 type.h 来包含 ENet 类型
-// 或者在这里重新定义（如果 type.h 中可以移除旧的定义）
-
-// 全局网络状态
-extern NetworkGameState network_state;
+// network_state 的 extern 声明在 globals.h 中
 
 // 函数声明
 

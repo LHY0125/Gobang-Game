@@ -5,8 +5,8 @@
  * 它包含了游戏棋盘的表示、玩家操作、规则检查以及AI决策等功能。
  */
 
-#ifndef GO_BANG_H
-#define GO_BANG_H
+#ifndef GOBANG_H
+#define GOBANG_H
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -88,4 +88,4 @@ bool return_move(int steps_to_undo);
  */
 int calculate_step_score(int x, int y, int player);
 
-#endif // GO_BANG_H
+#endif // GOBANG_H

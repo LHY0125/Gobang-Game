@@ -6,6 +6,10 @@
 #include "ai.h"
 #include "record.h"
 #include "network.h"
+#include "llm_ai.h"
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include <iup.h>
 #include <iupdraw.h>
 #include <stdio.h>
@@ -13,6 +17,7 @@
 #include <string.h>
 
 static Ihandle *timer = NULL; // 网络轮询定时器
+static Ihandle *llm_timer = NULL; // LLM异步轮询定时器
 
 /**
  * @brief 网络事件轮询回调
@@ -73,23 +78,172 @@ static int timer_cb(Ihandle *ih)
 }
 
 /**
+ * @brief 处理AI落子结果（LLM或算法）
+ */
+static void process_ai_move_result(void)
+{
+    Step last_step = steps[step_count - 1];
+    if (check_win(last_step.x, last_step.y, AI))
+    {
+        game_over = 1;
+        sprintf(status_message, "AI获胜！");
+        IupMessage("游戏结束", "AI获胜！");
+    }
+    else
+    {
+        current_player_gui = PLAYER;
+        sprintf(status_message, "轮到玩家");
+    }
+    update_ui_labels();
+    if (board_canvas)
+        IupUpdate(board_canvas);
+}
+
+/**
+ * @brief LLM异步轮询定时器回调
+ */
+static int llm_timer_cb(Ihandle *ih)
+{
+    (void)ih;
+    int x, y;
+    int result = llm_ai_poll_result(&x, &y);
+
+    if (result == 0)
+        return IUP_DEFAULT; // 仍在思考
+
+    // 停止轮询定时器
+    if (llm_timer)
+    {
+        IupSetAttribute(llm_timer, "RUN", "NO");
+    }
+
+    if (result == 1 && x >= 0 && y >= 0 && player_move(x, y, AI))
+    {
+        // LLM成功且落子合法
+    }
+    else
+    {
+        // LLM失败或坐标非法，回退到算法AI
+        if (result == 1)
+            snprintf(status_message, sizeof(status_message), "大模型返回非法位置，使用算法AI");
+        else
+            snprintf(status_message, sizeof(status_message), "大模型响应失败，使用算法AI");
+        update_ui_labels();
+        ai_move(ai_difficulty);
+    }
+
+    process_ai_move_result();
+    return IUP_DEFAULT;
+}
+
+/**
+ * @brief MAP_CB 回调：Canvas映射后强制重绘
+ */
+static int map_cb(Ihandle *ih)
+{
+    (void)ih;
+    IupUpdate(board_canvas);
+    return IUP_DEFAULT;
+}
+
+/**
  * @brief ACTION 回调：负责重绘
  */
 int action_cb(Ihandle *ih)
 {
-    IupDrawBegin(ih);
+    HWND hwnd = (HWND)IupGetAttribute(ih, "WID");
+    if (!hwnd)
+        return IUP_DEFAULT;
 
-    int w, h;
-    IupGetIntInt(ih, "DRAWSIZE", &w, &h);
+    HDC hdc = GetDC(hwnd);
+    if (!hdc)
+        return IUP_DEFAULT;
 
-    set_draw_color(ih, 240, 217, 181); // 棋盘背景色 (木纹色近似)
-    IupSetAttribute(ih, "DRAWSTYLE", "FILL");
-    IupDrawRectangle(ih, 0, 0, w, h);
+    RECT rc;
+    GetClientRect(hwnd, &rc);
 
-    draw_board_iup(ih);
-    draw_stones_iup(ih);
+    // 预创建所有 GDI 对象（避免循环内反复创建销毁）
+    HBRUSH bg_brush = CreateSolidBrush(RGB(240, 217, 181));
+    HBRUSH black_brush = CreateSolidBrush(RGB(0, 0, 0));
+    HBRUSH white_brush = CreateSolidBrush(RGB(255, 255, 255));
+    HBRUSH red_brush = CreateSolidBrush(RGB(255, 0, 0));
+    HPEN grid_pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
+    HPEN stone_pen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
 
-    IupDrawEnd(ih);
+    // 1. 填充背景
+    FillRect(hdc, &rc, bg_brush);
+
+    // 2. 绘制棋盘网格
+    HPEN prev_pen = (HPEN)SelectObject(hdc, grid_pen);
+    for (int i = 0; i < BOARD_SIZE; i++)
+    {
+        MoveToEx(hdc, BOARD_OFFSET_X, BOARD_OFFSET_Y + i * CELL_SIZE, NULL);
+        LineTo(hdc, BOARD_OFFSET_X + (BOARD_SIZE - 1) * CELL_SIZE, BOARD_OFFSET_Y + i * CELL_SIZE);
+        MoveToEx(hdc, BOARD_OFFSET_X + i * CELL_SIZE, BOARD_OFFSET_Y, NULL);
+        LineTo(hdc, BOARD_OFFSET_X + i * CELL_SIZE, BOARD_OFFSET_Y + (BOARD_SIZE - 1) * CELL_SIZE);
+    }
+
+    // 3. 星位/天元
+    SelectObject(hdc, black_brush);
+    if (BOARD_SIZE == 15)
+    {
+        int stars[] = {3, 7, 11};
+        for (int si = 0; si < 3; si++)
+            for (int sj = 0; sj < 3; sj++)
+            {
+                int cx = BOARD_OFFSET_X + stars[si] * CELL_SIZE;
+                int cy = BOARD_OFFSET_Y + stars[sj] * CELL_SIZE;
+                Ellipse(hdc, cx - 3, cy - 3, cx + 4, cy + 4);
+            }
+    }
+    else
+    {
+        int cx = BOARD_OFFSET_X + (BOARD_SIZE / 2) * CELL_SIZE;
+        int cy = BOARD_OFFSET_Y + (BOARD_SIZE / 2) * CELL_SIZE;
+        Ellipse(hdc, cx - 3, cy - 3, cx + 4, cy + 4);
+    }
+
+    // 4. 绘制棋子
+    SelectObject(hdc, stone_pen);
+    for (int i = 0; i < BOARD_SIZE; i++)
+        for (int j = 0; j < BOARD_SIZE; j++)
+        {
+            if (board[i][j] == EMPTY)
+                continue;
+
+            int cx = BOARD_OFFSET_X + j * CELL_SIZE;
+            int cy = BOARD_OFFSET_Y + i * CELL_SIZE;
+
+            if (board[i][j] == PLAYER)
+                SelectObject(hdc, black_brush);
+            else
+                SelectObject(hdc, white_brush);
+
+            Ellipse(hdc, cx - STONE_RADIUS, cy - STONE_RADIUS,
+                    cx + STONE_RADIUS + 1, cy + STONE_RADIUS + 1);
+        }
+
+    // 5. 标记最后落子位置（红色小方块）
+    if (step_count > 0 && step_count <= MAX_STEPS)
+    {
+        Step last = steps[step_count - 1];
+        int cx = BOARD_OFFSET_X + last.y * CELL_SIZE;
+        int cy = BOARD_OFFSET_Y + last.x * CELL_SIZE;
+        RECT mark = {cx - 3, cy - 3, cx + 4, cy + 4};
+        FillRect(hdc, &mark, red_brush);
+    }
+
+    // 恢复原始 GDI 对象，然后清理
+    SelectObject(hdc, prev_pen);
+    ReleaseDC(hwnd, hdc);
+
+    DeleteObject(bg_brush);
+    DeleteObject(black_brush);
+    DeleteObject(white_brush);
+    DeleteObject(red_brush);
+    DeleteObject(grid_pen);
+    DeleteObject(stone_pen);
+
     return IUP_DEFAULT;
 }
 
@@ -163,14 +317,20 @@ int btn_save_cb(Ihandle *ih)
         else
             base_name = filename;
 
-        int mode = (gui_game_mode == 0) ? GAME_MODE_PVP : GAME_MODE_AI;
+        int mode;
+        if (gui_game_mode == 0)
+            mode = GAME_MODE_PVP;
+        else if (gui_game_mode == 3)
+            mode = GAME_MODE_NETWORK;
+        else
+            mode = GAME_MODE_AI;
         if (save_game_to_file(base_name, mode) == 0)
         {
-            sprintf(status_message, "保存成功: %s", base_name);
+            snprintf(status_message, sizeof(status_message), "保存成功: %s", base_name);
         }
         else
         {
-            sprintf(status_message, "保存失败");
+            snprintf(status_message, sizeof(status_message), "保存失败");
         }
         update_ui_labels();
     }
@@ -185,23 +345,29 @@ int btn_save_cb(Ihandle *ih)
 int btn_back_cb(Ihandle *ih)
 {
     (void)ih;
-    printf("DEBUG: Back to Menu clicked\n");
 
-    // 如果是网络模式，断开连接
+    // 停止所有定时器
+    if (timer)
+    {
+        IupSetAttribute(timer, "RUN", "NO");
+        IupDestroy(timer);
+        timer = NULL;
+    }
+    if (llm_timer)
+    {
+        IupSetAttribute(llm_timer, "RUN", "NO");
+        IupDestroy(llm_timer);
+        llm_timer = NULL;
+    }
+
+    // 如果是网络模式，彻底清理网络资源
     if (gui_game_mode == 3)
     {
-        disconnect_network();
-        if (timer)
-        {
-            IupSetAttribute(timer, "RUN", "NO");
-            IupDestroy(timer);
-            timer = NULL;
-        }
+        cleanup_network();
     }
 
     // 1. 先显示主菜单
     show_main_menu();
-    printf("DEBUG: Main menu shown\n");
 
     // 2. 销毁游戏窗口
     if (dlg)
@@ -209,7 +375,6 @@ int btn_back_cb(Ihandle *ih)
         Ihandle *old_dlg = dlg;
         dlg = NULL; // 先清除全局指针
         IupDestroy(old_dlg);
-        printf("DEBUG: Destroyed game window\n");
     }
 
     return IUP_IGNORE; // 返回 IUP_IGNORE 以阻止默认处理
@@ -278,25 +443,34 @@ int button_cb(Ihandle *ih, int button, int pressed, int x, int y, char *status)
                         else // PvE
                         {
                             current_player_gui = AI;
-                            sprintf(status_message, "AI思考中...");
                             update_ui_labels();
                             IupUpdate(ih); // 立即更新显示
                             IupFlush();    // 强制刷新事件队列
 
-                            // AI 回合
-                            ai_move(ai_difficulty);
-
-                            Step last_step = steps[step_count - 1];
-                            if (check_win(last_step.x, last_step.y, AI))
+                            if (llm_use)
                             {
-                                game_over = 1;
-                                sprintf(status_message, "AI获胜！");
-                                IupMessage("游戏结束", "AI获胜！");
+                                // 大模型AI - 异步调用，不阻塞UI
+                                sprintf(status_message, "AI思考中（大模型）...");
+                                update_ui_labels();
+
+                                // 创建或复用轮询定时器
+                                if (!llm_timer)
+                                {
+                                    llm_timer = IupTimer();
+                                    IupSetCallback(llm_timer, "ACTION_CB", (Icallback)llm_timer_cb);
+                                    IupSetAttribute(llm_timer, "TIME", "100"); // 100ms轮询
+                                }
+                                llm_ai_start_move();
+                                IupSetAttribute(llm_timer, "RUN", "YES");
                             }
                             else
                             {
-                                current_player_gui = PLAYER;
-                                sprintf(status_message, "轮到玩家");
+                                // 算法AI - 同步调用
+                                sprintf(status_message, "AI思考中...");
+                                update_ui_labels();
+
+                                ai_move(ai_difficulty);
+                                process_ai_move_result();
                             }
                         }
                     }
@@ -336,8 +510,6 @@ int k_any_cb(Ihandle *ih, int c)
  */
 void create_game_window()
 {
-    printf("DEBUG: create_game_window start\n");
-
     if (dlg)
     {
         IupDestroy(dlg);
@@ -349,10 +521,10 @@ void create_game_window()
     if (!board_canvas)
         printf("ERROR: Failed to create board_canvas\n");
 
-    IupSetAttribute(board_canvas, "ACTION", "action_cb");
     IupSetCallback(board_canvas, "ACTION", (Icallback)action_cb);
     IupSetCallback(board_canvas, "BUTTON_CB", (Icallback)button_cb);
     IupSetCallback(board_canvas, "K_ANY", (Icallback)k_any_cb);
+    IupSetCallback(board_canvas, "MAP_CB", (Icallback)map_cb);
 
     // 计算棋盘像素大小
     int board_pixel_size = BOARD_SIZE * CELL_SIZE + BOARD_OFFSET_X * 2;
@@ -360,6 +532,8 @@ void create_game_window()
     sprintf(size, "%dx%d", board_pixel_size, board_pixel_size);
     IupSetAttribute(board_canvas, "RASTERSIZE", size);
     IupSetAttribute(board_canvas, "EXPAND", "NO");
+    IupSetAttribute(board_canvas, "BORDER", "NO");
+    IupSetAttribute(board_canvas, "BGCOLOR", "240 217 181");
 
     // 创建标签 (玩家信息和游戏状态)
     lbl_player = IupLabel("当前玩家: 黑子");
@@ -434,8 +608,6 @@ void create_game_window()
 
     // 设置 CLOSE_CB 回调，确保点击X也能正确返回菜单
     IupSetCallback(dlg, "CLOSE_CB", (Icallback)btn_back_cb);
-
-    printf("DEBUG: create_game_window end\n");
 }
 
 void start_pvp_game_gui()
@@ -448,6 +620,7 @@ void start_pvp_game_gui()
     create_game_window();
 
     IupShowXY(dlg, IUP_CENTER, IUP_CENTER);
+    IupFlush(); // 确保窗口完全映射
     sprintf(status_message, "玩家对战模式 - 黑方先行");
     update_ui_labels();
     if (board_canvas)
@@ -456,56 +629,44 @@ void start_pvp_game_gui()
 
 void start_pve_game_gui()
 {
-    printf("DEBUG: start_pve_game_gui start\n");
     gui_game_mode = 1;
-    // ai_difficulty 是全局变量
     empty_board();
     current_player_gui = PLAYER;
     game_over = 0;
 
     create_game_window();
-    printf("DEBUG: create_game_window returned\n");
 
     if (dlg)
     {
         IupShowXY(dlg, IUP_CENTER, IUP_CENTER);
-        printf("DEBUG: IupShowXY called\n");
+        IupFlush();
     }
     else
     {
-        printf("ERROR: dlg is NULL in start_pve_game_gui\n");
         return;
     }
 
     sprintf(status_message, "人机对战模式 - 玩家执黑先行");
     update_ui_labels();
-    printf("DEBUG: update_ui_labels returned\n");
 
-    // 强制初始重绘
     if (board_canvas)
-    {
         IupUpdate(board_canvas);
-    }
-    printf("DEBUG: start_pve_game_gui end\n");
 }
 
 void start_network_game_gui()
 {
-    printf("DEBUG: start_network_game_gui start\n");
     gui_game_mode = 3;
     empty_board();
 
-    // 主机执黑先行
     current_player_gui = PLAYER1;
     game_over = 0;
 
     create_game_window();
-    printf("DEBUG: create_game_window returned\n");
 
     if (dlg)
     {
         IupShowXY(dlg, IUP_CENTER, IUP_CENTER);
-        printf("DEBUG: IupShowXY called\n");
+        IupFlush();
     }
 
     if (network_state.is_server)
@@ -526,6 +687,4 @@ void start_network_game_gui()
     IupSetCallback(timer, "ACTION_CB", (Icallback)timer_cb);
     IupSetAttribute(timer, "TIME", "50"); // 50ms 轮询一次
     IupSetAttribute(timer, "RUN", "YES");
-
-    printf("DEBUG: start_network_game_gui end\n");
 }

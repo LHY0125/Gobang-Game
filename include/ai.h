@@ -33,13 +33,6 @@ int evaluate_move(int x, int y);
 int evaluate_pos(int x, int y, int player);
 
 /**
- * @brief 评估棋盘价值
- *
- * @param player 玩家标识(PLAYER/AI)
- */
-int dfs(int x, int y, int player, int depth, int alpha, int beta, bool is_maximizing);
-
-/**
  * @brief AI下棋
  *
  * @param depth
@@ -71,13 +64,5 @@ bool is_near_stones(int x, int y);
  */
 ThreatLevel detect_threat(int x, int y, int player);
 
-/**
- * @brief 计算指定方向的威胁数量
- * @param x, y 起始位置
- * @param dx, dy 方向向量
- * @param player 玩家
- * @return 威胁数量
- */
-int count_threats_in_direction(int x, int y, int dx, int dy, int player);
 
 #endif // AI_H

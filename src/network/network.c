@@ -17,12 +17,18 @@
 /**
  * @brief 初始化网络模块
  */
+static bool enet_initialized = false;
+
 bool init_network()
 {
-    if (enet_initialize() != 0)
+    if (!enet_initialized)
     {
-        printf("An error occurred while initializing ENet.\n");
-        return false;
+        if (enet_initialize() != 0)
+        {
+            printf("An error occurred while initializing ENet.\n");
+            return false;
+        }
+        enet_initialized = true;
     }
 
     memset(&network_state, 0, sizeof(NetworkGameState));
@@ -44,8 +50,13 @@ void cleanup_network()
         network_state.host = NULL;
     }
 
-    enet_deinitialize();
-    network_state.is_connected = false;
+    if (enet_initialized)
+    {
+        enet_deinitialize();
+        enet_initialized = false;
+    }
+
+    memset(&network_state, 0, sizeof(NetworkGameState));
 }
 
 /**
@@ -53,6 +64,9 @@ void cleanup_network()
  */
 bool create_server(int port)
 {
+    if (!init_network())
+        return false;
+
     ENetAddress address;
 
     // 绑定所有接口
@@ -117,6 +131,9 @@ bool create_server(int port)
  */
 bool connect_to_server(const char *ip, int port)
 {
+    if (!init_network())
+        return false;
+
     // 创建客户端主机
     network_state.host = (void *)enet_host_create(NULL, // 创建客户端
                                                   1,    // 仅允许1个传出连接
@@ -286,17 +303,54 @@ bool is_network_connected()
 }
 
 /**
- * @brief 获取本机IP地址
+ * @brief 获取本机局域网IP地址
  */
 bool get_local_ip(char *ip_buffer, int buffer_size)
 {
-    // ENet 没有直接获取本机局域网 IP 的简单跨平台函数。
-    // 这里我们可以回退到原生 socket 方法，或者简单返回本地回环。
-    // 为了不引入额外的系统头文件，暂时返回通用提示。
-    // 在真实应用中，可以保留之前的 gethostname/gethostbyname 逻辑。
-    strncpy(ip_buffer, "查看本机网络适配器", buffer_size - 1);
+#ifdef _WIN32
+    // 使用 Winsock 获取本机 IP（ws2_32 已链接）
+    char hostname[256];
+    if (gethostname(hostname, sizeof(hostname)) == SOCKET_ERROR)
+    {
+        strncpy(ip_buffer, "127.0.0.1", buffer_size - 1);
+        ip_buffer[buffer_size - 1] = '\0';
+        return false;
+    }
+
+    struct hostent *host = gethostbyname(hostname);
+    if (host == NULL || host->h_addr_list[0] == NULL)
+    {
+        strncpy(ip_buffer, "127.0.0.1", buffer_size - 1);
+        ip_buffer[buffer_size - 1] = '\0';
+        return false;
+    }
+
+    // 遍历所有地址，找一个非回环的 IPv4 地址
+    for (int i = 0; host->h_addr_list[i] != NULL; i++)
+    {
+        struct in_addr addr;
+        memcpy(&addr, host->h_addr_list[i], sizeof(struct in_addr));
+        const char *ip = inet_ntoa(addr);
+        if (ip && strcmp(ip, "127.0.0.1") != 0)
+        {
+            strncpy(ip_buffer, ip, buffer_size - 1);
+            ip_buffer[buffer_size - 1] = '\0';
+            return true;
+        }
+    }
+
+    // 没找到非回环地址，返回第一个
+    struct in_addr addr;
+    memcpy(&addr, host->h_addr_list[0], sizeof(struct in_addr));
+    const char *ip = inet_ntoa(addr);
+    strncpy(ip_buffer, ip ? ip : "127.0.0.1", buffer_size - 1);
     ip_buffer[buffer_size - 1] = '\0';
-    return true; // 总是返回 true 以允许服务器继续启动
+    return true;
+#else
+    strncpy(ip_buffer, "127.0.0.1", buffer_size - 1);
+    ip_buffer[buffer_size - 1] = '\0';
+    return true;
+#endif
 }
 
 /**

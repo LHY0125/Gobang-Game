@@ -8,13 +8,8 @@ extern Ihandle *dlg;
 extern Ihandle *board_canvas;
 extern Ihandle *lbl_player;
 extern Ihandle *lbl_status;
-extern int gui_game_mode;      // 0: PvP, 1: PvE, 2: Replay
+extern int gui_game_mode;      // 0: PvP, 1: PvE, 2: Replay, 3: Network
 extern int replay_total_steps; // 复盘总步数
-
-// 绘图函数 (在 gui_draw.c 中定义)
-void set_draw_color(Ihandle *ih, unsigned char r, unsigned char g, unsigned char b);
-void draw_board_iup(Ihandle *ih);
-void draw_stones_iup(Ihandle *ih);
 
 // 核心功能 (在 gui_core.c 中定义)
 void update_ui_labels();
@@ -24,7 +19,7 @@ int screen_to_board(int screen_x, int screen_y, int *board_x, int *board_y);
 void create_game_window();
 void start_pvp_game_gui();
 void start_pve_game_gui();
-void start_network_game_gui(); // 新增：启动网络对战游戏窗口
+void start_network_game_gui();
 int action_cb(Ihandle *ih);
 int button_cb(Ihandle *ih, int button, int pressed, int x, int y, char *status);
 int k_any_cb(Ihandle *ih, int c);

@@ -23,7 +23,7 @@ void load_game_config()
         return;
     }
 
-    char line[256];
+    char line[512];
     while (fgets(line, sizeof(line), file))
     {
         // 去除换行符
@@ -79,6 +79,25 @@ void load_game_config()
                 defense_coefficient = DEFAULT_DEFENSE_COEFFICIENT + (ai_difficulty - 1) * 0.1;
             }
         }
+        else if (strncmp(line, "LLM_USE=", 8) == 0)
+        {
+            llm_use = (atoi(line + 8) != 0) ? 1 : 0;
+        }
+        else if (strncmp(line, "LLM_ENDPOINT=", 13) == 0)
+        {
+            strncpy(llm_endpoint, line + 13, MAX_LLM_ENDPOINT_LEN - 1);
+            llm_endpoint[MAX_LLM_ENDPOINT_LEN - 1] = '\0';
+        }
+        else if (strncmp(line, "LLM_API_KEY=", 12) == 0)
+        {
+            strncpy(llm_api_key, line + 12, MAX_LLM_API_KEY_LEN - 1);
+            llm_api_key[MAX_LLM_API_KEY_LEN - 1] = '\0';
+        }
+        else if (strncmp(line, "LLM_MODEL=", 10) == 0)
+        {
+            strncpy(llm_model, line + 10, MAX_LLM_MODEL_LEN - 1);
+            llm_model[MAX_LLM_MODEL_LEN - 1] = '\0';
+        }
     }
 
     fclose(file);
@@ -114,6 +133,16 @@ void save_game_config()
     fprintf(file, "\n# AI难度 (1-5)\n");
     fprintf(file, "AI_DIFFICULTY=%d\n", ai_difficulty);
 
+    fprintf(file, "\n# 大模型AI设置\n");
+    fprintf(file, "# 是否使用大模型 (0=算法AI, 1=大模型)\n");
+    fprintf(file, "LLM_USE=%d\n", llm_use);
+    fprintf(file, "# API地址\n");
+    fprintf(file, "LLM_ENDPOINT=%s\n", llm_endpoint);
+    fprintf(file, "# API Key\n");
+    fprintf(file, "LLM_API_KEY=%s\n", llm_api_key);
+    fprintf(file, "# 模型名称\n");
+    fprintf(file, "LLM_MODEL=%s\n", llm_model);
+
     fclose(file);
     printf("配置保存完成\n");
 }
@@ -131,6 +160,14 @@ void reset_to_default_config()
     network_timeout = NETWORK_TIMEOUT_MS;
     ai_difficulty = 3; // 默认AI难度
     defense_coefficient = DEFAULT_DEFENSE_COEFFICIENT + (ai_difficulty - 1) * 0.1;
+
+    llm_use = DEFAULT_LLM_USE;
+    strncpy(llm_endpoint, DEFAULT_LLM_ENDPOINT, MAX_LLM_ENDPOINT_LEN - 1);
+    llm_endpoint[MAX_LLM_ENDPOINT_LEN - 1] = '\0';
+    strncpy(llm_api_key, DEFAULT_LLM_API_KEY, MAX_LLM_API_KEY_LEN - 1);
+    llm_api_key[MAX_LLM_API_KEY_LEN - 1] = '\0';
+    strncpy(llm_model, DEFAULT_LLM_MODEL, MAX_LLM_MODEL_LEN - 1);
+    llm_model[MAX_LLM_MODEL_LEN - 1] = '\0';
 
     printf("已重置为默认配置\n");
 }
