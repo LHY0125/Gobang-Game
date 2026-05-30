@@ -1,47 +1,14 @@
-# 编译生成的可执行文件
-*.out
-*.app
-
-# IDE配置文件
-.idea/
-.vscode/
-.vs/
-
-# Trae AI配置文件
-.trae/
-
-# 临时文件
-*.tmp
-*.temp
-*.log
-
-# 系统文件
+node_modules
+dist
+dist-ssr
+*.local
+target/
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-Thumbs.db
-
-# 备份文件
-*.bak
-*.backup
-
-# 调试文件
-*.pdb
-*.ilk
-
-# 对象文件
-*.obj
-
-# 打包文件
-dist/
-
-# 编译生成的对象文件
-obj/
-build/
-
-# 临时游戏存档
-records/
-
-# 运行时配置（含 API Key）
-bin/gobang_config.ini
-
-# 编译产物
-bin/gobang_gui.exe
+*.suo
+*.sw?
+.claude/
+.codegraph/
+CLAUDE.md
