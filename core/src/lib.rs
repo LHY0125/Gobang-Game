@@ -4,4 +4,6 @@ pub mod ai;
 pub mod board;
 pub mod rules;
 pub mod record;
+pub mod llm;
+pub mod network;
 pub mod types;
