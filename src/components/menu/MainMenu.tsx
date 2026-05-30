@@ -9,16 +9,17 @@ type View = 'main' | 'local' | 'ai' | 'online' | 'replay';
 
 interface Props {
   onGameStart: () => void;
+  onReplayStart: () => void;
 }
 
-export default function MainMenu({ onGameStart }: Props) {
+export default function MainMenu({ onGameStart, onReplayStart }: Props) {
   const { t } = useTranslation();
   const [view, setView] = useState<View>('main');
 
   if (view === 'local') return <LocalGameSetup onBack={() => setView('main')} onStart={onGameStart} />;
   if (view === 'ai') return <AiGameSetup onBack={() => setView('main')} onStart={onGameStart} />;
   if (view === 'online') return <OnlineSetup onBack={() => setView('main')} onStart={onGameStart} />;
-  if (view === 'replay') return <LoadReplay onBack={() => setView('main')} onStart={onGameStart} />;
+  if (view === 'replay') return <LoadReplay onBack={() => setView('main')} onStart={onReplayStart} />;
 
   return (
     <div className="main-menu">
