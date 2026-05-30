@@ -1,0 +1,40 @@
+{
+  "app": { "title": "Gobang v2.0" },
+  "menu": {
+    "local_game": "Local 2-Player",
+    "ai_game": "VS AI",
+    "online_game": "Online",
+    "load_replay": "Load Replay",
+    "settings": "Settings"
+  },
+  "game": {
+    "black_turn": "Black's Turn",
+    "white_turn": "White's Turn",
+    "black_win": "Black Wins!",
+    "white_win": "White Wins!",
+    "draw": "Draw",
+    "ai_thinking": "AI Thinking...",
+    "undo": "Undo",
+    "resign": "Resign",
+    "save": "Save Record",
+    "new_game": "New Game",
+    "waiting_opponent": "Waiting for Opponent...",
+    "your_turn": "Your Turn",
+    "opponent_turn": "Opponent's Turn"
+  },
+  "replay": {
+    "play": "Play",
+    "pause": "Pause",
+    "next": "Next",
+    "prev": "Prev",
+    "step": "Step {{current}}/{{total}}"
+  },
+  "settings": {
+    "board_size": "Board Size",
+    "forbidden_rules": "Forbidden Rules",
+    "timer": "Timer",
+    "time_limit": "Time Limit (s)",
+    "difficulty": "AI Difficulty",
+    "language": "Language"
+  }
+}

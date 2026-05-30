@@ -1,0 +1,40 @@
+{
+  "app": { "title": "五子棋 v2.0" },
+  "menu": {
+    "local_game": "本地双人",
+    "ai_game": "人机对战",
+    "online_game": "网络对战",
+    "load_replay": "加载棋谱",
+    "settings": "设置"
+  },
+  "game": {
+    "black_turn": "黑棋回合",
+    "white_turn": "白棋回合",
+    "black_win": "黑棋获胜!",
+    "white_win": "白棋获胜!",
+    "draw": "平局",
+    "ai_thinking": "AI 思考中...",
+    "undo": "悔棋",
+    "resign": "认输",
+    "save": "保存棋谱",
+    "new_game": "新游戏",
+    "waiting_opponent": "等待对手加入...",
+    "your_turn": "你的回合",
+    "opponent_turn": "对手回合"
+  },
+  "replay": {
+    "play": "播放",
+    "pause": "暂停",
+    "next": "下一步",
+    "prev": "上一步",
+    "step": "第 {{current}}/{{total}} 步"
+  },
+  "settings": {
+    "board_size": "棋盘大小",
+    "forbidden_rules": "禁手规则",
+    "timer": "计时器",
+    "time_limit": "时间限制(秒)",
+    "difficulty": "AI 难度",
+    "language": "语言"
+  }
+}
