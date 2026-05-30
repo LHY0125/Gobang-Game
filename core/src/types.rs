@@ -54,7 +54,7 @@ pub enum CellState {
 }
 
 /// 一步棋
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Move {
     pub position: Position,
     pub color: Color,
