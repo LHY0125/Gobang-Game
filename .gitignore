@@ -3,15 +3,26 @@ dist
 dist-ssr
 *.local
 target/
+
+# Editor
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
 *.suo
 *.sw?
+
+# Claude
 .claude/
 .codegraph/
 CLAUDE.md
-build/
-bin/gobang_config.ini
-*.png
+
+# Env & logs
+.env
+*.log
+
+# OS
+Thumbs.db
+
+# Tauri
+gui/gen/
