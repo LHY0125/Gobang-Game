@@ -11,7 +11,7 @@ pub fn run() {
             commands::new_game,
             commands::place_piece,
             commands::undo,
-            commands::get_board,
+
             commands::ai_move,
             commands::get_game_state,
         ])

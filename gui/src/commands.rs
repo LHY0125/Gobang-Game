@@ -110,23 +110,6 @@ pub fn undo(steps: u32, state: State<AppState>) -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-pub fn get_board(state: State<AppState>) -> Result<Vec<Vec<i32>>, String> {
-    let board_opt = state.board.lock().map_err(|e| e.to_string())?;
-    let board = board_opt.as_ref().ok_or("游戏未开始")?;
-
-    let mut result = vec![vec![0i32; board.size]; board.size];
-    for x in 0..board.size {
-        for y in 0..board.size {
-            result[x][y] = match board.get(Position::new(x, y)) {
-                CellState::Empty => 0,
-                CellState::Occupied(Color::Black) => 1,
-                CellState::Occupied(Color::White) => 2,
-            };
-        }
-    }
-    Ok(result)
-}
 
 #[tauri::command]
 pub fn ai_move(state: State<AppState>) -> Result<Option<(usize, usize)>, String> {
