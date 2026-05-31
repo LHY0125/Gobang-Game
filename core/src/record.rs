@@ -86,11 +86,54 @@ impl GameRecord {
 
 fn now_string() -> String {
     use std::time::SystemTime;
-    if let Ok(dur) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-        format!("{}", dur.as_secs())
-    } else {
-        "unknown".to_string()
+
+    let now = SystemTime::now();
+    let since_epoch = now
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap_or_default();
+    let secs = since_epoch.as_secs();
+
+    let days_since_epoch = secs / 86400;
+    let time_of_day = secs % 86400;
+    let hours = time_of_day / 3600;
+    let minutes = (time_of_day % 3600) / 60;
+    let seconds = time_of_day % 60;
+
+    let mut year: u64 = 1970;
+    let mut remaining_days = days_since_epoch;
+    loop {
+        let days_in_year = if is_leap_year(year) { 366 } else { 365 };
+        if remaining_days < days_in_year {
+            break;
+        }
+        remaining_days -= days_in_year;
+        year += 1;
     }
+
+    let month_days = if is_leap_year(year) {
+        [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    } else {
+        [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    };
+
+    let mut month: u64 = 1;
+    for &md in &month_days {
+        if remaining_days < md {
+            break;
+        }
+        remaining_days -= md;
+        month += 1;
+    }
+    let day = remaining_days + 1;
+
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+        year, month, day, hours, minutes, seconds
+    )
+}
+
+fn is_leap_year(y: u64) -> bool {
+    (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0)
 }
 
 #[cfg(test)]
@@ -131,5 +174,15 @@ mod tests {
             replayed.get(Position::new(7, 8)),
             CellState::Occupied(Color::White)
         );
+    }
+
+    #[test]
+    fn test_record_date_is_iso_format() {
+        let board = Board::new(15);
+        let record = GameRecord::from_board(&board, "B", "W", None);
+        // ISO 8601 格式: YYYY-MM-DDTHH:MM:SSZ
+        assert!(record.date.contains('T'), "date should contain T separator");
+        assert!(record.date.ends_with('Z'), "date should end with Z");
+        assert_eq!(record.date.len(), 20, "date should be 20 chars: YYYY-MM-DDTHH:MM:SSZ");
     }
 }
