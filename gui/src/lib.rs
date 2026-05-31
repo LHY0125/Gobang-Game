@@ -15,6 +15,8 @@ pub fn run() {
 
             commands::ai_move,
             commands::get_game_state,
+            commands::resign,
+            commands::save_record,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -176,3 +176,22 @@ pub fn get_game_state(state: State<AppState>) -> Result<serde_json::Value, Strin
         "game_over": game_over,
     }))
 }
+
+#[tauri::command]
+pub fn resign(state: State<AppState>) -> Result<(), String> {
+    let player_color = *state.current_color.lock().map_err(|e| e.to_string())?;
+    // 当前玩家认输，对手获胜
+    let winner = player_color.opponent();
+    *state.game_over.lock().map_err(|e| e.to_string())? = true;
+    *state.current_color.lock().map_err(|e| e.to_string())? = winner;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn save_record(state: State<AppState>) -> Result<String, String> {
+    let board_opt = state.board.lock().map_err(|e| e.to_string())?;
+    let board = board_opt.as_ref().ok_or("游戏未开始")?;
+
+    let record = gobang_core::record::GameRecord::from_board(board, "玩家", "对手", None);
+    serde_json::to_string_pretty(&record).map_err(|e| e.to_string())
+}
