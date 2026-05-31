@@ -27,13 +27,7 @@ export default function MainMenu({ onGameStart, onReplayStart }: Props) {
       <div className="menu-buttons">
         <button onClick={() => setView('local')}>{t('menu.local_game')}</button>
         <button onClick={() => setView('ai')}>{t('menu.ai_game')}</button>
-        <button
-          onClick={() => setView('online')}
-          disabled
-          title={t('menu.online_game_disabled')}
-        >
-          {t('menu.online_game')} (开发中)
-        </button>
+        <button onClick={() => setView('online')}>{t('menu.online_game')}</button>
         <button onClick={() => setView('replay')}>{t('menu.load_replay')}</button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useMemo } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { useGameStore, buildReplayBoard } from '../../store/gameStore';
 import {
   computeBoardDimensions,
@@ -58,6 +59,20 @@ export default function BoardCanvas() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [render]);
+
+  useEffect(() => {
+    if (mode !== 'Online') return;
+    let unlisten: (() => void) | undefined;
+
+    const setup = async () => {
+      unlisten = await listen<{ x: number; y: number }>('remote-move', (event) => {
+        placePiece(event.payload.x, event.payload.y);
+      });
+    };
+    setup();
+
+    return () => { unlisten?.(); };
+  }, [mode, placePiece]);
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {

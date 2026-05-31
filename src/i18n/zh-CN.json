@@ -33,7 +33,9 @@
     "new_game": "新游戏",
     "waiting_opponent": "等待对手加入...",
     "your_turn": "你的回合",
-    "opponent_turn": "对手回合"
+    "opponent_turn": "对手回合",
+    "opponent_connected": "对手已连接",
+    "opponent_disconnected": "对手已断开"
   },
   "replay": {
     "play": "播放",

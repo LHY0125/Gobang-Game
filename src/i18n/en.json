@@ -33,7 +33,9 @@
     "new_game": "New Game",
     "waiting_opponent": "Waiting for Opponent...",
     "your_turn": "Your Turn",
-    "opponent_turn": "Opponent's Turn"
+    "opponent_turn": "Opponent's Turn",
+    "opponent_connected": "Opponent Connected",
+    "opponent_disconnected": "Opponent Disconnected"
   },
   "replay": {
     "play": "Play",

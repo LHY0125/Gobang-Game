@@ -10,6 +10,7 @@ export default function GameControls({ onBackToMenu }: Props) {
   const { t } = useTranslation();
   const undo = useGameStore((s) => s.undo);
   const status = useGameStore((s) => s.status);
+  const mode = useGameStore((s) => s.mode);
   const refreshBoard = useGameStore((s) => s.refreshBoard);
 
   const handleUndo = () => {
@@ -38,7 +39,7 @@ export default function GameControls({ onBackToMenu }: Props) {
 
   return (
     <div className="game-controls">
-      <button onClick={handleUndo} disabled={status === 'game_over'}>
+      <button onClick={handleUndo} disabled={status === 'game_over' || mode === 'Online'}>
         {t('game.undo')}
       </button>
       <button onClick={handleResign} disabled={status === 'game_over'}>
