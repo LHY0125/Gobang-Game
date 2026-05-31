@@ -4,6 +4,7 @@
     "local_game": "本地双人",
     "ai_game": "人机对战",
     "online_game": "网络对战",
+    "online_game_disabled": "网络对战功能开发中",
     "load_replay": "加载棋谱",
     "settings": "设置"
   },

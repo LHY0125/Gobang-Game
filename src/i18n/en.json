@@ -4,6 +4,7 @@
     "local_game": "Local 2-Player",
     "ai_game": "VS AI",
     "online_game": "Online",
+    "online_game_disabled": "Online mode is under development",
     "load_replay": "Load Replay",
     "settings": "Settings"
   },
