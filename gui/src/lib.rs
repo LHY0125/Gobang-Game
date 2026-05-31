@@ -12,11 +12,15 @@ pub fn run() {
             commands::new_game,
             commands::place_piece,
             commands::undo,
-
             commands::ai_move,
             commands::get_game_state,
             commands::resign,
             commands::save_record,
+            commands::host_game,
+            commands::join_game,
+            commands::send_move,
+            commands::send_undo,
+            commands::send_resign,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,11 +1,13 @@
 use gobang_core::ai::search::AlphaBetaAi;
 use gobang_core::ai::AiEngine;
-use gobang_core::llm::LlmAi;
 use gobang_core::board::Board;
+use gobang_core::llm::LlmAi;
+use gobang_core::network::{NetworkCmd, NetworkEvent, NetworkLoop};
 use gobang_core::rules;
 use gobang_core::types::*;
+use std::sync::mpsc;
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{Emitter, State};
 
 /// 应用全局状态
 pub struct AppState {
@@ -15,6 +17,7 @@ pub struct AppState {
     pub ai_engine: Mutex<Option<std::sync::Arc<dyn AiEngine + Send + Sync>>>,
     pub current_color: Mutex<Color>,
     pub game_over: Mutex<bool>,
+    pub network_tx: Mutex<Option<mpsc::Sender<NetworkCmd>>>,
 }
 
 impl Default for AppState {
@@ -26,12 +29,20 @@ impl Default for AppState {
             ai_engine: Mutex::new(None),
             current_color: Mutex::new(Color::Black),
             game_over: Mutex::new(true),
+            network_tx: Mutex::new(None),
         }
     }
 }
 
 #[tauri::command]
 pub fn new_game(mode: GameMode, config: GameConfig, state: State<AppState>) -> Result<(), String> {
+    // 清理旧的网络连接
+    if let Ok(mut tx) = state.network_tx.lock() {
+        if let Some(tx) = tx.take() {
+            let _ = tx.send(NetworkCmd::Shutdown);
+        }
+    }
+
     let is_vs_ai = mode == GameMode::VsAi;
     let board = Board::new(config.board_size);
     log::info!("新游戏: mode={:?}, board_size={}", mode, config.board_size);
@@ -202,4 +213,121 @@ pub fn save_record(state: State<AppState>) -> Result<String, String> {
 
     let record = gobang_core::record::GameRecord::from_board(board, "玩家", "对手", None);
     serde_json::to_string_pretty(&record).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn host_game(port: u16, state: State<AppState>, app: tauri::AppHandle) -> Result<u16, String> {
+    let (cmd_tx, cmd_rx) = mpsc::channel();
+    let (event_tx, event_rx) = mpsc::channel();
+
+    let mut network = NetworkLoop::new_server(cmd_rx, event_tx);
+    let sock = std::net::UdpSocket::bind(format!("0.0.0.0:{}", port))
+        .map_err(|e| format!("绑定端口失败: {}", e))?;
+    let actual_port = sock.local_addr().map_err(|e| e.to_string())?.port();
+    drop(sock);
+
+    *state.network_tx.lock().map_err(|e| e.to_string())? = Some(cmd_tx);
+
+    let protocol_id: u64 = 7777;
+    std::thread::spawn(move || {
+        let _ = network.run("", protocol_id);
+    });
+
+    // event 转发线程
+    let app_clone = app.clone();
+    std::thread::spawn(move || {
+        for event in event_rx {
+            match event {
+                NetworkEvent::RemoteMove { x, y } => {
+                    let _ = app_clone.emit("remote-move", serde_json::json!({ "x": x, "y": y }));
+                }
+                NetworkEvent::RemoteUndo { steps } => {
+                    let _ = app_clone.emit("remote-undo", steps);
+                }
+                NetworkEvent::RemoteResign => {
+                    let _ = app_clone.emit("remote-resign", ());
+                }
+                NetworkEvent::Connected | NetworkEvent::ClientConnected => {
+                    let _ = app_clone.emit("connection-status", "connected");
+                }
+                NetworkEvent::ClientDisconnected => {
+                    let _ = app_clone.emit("connection-status", "disconnected");
+                }
+                NetworkEvent::Error(msg) => {
+                    let _ = app_clone.emit("network-error", msg);
+                }
+                NetworkEvent::Listening(port) => {
+                    let _ = app_clone.emit("listening-port", port);
+                }
+            }
+        }
+    });
+
+    Ok(actual_port)
+}
+
+#[tauri::command]
+pub fn join_game(address: String, state: State<AppState>, app: tauri::AppHandle) -> Result<(), String> {
+    let (cmd_tx, cmd_rx) = mpsc::channel();
+    let (event_tx, event_rx) = mpsc::channel();
+
+    let mut network = NetworkLoop::new_client(cmd_rx, event_tx);
+
+    *state.network_tx.lock().map_err(|e| e.to_string())? = Some(cmd_tx);
+
+    let protocol_id: u64 = 7777;
+    let addr = address.clone();
+    std::thread::spawn(move || {
+        let _ = network.run(&addr, protocol_id);
+    });
+
+    let app_clone = app.clone();
+    std::thread::spawn(move || {
+        for event in event_rx {
+            match event {
+                NetworkEvent::RemoteMove { x, y } => {
+                    let _ = app_clone.emit("remote-move", serde_json::json!({ "x": x, "y": y }));
+                }
+                NetworkEvent::RemoteUndo { steps } => {
+                    let _ = app_clone.emit("remote-undo", steps);
+                }
+                NetworkEvent::RemoteResign => {
+                    let _ = app_clone.emit("remote-resign", ());
+                }
+                NetworkEvent::Connected | NetworkEvent::ClientConnected => {
+                    let _ = app_clone.emit("connection-status", "connected");
+                }
+                NetworkEvent::ClientDisconnected => {
+                    let _ = app_clone.emit("connection-status", "disconnected");
+                }
+                NetworkEvent::Error(msg) => {
+                    let _ = app_clone.emit("network-error", msg);
+                }
+                _ => {}
+            }
+        }
+    });
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn send_move(x: usize, y: usize, turn: u32, state: State<AppState>) -> Result<(), String> {
+    let tx = state.network_tx.lock().map_err(|e| e.to_string())?;
+    let tx = tx.as_ref().ok_or("未建立网络连接")?;
+    tx.send(NetworkCmd::SendMove { x, y, turn }).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn send_undo(steps: u32, state: State<AppState>) -> Result<(), String> {
+    let tx = state.network_tx.lock().map_err(|e| e.to_string())?;
+    let tx = tx.as_ref().ok_or("未建立网络连接")?;
+    tx.send(NetworkCmd::SendUndo { steps }).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn send_resign(state: State<AppState>) -> Result<(), String> {
+    let tx = state.network_tx.lock().map_err(|e| e.to_string())?;
+    let tx = tx.as_ref().ok_or("未建立网络连接")?;
+    tx.send(NetworkCmd::SendResign).map_err(|e| e.to_string())
 }
