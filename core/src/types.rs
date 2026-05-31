@@ -68,6 +68,7 @@ pub enum MoveError {
     Occupied,
     ForbiddenMove,
     GameOver,
+    NoHistory,
 }
 
 impl std::fmt::Display for MoveError {
@@ -77,6 +78,7 @@ impl std::fmt::Display for MoveError {
             MoveError::Occupied => "该位置已有棋子",
             MoveError::ForbiddenMove => "禁手位置，不能落子",
             MoveError::GameOver => "游戏已结束",
+            MoveError::NoHistory => "没有可撤销的棋子",
         };
         write!(f, "{}", msg)
     }

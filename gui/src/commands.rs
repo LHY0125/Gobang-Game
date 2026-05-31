@@ -94,7 +94,10 @@ pub fn undo(steps: u32, state: State<AppState>) -> Result<(), String> {
     let mut board_opt = state.board.lock().map_err(|e| e.to_string())?;
     let mut board = board_opt.clone().ok_or("游戏未开始")?;
 
-    for _ in 0..steps * 2 {
+    let max_undo = board.history().len() as u32;
+    let actual_steps = (steps * 2).min(max_undo);
+
+    for _ in 0..actual_steps {
         board = board.undo().map_err(|e| e.to_string())?;
     }
 

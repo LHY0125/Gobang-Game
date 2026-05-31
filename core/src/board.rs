@@ -99,7 +99,7 @@ impl Board {
     /// 悔棋 — 撤销最近一步
     pub fn undo(&self) -> Result<Board, MoveError> {
         if self.history.is_empty() {
-            return Err(MoveError::GameOver);
+            return Err(MoveError::NoHistory);
         }
         let mut new_board = self.clone();
         let last_move = new_board.history.pop().unwrap();
@@ -253,9 +253,14 @@ mod tests {
     }
 
     #[test]
-    fn test_undo_empty_history() {
+    fn test_undo_empty_history_returns_no_history_error() {
         let board = Board::new(15);
-        assert_eq!(board.undo(), Err(MoveError::GameOver));
+        let result = board.undo();
+        assert!(result.is_err());
+        match result {
+            Err(MoveError::NoHistory) => {},
+            other => panic!("expected NoHistory, got {:?}", other),
+        }
     }
 
     #[test]
