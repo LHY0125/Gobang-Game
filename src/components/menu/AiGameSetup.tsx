@@ -24,6 +24,7 @@ export default function AiGameSetup({ onBack, onStart }: Props) {
       aiDifficulty: difficulty,
       playerColor,
       isServer: false,
+      remoteAddress: '',
     };
     await startGame('VsAi', config);
     onStart();

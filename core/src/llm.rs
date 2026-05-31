@@ -78,6 +78,12 @@ impl LlmAi {
 }
 
 impl AiEngine for LlmAi {
+    /// 获取 AI 最佳走法。
+    ///
+    /// TODO: 当前使用阻塞 HTTP 客户端 (`reqwest::blocking`)，
+    /// 在 GUI 线程调用会冻结界面。上层应在独立线程
+    /// (`std::thread::spawn` 或 `tauri::async_runtime::spawn_blocking`) 中调用此方法，
+    /// 或改用 async 版本。
     fn best_move(&self, board: &Board, color: Color) -> Option<Position> {
         let prompt = Self::board_to_prompt(board, color);
         let client = reqwest::blocking::Client::new();

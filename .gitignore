@@ -12,3 +12,6 @@ target/
 .claude/
 .codegraph/
 CLAUDE.md
+build/
+bin/gobang_config.ini
+*.png

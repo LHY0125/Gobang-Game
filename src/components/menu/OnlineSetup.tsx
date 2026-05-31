@@ -13,6 +13,7 @@ export default function OnlineSetup({ onBack, onStart }: Props) {
   const baseConfig: GameConfig = {
     boardSize: 15, useForbiddenRules: true, useTimer: false,
     timeLimitSecs: 60, aiDifficulty: 3, playerColor: 'Black', isServer: false,
+    remoteAddress: '',
   };
 
   const handleHost = async () => {
@@ -21,7 +22,7 @@ export default function OnlineSetup({ onBack, onStart }: Props) {
   };
 
   const handleJoin = async () => {
-    await startGame('Online', { ...baseConfig });
+    await startGame('Online', { ...baseConfig, remoteAddress: ip });
     onStart();
   };
 

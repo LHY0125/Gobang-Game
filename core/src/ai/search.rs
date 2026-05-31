@@ -1,6 +1,7 @@
 use crate::ai::evaluate::evaluate_board;
 use crate::ai::AiEngine;
 use crate::board::Board;
+use crate::rules;
 use crate::types::{Color, Position};
 
 /// Alpha-Beta AI 引擎
@@ -25,6 +26,10 @@ impl AiEngine for AlphaBetaAi {
         let mut best_score = f64::NEG_INFINITY;
 
         for &pos in &candidates {
+            // 禁手检查: 黑棋不能走禁手位置
+            if rules::is_forbidden(board, pos, color) {
+                continue;
+            }
             if let Ok(new_board) = board.place(pos, color) {
                 if new_board.check_win(pos) {
                     return Some(pos);
@@ -48,14 +53,7 @@ impl AiEngine for AlphaBetaAi {
 }
 
 impl AlphaBetaAi {
-    fn negamax(
-        &self,
-        board: &Board,
-        depth: usize,
-        mut alpha: f64,
-        beta: f64,
-        color: Color,
-    ) -> f64 {
+    fn negamax(&self, board: &Board, depth: usize, mut alpha: f64, beta: f64, color: Color) -> f64 {
         if depth == 0 {
             return evaluate_board(board, color);
         }
@@ -65,9 +63,10 @@ impl AlphaBetaAi {
             return evaluate_board(board, color);
         }
 
-        // 启发式排序：先评估每步棋，优先搜索高分走法
+        // 启发式排序：先评估每步棋，优先搜索高分走法 (跳过禁手)
         let mut scored: Vec<(Position, f64)> = candidates
             .into_iter()
+            .filter(|&pos| !rules::is_forbidden(board, pos, color))
             .filter_map(|pos| {
                 board.place(pos, color).ok().map(|b| {
                     if b.check_win(pos) {
@@ -87,13 +86,7 @@ impl AlphaBetaAi {
                 if new_board.check_win(pos) {
                     return f64::INFINITY;
                 }
-                let val = -self.negamax(
-                    &new_board,
-                    depth - 1,
-                    -beta,
-                    -alpha,
-                    color.opponent(),
-                );
+                let val = -self.negamax(&new_board, depth - 1, -beta, -alpha, color.opponent());
                 if val > max_val {
                     max_val = val;
                 }

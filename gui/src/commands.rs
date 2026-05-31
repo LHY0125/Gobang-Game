@@ -98,6 +98,14 @@ pub fn undo(steps: u32, state: State<AppState>) -> Result<(), String> {
         board = board.undo().map_err(|e| e.to_string())?;
     }
 
+    // 根据剩余步数修正当前颜色 (偶数 = 黑, 奇数 = 白)
+    let corrected_color = match board.history().last() {
+        Some(last_move) => last_move.color.opponent(),
+        None => state.config.lock().map_err(|e| e.to_string())?.player_color,
+    };
+    *state.current_color.lock().map_err(|e| e.to_string())? = corrected_color;
+    *state.game_over.lock().map_err(|e| e.to_string())? = false;
+
     *board_opt = Some(board);
     Ok(())
 }

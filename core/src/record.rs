@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use crate::board::Board;
 use crate::types::{Color, Position};
+use serde::{Deserialize, Serialize};
 
 /// 对局棋谱
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,15 +42,19 @@ impl GameRecord {
             Color::Black => black.to_string(),
             Color::White => white.to_string(),
         });
-        let moves = board.history().iter().map(|m| RecordMove {
-            x: m.position.x,
-            y: m.position.y,
-            color: match m.color {
-                Color::Black => "Black".into(),
-                Color::White => "White".into(),
-            },
-            turn: m.turn,
-        }).collect();
+        let moves = board
+            .history()
+            .iter()
+            .map(|m| RecordMove {
+                x: m.position.x,
+                y: m.position.y,
+                color: match m.color {
+                    Color::Black => "Black".into(),
+                    Color::White => "White".into(),
+                },
+                turn: m.turn,
+            })
+            .collect();
 
         Self {
             version: "2.0".to_string(),
@@ -101,8 +105,7 @@ mod tests {
         let board = board.place(Position::new(7, 7), Color::Black).unwrap();
         let board = board.place(Position::new(7, 8), Color::White).unwrap();
 
-        let record =
-            GameRecord::from_board(&board, "Human", "AI-Lv3", Some(Color::Black));
+        let record = GameRecord::from_board(&board, "Human", "AI-Lv3", Some(Color::Black));
         let json = serde_json::to_string_pretty(&record).unwrap();
 
         let loaded: GameRecord = serde_json::from_str(&json).unwrap();

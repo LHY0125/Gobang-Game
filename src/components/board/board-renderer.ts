@@ -6,6 +6,26 @@ export interface RenderConfig {
   boardSize: number;
 }
 
+/**
+ * 根据棋盘大小动态生成星位坐标。
+ * 标准五子棋/围棋星位: 四角和中心及边中点。
+ * 9x9 起可用，更小的棋盘仅使用中心点。
+ */
+export function computeStarPoints(boardSize: number): [number, number][] {
+  if (boardSize < 9) {
+    const mid = Math.floor(boardSize / 2);
+    return [[mid, mid]];
+  }
+  const a = Math.min(3, Math.floor(boardSize / 4));
+  const b = Math.floor(boardSize / 2);
+  const c = boardSize - 1 - a;
+  return [
+    [a, a], [a, b], [a, c],
+    [b, a], [b, b], [b, c],
+    [c, a], [c, b], [c, c],
+  ];
+}
+
 export function computeBoardDimensions(boardSize: number, canvasWidth: number, canvasHeight: number): RenderConfig {
   const maxBoardPixelSize = Math.min(canvasWidth, canvasHeight) * 0.85;
   const cellSize = Math.floor(maxBoardPixelSize / (boardSize - 1));
@@ -64,12 +84,8 @@ export function renderBoard(
     ctx.stroke();
   }
 
-  // 星位
-  const starPoints = [
-    [3, 3], [3, 7], [3, 11],
-    [7, 3], [7, 7], [7, 11],
-    [11, 3], [11, 7], [11, 11],
-  ];
+  // 星位 — 根据棋盘大小动态计算
+  const starPoints = computeStarPoints(boardSize);
   ctx.fillStyle = '#8B7355';
   for (const [r, c] of starPoints) {
     if (r < boardSize && c < boardSize) {

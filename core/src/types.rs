@@ -99,6 +99,7 @@ pub struct GameResult {
 
 /// 游戏模式 (Tauri IPC 兼容 — 纯标签, 不含字段)
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum GameMode {
     Local,
     VsAi,
@@ -108,6 +109,7 @@ pub enum GameMode {
 
 /// 游戏配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GameConfig {
     pub board_size: usize,
     pub use_forbidden_rules: bool,
@@ -116,6 +118,8 @@ pub struct GameConfig {
     pub ai_difficulty: u32,
     pub player_color: Color,
     pub is_server: bool,
+    #[serde(default)]
+    pub remote_address: String,
 }
 
 impl Default for GameConfig {
@@ -128,6 +132,7 @@ impl Default for GameConfig {
             ai_difficulty: 3,
             player_color: Color::Black,
             is_server: false,
+            remote_address: String::new(),
         }
     }
 }

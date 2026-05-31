@@ -12,8 +12,11 @@ interface Props {
 export default function ReplayView({ onBackToMenu }: Props) {
   const { t } = useTranslation();
   const moves = useGameStore((s) => s.moves);
-  const [step, setStep] = useState(moves.length);
+  const replayStep = useGameStore((s) => s.replayStep);
+  const setReplayStep = useGameStore((s) => s.setReplayStep);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const step = replayStep;
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -21,22 +24,22 @@ export default function ReplayView({ onBackToMenu }: Props) {
       setIsPlaying(false);
       return;
     }
-    const timer = setInterval(() => setStep((s) => s + 1), 500);
+    const timer = setInterval(() => setReplayStep(step + 1), 500);
     return () => clearInterval(timer);
-  }, [isPlaying, step, moves.length]);
+  }, [isPlaying, step, moves.length, setReplayStep]);
 
   return (
     <div className="replay-view">
       <div className="board-container">
         <BoardCanvas />
       </div>
-      <StepSlider current={step} total={moves.length} onChange={setStep} />
+      <StepSlider current={step} total={moves.length} onChange={setReplayStep} />
       <div>{t('replay.step', { current: step, total: moves.length })}</div>
       <ReplayControls
         isPlaying={isPlaying}
         onTogglePlay={() => setIsPlaying(!isPlaying)}
-        onPrev={() => setStep(Math.max(0, step - 1))}
-        onNext={() => setStep(Math.min(moves.length, step + 1))}
+        onPrev={() => setReplayStep(Math.max(0, step - 1))}
+        onNext={() => setReplayStep(Math.min(moves.length, step + 1))}
       />
       <button onClick={onBackToMenu}>返回菜单</button>
     </div>

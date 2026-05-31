@@ -1,5 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { useGameStore } from '../../store/gameStore';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
+import { useGameStore, buildReplayBoard } from '../../store/gameStore';
 import {
   computeBoardDimensions,
   canvasToBoard,
@@ -15,8 +15,26 @@ export default function BoardCanvas() {
   const placePiece = useGameStore((s) => s.placePiece);
   const aiMove = useGameStore((s) => s.aiMove);
   const moves = useGameStore((s) => s.moves);
+  const replayStep = useGameStore((s) => s.replayStep);
 
-  const lastMove = moves.length > 0 ? moves[moves.length - 1].position : null;
+  // 复盘模式下根据 replayStep 重建棋盘
+  const displayBoard = useMemo(() => {
+    if (mode === 'Replay') {
+      return buildReplayBoard(boardSize, moves, replayStep);
+    }
+    return board;
+  }, [mode, board, boardSize, moves, replayStep]);
+
+  // 复盘模式下的最后一手
+  const displayLastMove = useMemo(() => {
+    if (mode !== 'Replay') {
+      return moves.length > 0 ? moves[moves.length - 1].position : null;
+    }
+    if (replayStep > 0 && replayStep <= moves.length) {
+      return moves[replayStep - 1].position;
+    }
+    return null;
+  }, [mode, moves, replayStep]);
 
   const render = useCallback(() => {
     const canvas = canvasRef.current;
@@ -31,8 +49,8 @@ export default function BoardCanvas() {
     ctx.scale(dpr, dpr);
 
     const cfg = computeBoardDimensions(boardSize, rect.width, rect.height);
-    renderBoard(ctx, board, cfg, lastMove);
-  }, [board, boardSize, lastMove]);
+    renderBoard(ctx, displayBoard, cfg, displayLastMove);
+  }, [displayBoard, boardSize, displayLastMove]);
 
   useEffect(() => {
     render();

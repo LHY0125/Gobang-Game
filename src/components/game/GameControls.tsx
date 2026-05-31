@@ -8,7 +8,6 @@ interface Props {
 export default function GameControls({ onBackToMenu }: Props) {
   const { t } = useTranslation();
   const undo = useGameStore((s) => s.undo);
-  const mode = useGameStore((s) => s.mode);
   const status = useGameStore((s) => s.status);
 
   const handleUndo = () => {

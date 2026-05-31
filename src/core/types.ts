@@ -19,6 +19,7 @@ export interface GameConfig {
   aiDifficulty: number;
   playerColor: Color;
   isServer: boolean;
+  remoteAddress: string;
 }
 
 export interface MoveResult {

@@ -20,6 +20,7 @@ export default function LocalGameSetup({ onBack, onStart }: Props) {
       aiDifficulty: 3,
       playerColor: 'Black',
       isServer: false,
+      remoteAddress: '',
     };
     await startGame('Local', config);
     onStart();

@@ -2,6 +2,17 @@ import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import type { CellState, Color, GameConfig, GameModeType, GameStatus, Move, MoveResult } from '../core/types';
 
+/** 根据落子列表重建棋盘到指定步数 */
+export function buildReplayBoard(boardSize: number, moves: Move[], step: number): CellState[][] {
+  const b: CellState[][] = Array.from({ length: boardSize }, () => Array(boardSize).fill(0) as CellState[]);
+  const limit = Math.min(step, moves.length);
+  for (let i = 0; i < limit; i++) {
+    const m = moves[i];
+    b[m.position.x][m.position.y] = (m.color === 'Black' ? 1 : 2) as CellState;
+  }
+  return b;
+}
+
 interface GameState {
   mode: GameModeType;
   board: CellState[][];
@@ -12,6 +23,7 @@ interface GameState {
   moves: Move[];
   config: GameConfig;
   isSaving: boolean;
+  replayStep: number;
 
   startGame: (mode: GameModeType, config: GameConfig) => Promise<void>;
   placePiece: (x: number, y: number) => Promise<MoveResult>;
@@ -19,6 +31,7 @@ interface GameState {
   aiMove: () => Promise<void>;
   refreshBoard: () => Promise<void>;
   loadReplayBoard: (board: CellState[][], moves: Move[]) => void;
+  setReplayStep: (step: number) => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -37,8 +50,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     aiDifficulty: 3,
     playerColor: 'Black',
     isServer: false,
+    remoteAddress: '',
   },
   isSaving: false,
+  replayStep: 0,
 
   startGame: async (mode, config) => {
     await invoke('new_game', { mode, config });
@@ -50,6 +65,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currentColor: 'Black',
       winner: null,
       moves: [],
+      replayStep: 0,
     });
     await get().refreshBoard();
   },
@@ -92,6 +108,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   loadReplayBoard: (board, moves) => {
-    set({ board, moves, mode: 'Replay', status: 'playing' });
+    set({ board, moves, mode: 'Replay', status: 'playing', replayStep: moves.length });
+  },
+
+  setReplayStep: (step) => {
+    set({ replayStep: step });
   },
 }));
