@@ -41,7 +41,7 @@ export default function ReplayView({ onBackToMenu }: Props) {
         onPrev={() => setReplayStep(Math.max(0, step - 1))}
         onNext={() => setReplayStep(Math.min(moves.length, step + 1))}
       />
-      <button onClick={onBackToMenu}>返回菜单</button>
+      <button onClick={onBackToMenu}>{t('common.back_to_menu')}</button>
     </div>
   );
 }

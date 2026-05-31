@@ -1,12 +1,24 @@
 {
   "app": { "title": "Gobang v2.0" },
+  "common": {
+    "back": "Back",
+    "back_to_menu": "Back to Menu"
+  },
   "menu": {
     "local_game": "Local 2-Player",
     "ai_game": "VS AI",
     "online_game": "Online",
     "online_game_disabled": "Online mode is under development",
     "load_replay": "Load Replay",
-    "settings": "Settings"
+    "settings": "Settings",
+    "host_room": "Create Room",
+    "join_room": "Join Room",
+    "ip_placeholder": "IP:Port"
+  },
+  "ai_setup": {
+    "first_player": "First Player",
+    "black_first": "Black (First)",
+    "white_second": "White (Second)"
   },
   "game": {
     "black_turn": "Black's Turn",

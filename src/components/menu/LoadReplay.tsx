@@ -38,7 +38,7 @@ export default function LoadReplay({ onBack, onStart }: Props) {
     <div className="setup-panel">
       <h2>{t('menu.load_replay')}</h2>
       <input ref={fileRef} type="file" accept=".json" onChange={handleFile} />
-      <button onClick={onBack} style={{ marginTop: 12 }}>返回</button>
+      <button onClick={onBack} style={{ marginTop: 12 }}>{t('common.back')}</button>
     </div>
   );
 }

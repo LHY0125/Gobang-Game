@@ -31,7 +31,7 @@ export default function LocalGameSetup({ onBack, onStart }: Props) {
       <h2>{t('menu.local_game')}</h2>
       <div className="setup-actions">
         <button onClick={handleStart}>{t('game.new_game')}</button>
-        <button onClick={onBack}>返回</button>
+        <button onClick={onBack}>{t('common.back')}</button>
       </div>
     </div>
   );

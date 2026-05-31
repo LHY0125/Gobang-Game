@@ -42,10 +42,10 @@ export default function AiGameSetup({ onBack, onStart }: Props) {
         </select>
       </label>
       <label>
-        先手:
+        {t('ai_setup.first_player')}:
         <select value={playerColor} onChange={(e) => setPlayerColor(e.target.value as Color)}>
-          <option value="Black">黑棋 (先手)</option>
-          <option value="White">白棋 (后手)</option>
+          <option value="Black">{t('ai_setup.black_first')}</option>
+          <option value="White">{t('ai_setup.white_second')}</option>
         </select>
       </label>
       <label>
@@ -54,7 +54,7 @@ export default function AiGameSetup({ onBack, onStart }: Props) {
       </label>
       <div className="setup-actions">
         <button onClick={handleStart}>{t('game.new_game')}</button>
-        <button onClick={onBack}>返回</button>
+        <button onClick={onBack}>{t('common.back')}</button>
       </div>
     </div>
   );

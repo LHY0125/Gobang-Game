@@ -29,12 +29,12 @@ export default function OnlineSetup({ onBack, onStart }: Props) {
   return (
     <div className="setup-panel">
       <h2>{t('menu.online_game')}</h2>
-      <button onClick={handleHost}>创建房间</button>
+      <button onClick={handleHost}>{t('menu.host_room')}</button>
       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-        <input value={ip} onChange={(e) => setIp(e.target.value)} placeholder="IP:端口" />
-        <button onClick={handleJoin} disabled={!ip}>加入房间</button>
+        <input value={ip} onChange={(e) => setIp(e.target.value)} placeholder={t('menu.ip_placeholder') as string} />
+        <button onClick={handleJoin} disabled={!ip}>{t('menu.join_room')}</button>
       </div>
-      <button onClick={onBack} style={{ marginTop: 12 }}>返回</button>
+      <button onClick={onBack} style={{ marginTop: 12 }}>{t('common.back')}</button>
     </div>
   );
 }
