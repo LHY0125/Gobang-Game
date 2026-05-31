@@ -169,7 +169,7 @@ pub fn init_zobrist_table(_board_size: usize) -> &'static Vec<Vec<[ZobristHash; 
         for x in 0..size {
             let mut row = Vec::with_capacity(size);
             for _y in 0..size {
-                row.push([rng.hash_one(&(x, _y, 0u8)), rng.hash_one(&(x, _y, 1u8))]);
+                row.push([rng.hash_one((x, _y, 0u8)), rng.hash_one((x, _y, 1u8))]);
             }
             table.push(row);
         }

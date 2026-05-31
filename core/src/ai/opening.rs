@@ -6,13 +6,19 @@ pub struct OpeningBook {
     positions: HashMap<ZobristHash, Vec<Position>>,
 }
 
-impl OpeningBook {
-    pub fn new() -> Self {
+impl Default for OpeningBook {
+    fn default() -> Self {
         let mut book = Self {
             positions: HashMap::new(),
         };
         book.load();
         book
+    }
+}
+
+impl OpeningBook {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     fn load(&mut self) {

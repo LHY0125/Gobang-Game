@@ -79,6 +79,7 @@ impl AiEngine for AlphaBetaAi {
 }
 
 impl AlphaBetaAi {
+    #[allow(clippy::too_many_arguments)]
     fn search_depth(
         &self,
         board: &Board,
@@ -162,6 +163,7 @@ impl AlphaBetaAi {
         (best_pos, completed)
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn negamax(
         &self,
         board: &Board,

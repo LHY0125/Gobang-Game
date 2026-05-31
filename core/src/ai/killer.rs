@@ -7,11 +7,17 @@ pub struct KillerTable {
     moves: [[Option<Position>; SLOTS_PER_DEPTH]; MAX_DEPTH],
 }
 
-impl KillerTable {
-    pub fn new() -> Self {
+impl Default for KillerTable {
+    fn default() -> Self {
         Self {
             moves: [[None; SLOTS_PER_DEPTH]; MAX_DEPTH],
         }
+    }
+}
+
+impl KillerTable {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// 记录产生剪枝的走法，同一位置不会重复存储
