@@ -122,6 +122,8 @@ pub struct GameConfig {
     #[serde(default)]
     pub remote_address: String,
     #[serde(default)]
+    pub host_port: u16,
+    #[serde(default)]
     pub use_llm: bool,
     #[serde(default)]
     pub llm_endpoint: String,
@@ -142,6 +144,7 @@ impl Default for GameConfig {
             player_color: Color::Black,
             is_server: false,
             remote_address: String::new(),
+            host_port: 0,
             use_llm: false,
             llm_endpoint: String::new(),
             llm_api_key: String::new(),

@@ -20,6 +20,7 @@ export interface GameConfig {
   playerColor: Color;
   isServer: boolean;
   remoteAddress: string;
+  hostPort?: number;
   useLlm?: boolean;
   llmEndpoint?: string;
   llmApiKey?: string;
