@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nicknisi/tauri-config-schema/main/tauri.conf.json",
   "productName": "Gobang",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "identifier": "com.liuhangyu.gobang",
   "build": {
     "frontendDist": "../dist",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "五子棋 v2.0",
+        "title": "五子棋 v2.0.1",
         "width": 900,
         "height": 700,
         "resizable": true,
