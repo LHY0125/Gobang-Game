@@ -152,3 +152,27 @@ impl Default for GameConfig {
         }
     }
 }
+
+/// Zobrist 哈希值
+pub type ZobristHash = u64;
+
+/// 获取全局 Zobrist 随机表（只初始化一次，使用 MAX_BOARD_SIZE 确保所有棋盘尺寸可用）
+pub fn init_zobrist_table(_board_size: usize) -> &'static Vec<Vec<[ZobristHash; 2]>> {
+    use std::collections::hash_map::RandomState;
+    use std::hash::BuildHasher;
+    use std::sync::OnceLock;
+    static TABLE: OnceLock<Vec<Vec<[ZobristHash; 2]>>> = OnceLock::new();
+    TABLE.get_or_init(|| {
+        let size = MAX_BOARD_SIZE;
+        let rng = RandomState::new();
+        let mut table = Vec::with_capacity(size);
+        for x in 0..size {
+            let mut row = Vec::with_capacity(size);
+            for _y in 0..size {
+                row.push([rng.hash_one(&(x, _y, 0u8)), rng.hash_one(&(x, _y, 1u8))]);
+            }
+            table.push(row);
+        }
+        table
+    })
+}

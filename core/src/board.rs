@@ -1,4 +1,4 @@
-use crate::types::{CellState, Color, Move, MoveError, Position, MAX_BOARD_SIZE};
+use crate::types::{CellState, Color, Move, MoveError, Position, ZobristHash, MAX_BOARD_SIZE};
 
 /// 棋盘主体 — 不可变风格, place/undo 返回新 Board
 #[derive(Debug, Clone, PartialEq)]
@@ -7,6 +7,7 @@ pub struct Board {
     cells: [[CellState; MAX_BOARD_SIZE]; MAX_BOARD_SIZE],
     history: Vec<Move>,
     current_turn: u32,
+    pub zobrist_hash: ZobristHash,
 }
 
 impl Board {
@@ -22,6 +23,7 @@ impl Board {
             cells: [[CellState::Empty; MAX_BOARD_SIZE]; MAX_BOARD_SIZE],
             history: Vec::new(),
             current_turn: 0,
+            zobrist_hash: 0,
         }
     }
 
@@ -31,6 +33,11 @@ impl Board {
             return CellState::Empty;
         }
         self.cells[pos.x][pos.y]
+    }
+
+    /// 获取当前局面 Zobrist 哈希
+    pub fn hash(&self) -> ZobristHash {
+        self.zobrist_hash
     }
 
     /// 落子 — 返回新 Board (不可变)
@@ -44,6 +51,9 @@ impl Board {
 
         let mut new_board = self.clone();
         new_board.cells[pos.x][pos.y] = CellState::Occupied(color);
+        let color_idx = if matches!(color, Color::Black) { 0 } else { 1 };
+        let zobrist = crate::types::init_zobrist_table(self.size);
+        new_board.zobrist_hash ^= zobrist[pos.x][pos.y][color_idx];
         new_board.history.push(Move {
             position: pos,
             color,
@@ -104,6 +114,14 @@ impl Board {
         let mut new_board = self.clone();
         let last_move = new_board.history.pop().unwrap();
         new_board.cells[last_move.position.x][last_move.position.y] = CellState::Empty;
+        let last_color_idx = if matches!(last_move.color, Color::Black) {
+            0
+        } else {
+            1
+        };
+        let zobrist = crate::types::init_zobrist_table(self.size);
+        new_board.zobrist_hash ^=
+            zobrist[last_move.position.x][last_move.position.y][last_color_idx];
         new_board.current_turn = self.current_turn.saturating_sub(1);
         Ok(new_board)
     }
@@ -268,5 +286,32 @@ mod tests {
         let board = Board::new(15);
         let _new = board.place(Position::new(7, 7), Color::Black).unwrap();
         assert_eq!(board.get(Position::new(7, 7)), CellState::Empty);
+    }
+
+    #[test]
+    fn test_zobrist_hash_changes_on_place() {
+        let board = Board::new(15);
+        let h1 = board.hash();
+        let board2 = board.place(Position::new(7, 7), Color::Black).unwrap();
+        assert_ne!(h1, board2.hash());
+    }
+
+    #[test]
+    fn test_zobrist_hash_restores_on_undo() {
+        let board = Board::new(15);
+        let board = board.place(Position::new(7, 7), Color::Black).unwrap();
+        let h1 = board.hash();
+        let board = board.place(Position::new(7, 8), Color::White).unwrap();
+        assert_ne!(h1, board.hash());
+        let board = board.undo().unwrap();
+        assert_eq!(h1, board.hash());
+    }
+
+    #[test]
+    fn test_zobrist_hash_symmetry() {
+        let board = Board::new(15);
+        let b1 = board.place(Position::new(7, 7), Color::Black).unwrap();
+        let b2 = board.place(Position::new(7, 8), Color::Black).unwrap();
+        assert_ne!(b1.hash(), b2.hash());
     }
 }
