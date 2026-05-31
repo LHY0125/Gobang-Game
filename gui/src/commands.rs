@@ -33,6 +33,7 @@ impl Default for AppState {
 pub fn new_game(mode: GameMode, config: GameConfig, state: State<AppState>) -> Result<(), String> {
     let is_vs_ai = mode == GameMode::VsAi;
     let board = Board::new(config.board_size);
+    log::info!("新游戏: mode={:?}, board_size={}", mode, config.board_size);
     *state.board.lock().map_err(|e| e.to_string())? = Some(board);
     *state.game_mode.lock().map_err(|e| e.to_string())? = mode;
     *state.config.lock().map_err(|e| e.to_string())? = config.clone();
@@ -81,6 +82,10 @@ pub fn place_piece(x: usize, y: usize, state: State<AppState>) -> Result<MoveRes
     *state.board.lock().map_err(|e| e.to_string())? = Some(new_board);
     *state.current_color.lock().map_err(|e| e.to_string())? = color.opponent();
     *state.game_over.lock().map_err(|e| e.to_string())? = is_win;
+
+    if is_win {
+        log::info!("游戏结束: 胜者={:?}", color);
+    }
 
     Ok(MoveResult {
         position: pos,
