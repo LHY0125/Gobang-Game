@@ -5,6 +5,7 @@ use crate::rules;
 use crate::types::{Color, Position};
 
 /// Alpha-Beta AI 引擎
+#[derive(Clone)]
 pub struct AlphaBetaAi {
     depth: usize,
 }

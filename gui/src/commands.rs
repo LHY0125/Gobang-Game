@@ -121,13 +121,24 @@ pub fn undo(steps: u32, state: State<AppState>) -> Result<(), String> {
 
 #[tauri::command]
 pub fn ai_move(state: State<AppState>) -> Result<Option<(usize, usize)>, String> {
-    let board_opt = state.board.lock().map_err(|e| e.to_string())?;
-    let board = board_opt.as_ref().ok_or("游戏未开始")?;
-    let color = *state.current_color.lock().map_err(|e| e.to_string())?;
-    let ai = state.ai_engine.lock().map_err(|e| e.to_string())?;
-    let ai = ai.as_ref().ok_or("AI 未初始化")?;
+    let (board_clone, color, ai_clone) = {
+        let board_opt = state.board.lock().map_err(|e| e.to_string())?;
+        let board = board_opt.as_ref().ok_or("游戏未开始")?.clone();
+        let color = *state.current_color.lock().map_err(|e| e.to_string())?;
+        let ai_guard = state.ai_engine.lock().map_err(|e| e.to_string())?;
+        let ai = ai_guard.as_ref().ok_or("AI 未初始化")?.clone();
+        (board, color, ai)
+    };
 
-    Ok(ai.best_move(board, color).map(|p| (p.x, p.y)))
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let result = ai_clone.best_move(&board_clone, color);
+        let _ = tx.send(result);
+    });
+
+    rx.recv_timeout(std::time::Duration::from_secs(30))
+        .map_err(|_| "AI 计算超时".to_string())
+        .map(|r| r.map(|p| (p.x, p.y)))
 }
 
 #[tauri::command]
