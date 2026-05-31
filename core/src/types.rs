@@ -99,7 +99,6 @@ pub struct GameResult {
 
 /// 游戏模式 (Tauri IPC 兼容 — 纯标签, 不含字段)
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub enum GameMode {
     Local,
     VsAi,
