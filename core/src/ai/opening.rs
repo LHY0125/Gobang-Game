@@ -112,7 +112,10 @@ mod tests {
         let book = OpeningBook::new();
         let board = Board::new(15);
         // 开局库在走子后才能匹配，空棋盘作为兜底结果也合理
-        assert!(book.lookup(board.hash()).is_none(), "空棋盘不应匹配（需至少一手）");
+        assert!(
+            book.lookup(board.hash()).is_none(),
+            "空棋盘不应匹配（需至少一手）"
+        );
     }
 
     #[test]
@@ -126,18 +129,10 @@ mod tests {
         let book = OpeningBook::new();
         let board = Board::new(15);
         // 花月前4手: 黑(7,7) 白(7,8) 黑(6,7) 白(6,6)
-        let board = board
-            .place(Position::new(7, 7), Color::Black)
-            .unwrap();
-        let board = board
-            .place(Position::new(7, 8), Color::White)
-            .unwrap();
-        let board = board
-            .place(Position::new(6, 7), Color::Black)
-            .unwrap();
-        let board = board
-            .place(Position::new(6, 6), Color::White)
-            .unwrap();
+        let board = board.place(Position::new(7, 7), Color::Black).unwrap();
+        let board = board.place(Position::new(7, 8), Color::White).unwrap();
+        let board = board.place(Position::new(6, 7), Color::Black).unwrap();
+        let board = board.place(Position::new(6, 6), Color::White).unwrap();
         assert!(book.lookup(board.hash()).is_some(), "花月前4手应匹配");
     }
 }

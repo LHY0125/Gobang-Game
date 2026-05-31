@@ -62,9 +62,8 @@ impl AiEngine for AlphaBetaAi {
                 break;
             }
 
-            let (pos, completed) = self.search_depth(
-                board, color, depth, &mut tt, &mut killer, start, time_limit,
-            );
+            let (pos, completed) =
+                self.search_depth(board, color, depth, &mut tt, &mut killer, start, time_limit);
 
             if let Some(p) = pos {
                 best_pos = p;
@@ -81,9 +80,14 @@ impl AiEngine for AlphaBetaAi {
 
 impl AlphaBetaAi {
     fn search_depth(
-        &self, board: &Board, color: Color, depth: u32,
-        tt: &mut TransTable, killer: &mut KillerTable,
-        start: Instant, time_limit: Duration,
+        &self,
+        board: &Board,
+        color: Color,
+        depth: u32,
+        tt: &mut TransTable,
+        killer: &mut KillerTable,
+        start: Instant,
+        time_limit: Duration,
     ) -> (Option<Position>, bool) {
         let candidates = board.get_candidate_moves();
         if candidates.is_empty() {
@@ -103,8 +107,11 @@ impl AlphaBetaAi {
             .filter(|&&p| !rules::is_forbidden(board, p, color))
             .filter_map(|&p| {
                 board.place(p, color).ok().map(|b| {
-                    if b.check_win(p) { (p, f64::INFINITY) }
-                    else { (p, evaluate_board(&b, color)) }
+                    if b.check_win(p) {
+                        (p, f64::INFINITY)
+                    } else {
+                        (p, evaluate_board(&b, color))
+                    }
                 })
             })
             .collect();
@@ -112,9 +119,13 @@ impl AlphaBetaAi {
         scored.sort_by(|a, b| {
             let a_k = killer_moves.contains(&Some(a.0));
             let b_k = killer_moves.contains(&Some(b.0));
-            if a_k && !b_k { std::cmp::Ordering::Less }
-            else if !a_k && b_k { std::cmp::Ordering::Greater }
-            else { b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal) }
+            if a_k && !b_k {
+                std::cmp::Ordering::Less
+            } else if !a_k && b_k {
+                std::cmp::Ordering::Greater
+            } else {
+                b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
+            }
         });
 
         for (pos, _) in scored {
@@ -128,8 +139,15 @@ impl AlphaBetaAi {
                     return (Some(pos), true);
                 }
                 let score = -self.negamax(
-                    &new_board, depth - 1, -beta, -alpha, color.opponent(),
-                    tt, killer, start, time_limit,
+                    &new_board,
+                    depth - 1,
+                    -beta,
+                    -alpha,
+                    color.opponent(),
+                    tt,
+                    killer,
+                    start,
+                    time_limit,
                 );
                 if score > best_score {
                     best_score = score;
@@ -145,9 +163,16 @@ impl AlphaBetaAi {
     }
 
     fn negamax(
-        &self, board: &Board, depth: u32, mut alpha: f64, beta: f64, color: Color,
-        tt: &mut TransTable, killer: &mut KillerTable,
-        start: Instant, time_limit: Duration,
+        &self,
+        board: &Board,
+        depth: u32,
+        mut alpha: f64,
+        beta: f64,
+        color: Color,
+        tt: &mut TransTable,
+        killer: &mut KillerTable,
+        start: Instant,
+        time_limit: Duration,
     ) -> f64 {
         if start.elapsed() >= time_limit {
             return evaluate_board(board, color);
@@ -160,10 +185,15 @@ impl AlphaBetaAi {
             match entry.bound {
                 BoundType::Exact => return entry.score as f64,
                 BoundType::LowerBound => alpha = alpha.max(entry.score as f64),
-                BoundType::UpperBound =>
-                    if (entry.score as f64) <= alpha { return entry.score as f64; },
+                BoundType::UpperBound => {
+                    if (entry.score as f64) <= alpha {
+                        return entry.score as f64;
+                    }
+                }
             }
-            if alpha >= beta { return entry.score as f64; }
+            if alpha >= beta {
+                return entry.score as f64;
+            }
         }
 
         if depth == 0 {
@@ -182,8 +212,11 @@ impl AlphaBetaAi {
             .filter(|&p| !rules::is_forbidden(board, p, color))
             .filter_map(|p| {
                 board.place(p, color).ok().map(|b| {
-                    if b.check_win(p) { (p, f64::INFINITY) }
-                    else { (p, evaluate_board(&b, color)) }
+                    if b.check_win(p) {
+                        (p, f64::INFINITY)
+                    } else {
+                        (p, evaluate_board(&b, color))
+                    }
                 })
             })
             .collect();
@@ -191,9 +224,13 @@ impl AlphaBetaAi {
         scored.sort_by(|a, b| {
             let a_k = killer_moves.contains(&Some(a.0));
             let b_k = killer_moves.contains(&Some(b.0));
-            if a_k && !b_k { std::cmp::Ordering::Less }
-            else if !a_k && b_k { std::cmp::Ordering::Greater }
-            else { b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal) }
+            if a_k && !b_k {
+                std::cmp::Ordering::Less
+            } else if !a_k && b_k {
+                std::cmp::Ordering::Greater
+            } else {
+                b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal)
+            }
         });
 
         let mut max_val = f64::NEG_INFINITY;
@@ -206,12 +243,25 @@ impl AlphaBetaAi {
 
             if let Ok(new_board) = board.place(pos, color) {
                 if new_board.check_win(pos) {
-                    tt.store(hash, depth as u8, f64::INFINITY as i32, BoundType::Exact, Some(pos));
+                    tt.store(
+                        hash,
+                        depth as u8,
+                        f64::INFINITY as i32,
+                        BoundType::Exact,
+                        Some(pos),
+                    );
                     return f64::INFINITY;
                 }
                 let val = -self.negamax(
-                    &new_board, depth - 1, -beta, -alpha, color.opponent(),
-                    tt, killer, start, time_limit,
+                    &new_board,
+                    depth - 1,
+                    -beta,
+                    -alpha,
+                    color.opponent(),
+                    tt,
+                    killer,
+                    start,
+                    time_limit,
                 );
                 if val > max_val {
                     max_val = val;
@@ -227,9 +277,13 @@ impl AlphaBetaAi {
             }
         }
 
-        let bound = if max_val <= alpha_orig { BoundType::UpperBound }
-            else if max_val >= beta { BoundType::LowerBound }
-            else { BoundType::Exact };
+        let bound = if max_val <= alpha_orig {
+            BoundType::UpperBound
+        } else if max_val >= beta {
+            BoundType::LowerBound
+        } else {
+            BoundType::Exact
+        };
         tt.store(hash, depth as u8, max_val as i32, bound, best_move);
 
         max_val
@@ -268,7 +322,9 @@ mod tests {
         let mv = ai.best_move(&board, Color::Black).unwrap();
         assert!(
             (mv.x == 7 && mv.y == 2) || (mv.x == 7 && mv.y == 7),
-            "AI should win, got ({},{})", mv.x, mv.y
+            "AI should win, got ({},{})",
+            mv.x,
+            mv.y
         );
     }
 }

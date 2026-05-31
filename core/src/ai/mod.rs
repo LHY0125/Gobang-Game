@@ -9,7 +9,7 @@ pub trait AiEngine: Send + Sync {
 
 pub mod evaluate;
 pub mod killer;
+pub mod opening;
 pub mod search;
 pub mod trans_table;
 pub mod vcf;
-pub mod opening;
