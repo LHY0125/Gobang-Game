@@ -26,8 +26,8 @@ npm test
 # Rust 测试
 cargo test
 
-# E2E 测试 (需要先 npx tauri dev)
-npx playwright test
+# TypeScript 类型检查
+npx tsc -b
 
 # Clippy 检查
 cargo clippy -- -D warnings
@@ -61,9 +61,7 @@ cargo clippy -- -D warnings
 ```
 core/        # Rust 游戏核心库（零 Tauri 依赖）
 gui/         # Tauri 桌面应用
-src/         # React 前端
-tests/       # 前端单元测试
-e2e/         # Playwright E2E 测试
+src/         # React 前端 + 内联 vitest 测试
 ```
 
 ## 开始贡献前
