@@ -20,6 +20,10 @@ export interface GameConfig {
   playerColor: Color;
   isServer: boolean;
   remoteAddress: string;
+  useLlm?: boolean;
+  llmEndpoint?: string;
+  llmApiKey?: string;
+  llmModel?: string;
 }
 
 export interface MoveResult {

@@ -1,5 +1,6 @@
 use gobang_core::ai::search::AlphaBetaAi;
 use gobang_core::ai::AiEngine;
+use gobang_core::llm::LlmAi;
 use gobang_core::board::Board;
 use gobang_core::rules;
 use gobang_core::types::*;
@@ -11,7 +12,7 @@ pub struct AppState {
     pub board: Mutex<Option<Board>>,
     pub game_mode: Mutex<GameMode>,
     pub config: Mutex<GameConfig>,
-    pub ai_engine: Mutex<Option<AlphaBetaAi>>,
+    pub ai_engine: Mutex<Option<Box<dyn AiEngine + Send>>>,
     pub current_color: Mutex<Color>,
     pub game_over: Mutex<bool>,
 }
@@ -42,7 +43,15 @@ pub fn new_game(mode: GameMode, config: GameConfig, state: State<AppState>) -> R
 
     // 初始化 AI (如果是人机模式)
     if is_vs_ai {
-        let ai = AlphaBetaAi::new(config.ai_difficulty as usize);
+        let ai: Box<dyn AiEngine + Send> = if config.use_llm {
+            Box::new(LlmAi::new(
+                &config.llm_endpoint,
+                &config.llm_api_key,
+                &config.llm_model,
+            ))
+        } else {
+            Box::new(AlphaBetaAi::new(config.ai_difficulty as usize))
+        };
         *state.ai_engine.lock().map_err(|e| e.to_string())? = Some(ai);
     }
 
@@ -121,24 +130,21 @@ pub fn undo(steps: u32, state: State<AppState>) -> Result<(), String> {
 
 #[tauri::command]
 pub fn ai_move(state: State<AppState>) -> Result<Option<(usize, usize)>, String> {
-    let (board_clone, color, ai_clone) = {
+    // 预先提取棋盘和当前颜色，释放 board/color 锁
+    let (board_clone, color) = {
         let board_opt = state.board.lock().map_err(|e| e.to_string())?;
         let board = board_opt.as_ref().ok_or("游戏未开始")?.clone();
         let color = *state.current_color.lock().map_err(|e| e.to_string())?;
-        let ai_guard = state.ai_engine.lock().map_err(|e| e.to_string())?;
-        let ai = ai_guard.as_ref().ok_or("AI 未初始化")?.clone();
-        (board, color, ai)
+        (board, color)
     };
 
-    let (tx, rx) = std::sync::mpsc::channel();
-    std::thread::spawn(move || {
-        let result = ai_clone.best_move(&board_clone, color);
-        let _ = tx.send(result);
-    });
+    // 持有 ai_engine 锁同步调用 best_move（阻塞 IPC 命令，但只影响 AI 走棋）
+    let ai_guard = state.ai_engine.lock().map_err(|e| e.to_string())?;
+    let ai = ai_guard.as_ref().ok_or("AI 未初始化")?;
+    let result = ai.best_move(&board_clone, color);
+    drop(ai_guard);
 
-    rx.recv_timeout(std::time::Duration::from_secs(30))
-        .map_err(|_| "AI 计算超时".to_string())
-        .map(|r| r.map(|p| (p.x, p.y)))
+    Ok(result.map(|p| (p.x, p.y)))
 }
 
 #[tauri::command]

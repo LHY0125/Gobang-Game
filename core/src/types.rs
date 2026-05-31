@@ -121,6 +121,14 @@ pub struct GameConfig {
     pub is_server: bool,
     #[serde(default)]
     pub remote_address: String,
+    #[serde(default)]
+    pub use_llm: bool,
+    #[serde(default)]
+    pub llm_endpoint: String,
+    #[serde(default)]
+    pub llm_api_key: String,
+    #[serde(default)]
+    pub llm_model: String,
 }
 
 impl Default for GameConfig {
@@ -134,6 +142,10 @@ impl Default for GameConfig {
             player_color: Color::Black,
             is_server: false,
             remote_address: String::new(),
+            use_llm: false,
+            llm_endpoint: String::new(),
+            llm_api_key: String::new(),
+            llm_model: String::new(),
         }
     }
 }
