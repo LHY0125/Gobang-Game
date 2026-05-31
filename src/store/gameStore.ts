@@ -100,10 +100,15 @@ export const useGameStore = create<GameState>((set, get) => ({
   refreshBoard: async () => {
     const state: { board: CellState[][]; current_color: string; game_over: boolean } =
       await invoke('get_game_state');
+    const newStatus: GameStatus = state.game_over
+      ? 'game_over'
+      : get().status === 'ai_thinking'
+        ? 'ai_thinking'
+        : 'playing';
     set({
       board: state.board,
       currentColor: state.current_color as Color,
-      status: state.game_over ? 'game_over' : get().status === 'ai_thinking' ? 'ai_thinking' : 'playing',
+      status: newStatus,
     });
   },
 

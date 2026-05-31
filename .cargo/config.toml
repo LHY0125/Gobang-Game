@@ -1,3 +1,4 @@
+# MinGW-Builds MCF 线程模型运行时需要显式链接 libmcfgthread。
+# 如果使用 MSVC 工具链或 POSIX 线程模型的 MinGW，可移除此配置。
 [target.x86_64-pc-windows-gnu]
-# MinGW-Builds MCF 运行时需要链接 libmcfgthread
 rustflags = ["-C", "link-args=-lmcfgthread"]
