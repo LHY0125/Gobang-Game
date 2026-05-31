@@ -183,6 +183,10 @@ mod tests {
         // ISO 8601 格式: YYYY-MM-DDTHH:MM:SSZ
         assert!(record.date.contains('T'), "date should contain T separator");
         assert!(record.date.ends_with('Z'), "date should end with Z");
-        assert_eq!(record.date.len(), 20, "date should be 20 chars: YYYY-MM-DDTHH:MM:SSZ");
+        assert_eq!(
+            record.date.len(),
+            20,
+            "date should be 20 chars: YYYY-MM-DDTHH:MM:SSZ"
+        );
     }
 }

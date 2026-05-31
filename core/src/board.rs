@@ -258,7 +258,7 @@ mod tests {
         let result = board.undo();
         assert!(result.is_err());
         match result {
-            Err(MoveError::NoHistory) => {},
+            Err(MoveError::NoHistory) => {}
             other => panic!("expected NoHistory, got {:?}", other),
         }
     }
