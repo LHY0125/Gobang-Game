@@ -13,6 +13,8 @@ export default function BoardCanvas() {
   const boardSize = useGameStore((s) => s.boardSize);
   const status = useGameStore((s) => s.status);
   const mode = useGameStore((s) => s.mode);
+  const currentColor = useGameStore((s) => s.currentColor);
+  const config = useGameStore((s) => s.config);
   const placePiece = useGameStore((s) => s.placePiece);
   const aiMove = useGameStore((s) => s.aiMove);
   const moves = useGameStore((s) => s.moves);
@@ -77,7 +79,7 @@ export default function BoardCanvas() {
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (status !== 'playing') return;
-      if (mode === 'VsAi' && moves.length % 2 === 1) return;
+      if (mode === 'VsAi' && currentColor !== config.playerColor) return;
       if (mode === 'Replay') return;
 
       const canvas = canvasRef.current;
@@ -93,7 +95,7 @@ export default function BoardCanvas() {
         }
       });
     },
-    [status, mode, boardSize, moves.length, placePiece, aiMove]
+    [status, mode, boardSize, currentColor, config.playerColor, placePiece, aiMove]
   );
 
   return (

@@ -18,7 +18,15 @@
   "ai_setup": {
     "first_player": "First Player",
     "black_first": "Black (First)",
-    "white_second": "White (Second)"
+    "white_second": "White (Second)",
+    "ai_type": "AI Type",
+    "alpha_beta": "Alpha-Beta Search",
+    "llm": "Large Language Model",
+    "llm_endpoint": "API Endpoint",
+    "llm_api_key": "API Key",
+    "llm_model": "Model",
+    "llm_endpoint_placeholder": "Enter API endpoint...",
+    "llm_model_placeholder": "e.g. gpt-4o-mini"
   },
   "game": {
     "black_turn": "Black's Turn",

@@ -8,18 +8,19 @@ export default function TimerDisplay() {
   const status = useGameStore((s) => s.status);
   const refreshBoard = useGameStore((s) => s.refreshBoard);
 
-  const [blackTime, setBlackTime] = useState(config.timeLimitSecs);
-  const [whiteTime, setWhiteTime] = useState(config.timeLimitSecs);
-  const lastColorRef = useRef(currentColor);
+  const blackTimeRef = useRef(config.timeLimitSecs);
+  const whiteTimeRef = useRef(config.timeLimitSecs);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hasTimedOutRef = useRef(false);
+  const [, forceRender] = useState(0);
 
   // 初始化/重置时钟
   useEffect(() => {
-    setBlackTime(config.timeLimitSecs);
-    setWhiteTime(config.timeLimitSecs);
+    blackTimeRef.current = config.timeLimitSecs;
+    whiteTimeRef.current = config.timeLimitSecs;
     hasTimedOutRef.current = false;
-    lastColorRef.current = 'Black';
-  }, [config.timeLimitSecs, status === 'waiting' ? status : null]);
+    forceRender((n) => n + 1);
+  }, [config.timeLimitSecs, status]);
 
   const handleTimeout = useCallback(async () => {
     if (hasTimedOutRef.current) return;
@@ -33,38 +34,48 @@ export default function TimerDisplay() {
   }, [refreshBoard]);
 
   useEffect(() => {
-    if (!config.useTimer || status !== 'playing') return;
-
-    const timer = setInterval(() => {
-      if (currentColor === 'Black') {
-        setBlackTime((t) => {
-          if (t <= 1) {
-            clearInterval(timer);
-            handleTimeout();
-            return 0;
-          }
-          return t - 1;
-        });
-      } else {
-        setWhiteTime((t) => {
-          if (t <= 1) {
-            clearInterval(timer);
-            handleTimeout();
-            return 0;
-          }
-          return t - 1;
-        });
+    if (!config.useTimer || status !== 'playing') {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
       }
+      return;
+    }
+
+    timerRef.current = setInterval(() => {
+      if (currentColor === 'Black') {
+        blackTimeRef.current -= 1;
+        if (blackTimeRef.current <= 0) {
+          blackTimeRef.current = 0;
+          clearInterval(timerRef.current!);
+          timerRef.current = null;
+          handleTimeout();
+        }
+      } else {
+        whiteTimeRef.current -= 1;
+        if (whiteTimeRef.current <= 0) {
+          whiteTimeRef.current = 0;
+          clearInterval(timerRef.current!);
+          timerRef.current = null;
+          handleTimeout();
+        }
+      }
+      forceRender((n) => n + 1);
     }, 1000);
 
-    lastColorRef.current = currentColor;
-
-    return () => clearInterval(timer);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [currentColor, config.useTimer, status, handleTimeout]);
 
   if (!config.useTimer) return null;
 
-  const displayTime = currentColor === 'Black' ? blackTime : whiteTime;
+  const bTime = blackTimeRef.current;
+  const wTime = whiteTimeRef.current;
+  const displayTime = currentColor === 'Black' ? bTime : wTime;
   const isWarning = displayTime <= 10;
 
   return (
@@ -74,10 +85,10 @@ export default function TimerDisplay() {
       </div>
       <div style={{ display: 'flex', gap: 20, fontSize: 14, opacity: 0.7 }}>
         <span style={{ fontWeight: currentColor === 'Black' ? 'bold' : 'normal' }}>
-          黑: {Math.floor(blackTime / 60)}:{String(blackTime % 60).padStart(2, '0')}
+          黑: {Math.floor(bTime / 60)}:{String(bTime % 60).padStart(2, '0')}
         </span>
         <span style={{ fontWeight: currentColor === 'White' ? 'bold' : 'normal' }}>
-          白: {Math.floor(whiteTime / 60)}:{String(whiteTime % 60).padStart(2, '0')}
+          白: {Math.floor(wTime / 60)}:{String(wTime % 60).padStart(2, '0')}
         </span>
       </div>
     </div>

@@ -18,7 +18,15 @@
   "ai_setup": {
     "first_player": "先手",
     "black_first": "黑棋 (先手)",
-    "white_second": "白棋 (后手)"
+    "white_second": "白棋 (后手)",
+    "ai_type": "AI 类型",
+    "alpha_beta": "Alpha-Beta 搜索",
+    "llm": "大语言模型",
+    "llm_endpoint": "API 地址",
+    "llm_api_key": "API 密钥",
+    "llm_model": "模型",
+    "llm_endpoint_placeholder": "输入 API 地址...",
+    "llm_model_placeholder": "例如 gpt-4o-mini"
   },
   "game": {
     "black_turn": "黑棋回合",
