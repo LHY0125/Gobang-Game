@@ -6,4 +6,5 @@ pub mod llm;
 pub mod network;
 pub mod record;
 pub mod rules;
+pub mod scan;
 pub mod types;

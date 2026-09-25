@@ -1,4 +1,5 @@
 use crate::board::Board;
+use crate::scan;
 use crate::types::{CellState, Color, Position};
 
 pub fn is_forbidden(board: &Board, pos: Position, color: Color) -> bool {
@@ -13,30 +14,8 @@ pub fn is_forbidden(board: &Board, pos: Position, color: Color) -> bool {
 fn is_overline(board: &Board, pos: Position, color: Color) -> bool {
     let directions: [(isize, isize); 4] = [(0, 1), (1, 0), (1, 1), (1, -1)];
     for (dx, dy) in directions {
-        let mut count = 1u32;
-        let mut nx = pos.x as isize + dx;
-        let mut ny = pos.y as isize + dy;
-        while let Some(cell) = get_cell(board, nx, ny) {
-            if cell == CellState::Occupied(color) {
-                count += 1;
-            } else {
-                break;
-            }
-            nx += dx;
-            ny += dy;
-        }
-        let mut nx = pos.x as isize - dx;
-        let mut ny = pos.y as isize - dy;
-        while let Some(cell) = get_cell(board, nx, ny) {
-            if cell == CellState::Occupied(color) {
-                count += 1;
-            } else {
-                break;
-            }
-            nx -= dx;
-            ny -= dy;
-        }
-        if count >= 6 {
+        let info = scan::scan_direction(board, pos, color, dx, dy);
+        if info.count >= 6 {
             return true;
         }
     }
@@ -80,58 +59,38 @@ fn is_open_three_in_direction(
     dx: isize,
     dy: isize,
 ) -> bool {
-    let (cnt, start_open, end_open) = scan_direction(board, pos, color, dx, dy);
-    cnt == 3 && start_open && end_open
+    let info = scan::scan_direction(board, pos, color, dx, dy);
+    if info.count != 3 || !info.start_open || !info.end_open {
+        return false;
+    }
+    // 严格活三: 至少一端放入第4子后仍为活四（即该端再往外一格也是空）
+    can_extend_to_open_four(board, pos, color, dx, dy, info)
+}
+
+/// 检查活三至少一端能延伸成活四（该端外侧第2格为空或可落子）
+fn can_extend_to_open_four(
+    board: &Board,
+    pos: Position,
+    _color: Color,
+    dx: isize,
+    dy: isize,
+    info: scan::LineInfo,
+) -> bool {
+    // 正向端外侧: 从 pos 出发沿 +dx,+dy 方向走 count 步后，再往外一格
+    let ex = pos.x as isize + dx * info.count as isize;
+    let ey = pos.y as isize + dy * info.count as isize;
+    if scan::cell_at(board, ex, ey) == Some(CellState::Empty) {
+        return true;
+    }
+    // 反向端外侧: 从 pos 出发沿 -dx,-dy 方向走 count 步后，再往外一格
+    let sx = pos.x as isize - dx * info.count as isize;
+    let sy = pos.y as isize - dy * info.count as isize;
+    scan::cell_at(board, sx, sy) == Some(CellState::Empty)
 }
 
 fn is_four_in_direction(board: &Board, pos: Position, color: Color, dx: isize, dy: isize) -> bool {
-    let (cnt, _start_open, _end_open) = scan_direction(board, pos, color, dx, dy);
-    cnt == 4
-}
-
-fn scan_direction(
-    board: &Board,
-    pos: Position,
-    color: Color,
-    dx: isize,
-    dy: isize,
-) -> (u32, bool, bool) {
-    let mut count = 1u32;
-
-    let mut nx = pos.x as isize + dx;
-    let mut ny = pos.y as isize + dy;
-    while let Some(cell) = get_cell(board, nx, ny) {
-        if cell == CellState::Occupied(color) {
-            count += 1;
-        } else {
-            break;
-        }
-        nx += dx;
-        ny += dy;
-    }
-    let end_open = get_cell(board, nx, ny) == Some(CellState::Empty);
-
-    let mut nx = pos.x as isize - dx;
-    let mut ny = pos.y as isize - dy;
-    while let Some(cell) = get_cell(board, nx, ny) {
-        if cell == CellState::Occupied(color) {
-            count += 1;
-        } else {
-            break;
-        }
-        nx -= dx;
-        ny -= dy;
-    }
-    let start_open = get_cell(board, nx, ny) == Some(CellState::Empty);
-
-    (count, start_open, end_open)
-}
-
-fn get_cell(board: &Board, x: isize, y: isize) -> Option<CellState> {
-    if x < 0 || y < 0 || x as usize >= board.size || y as usize >= board.size {
-        return None;
-    }
-    Some(board.get(Position::new(x as usize, y as usize)))
+    let info = scan::scan_direction(board, pos, color, dx, dy);
+    info.count == 4
 }
 
 #[cfg(test)]
@@ -154,11 +113,9 @@ mod tests {
     fn test_double_four_forbidden() {
         let board = Board::new(15);
         let mut board = board;
-        // 水平方向: (7,4)(7,5)(7,6) 已落黑子, 在(7,7)落子形成活四 (4子)
         board = board.place(Position::new(7, 4), Color::Black).unwrap();
         board = board.place(Position::new(7, 5), Color::Black).unwrap();
         board = board.place(Position::new(7, 6), Color::Black).unwrap();
-        // 对角线(1,1)方向: (4,4)(5,5)(6,6) 已落黑子, 在(7,7)形成另一个活四
         board = board.place(Position::new(4, 4), Color::Black).unwrap();
         board = board.place(Position::new(5, 5), Color::Black).unwrap();
         board = board.place(Position::new(6, 6), Color::Black).unwrap();
@@ -193,5 +150,31 @@ mod tests {
         let board = board.place(Position::new(7, 7), Color::Black).unwrap();
         let board = board.place(Position::new(7, 8), Color::Black).unwrap();
         assert!(!is_forbidden(&board, Position::new(7, 9), Color::Black));
+    }
+
+    #[test]
+    fn test_fake_open_three_not_forbidden() {
+        // 3子一端被堵，不是真正活三
+        let board = Board::new(15);
+        let board = board.place(Position::new(7, 5), Color::White).unwrap(); // 堵住一端
+        let board = board.place(Position::new(7, 6), Color::Black).unwrap();
+        let board = board.place(Position::new(7, 7), Color::Black).unwrap();
+        let board = board.place(Position::new(7, 8), Color::Black).unwrap();
+        // 在(7,4)落子只有水平方向3连但一端被白棋堵，非活三
+        // 但如果在另一端(7,9)有另一方向的活三则可能禁手
+        // 仅测试单方向不是活三
+        assert!(!is_forbidden(&board, Position::new(7, 4), Color::Black));
+    }
+
+    #[test]
+    fn test_edge_open_three_detection() {
+        // 边角的活三：一端靠边界的活三不算真正的活三
+        let board = Board::new(15);
+        let board = board.place(Position::new(0, 1), Color::Black).unwrap();
+        let board = board.place(Position::new(0, 2), Color::Black).unwrap();
+        let board = board.place(Position::new(0, 3), Color::Black).unwrap();
+        // 在(0,0)落子，水平方向形成 4 连（0,0..0,3），不是活三
+        // (0,4)是空，所以是冲四，不是活三
+        assert!(!is_forbidden(&board, Position::new(0, 0), Color::Black));
     }
 }

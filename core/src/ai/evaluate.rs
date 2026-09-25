@@ -1,4 +1,5 @@
 use crate::board::Board;
+use crate::scan;
 use crate::types::{CellState, Color, Position};
 
 const FIVE: f64 = 100000.0;
@@ -10,7 +11,6 @@ const OPEN_TWO: f64 = 100.0;
 const SLEEP_TWO: f64 = 50.0;
 const OPEN_ONE: f64 = 10.0;
 
-// 组合加分
 const COMBO_THREE_THREE: f64 = 5000.0;
 const COMBO_THREE_FOUR: f64 = 10000.0;
 const COMBO_FOUR_FOUR: f64 = 8000.0;
@@ -39,13 +39,20 @@ fn evaluate_player(board: &Board, color: Color) -> f64 {
 
             let mut patterns: Vec<(u32, u32)> = Vec::with_capacity(4);
             for &(dx, dy) in &directions {
-                let (count, open_count, is_start) =
-                    scan_pattern(board, Position::new(x, y), color, dx, dy);
-                // 始终记录模式信息，用于组合检测（交叉点需要）
-                patterns.push((count, open_count));
-                // 只在起点处计分，避免重复
-                if is_start && count >= 1 {
-                    total += score_pattern(count, open_count);
+                let info = scan::scan_direction(board, Position::new(x, y), color, dx, dy);
+                let is_start = !matches!(
+                    scan::cell_at(board, x as isize - dx, y as isize - dy),
+                    Some(CellState::Occupied(c)) if c == color
+                );
+                patterns.push((
+                    info.count,
+                    (info.start_open as u32) + (info.end_open as u32),
+                ));
+                if is_start && info.count >= 1 {
+                    total += score_pattern(
+                        info.count,
+                        (info.start_open as u32) + (info.end_open as u32),
+                    );
                 }
             }
 
@@ -84,53 +91,6 @@ fn evaluate_player(board: &Board, color: Color) -> f64 {
     total
 }
 
-/// 扫描从 pos 沿 (dx,dy) 方向的完整棋形。
-/// 返回 (总连子数, 开放端数, 是否连续段起点)。
-/// 总连子数和开放端数始终正确，供组合检测使用；
-/// is_start 用于控制计分，避免重复。
-fn scan_pattern(
-    board: &Board,
-    pos: Position,
-    color: Color,
-    dx: isize,
-    dy: isize,
-) -> (u32, u32, bool) {
-    let mut pos_count = 0u32;
-    let mut neg_count = 0u32;
-
-    // 正方向
-    let mut nx = pos.x as isize + dx;
-    let mut ny = pos.y as isize + dy;
-    while in_bounds(board, nx, ny)
-        && board.get(Position::new(nx as usize, ny as usize)) == CellState::Occupied(color)
-    {
-        pos_count += 1;
-        nx += dx;
-        ny += dy;
-    }
-    let end_open = in_bounds(board, nx, ny)
-        && board.get(Position::new(nx as usize, ny as usize)) == CellState::Empty;
-
-    // 反方向
-    let mut nx = pos.x as isize - dx;
-    let mut ny = pos.y as isize - dy;
-    while in_bounds(board, nx, ny)
-        && board.get(Position::new(nx as usize, ny as usize)) == CellState::Occupied(color)
-    {
-        neg_count += 1;
-        nx -= dx;
-        ny -= dy;
-    }
-    let start_open = in_bounds(board, nx, ny)
-        && board.get(Position::new(nx as usize, ny as usize)) == CellState::Empty;
-
-    let total_count = 1 + pos_count + neg_count;
-    let open_count = (start_open as u32) + (end_open as u32);
-    let is_start = neg_count == 0;
-
-    (total_count, open_count, is_start)
-}
-
 fn score_pattern(count: u32, open_count: u32) -> f64 {
     match (count, open_count) {
         (5, _) => FIVE,
@@ -143,10 +103,6 @@ fn score_pattern(count: u32, open_count: u32) -> f64 {
         (1, 2) => OPEN_ONE,
         _ => 0.0,
     }
-}
-
-fn in_bounds(board: &Board, x: isize, y: isize) -> bool {
-    x >= 0 && y >= 0 && (x as usize) < board.size && (y as usize) < board.size
 }
 
 #[cfg(test)]
@@ -183,11 +139,9 @@ mod tests {
     fn test_combo_three_three() {
         let board = Board::new(15);
         let mut board = board;
-        // 水平活三: (7,5)(7,6)(7,7) — 两端(7,4)(7,8)空
         board = board.place(Position::new(7, 5), Color::Black).unwrap();
         board = board.place(Position::new(7, 6), Color::Black).unwrap();
         board = board.place(Position::new(7, 7), Color::Black).unwrap();
-        // 垂直活三: (5,7)(6,7) 与 (7,7) 交叉 — 两端(4,7)(8,7)空
         board = board.place(Position::new(5, 7), Color::Black).unwrap();
         board = board.place(Position::new(6, 7), Color::Black).unwrap();
         let score = evaluate_board(&board, Color::Black);

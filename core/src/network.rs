@@ -244,6 +244,10 @@ impl NetworkLoop {
 
         let tick = Duration::from_millis(16);
         let mut was_connected = false;
+        let mut disconnected_at: Option<Instant> = None;
+        let mut reconnect_attempts: u32 = 0;
+        const MAX_RECONNECT_ATTEMPTS: u32 = 3;
+        const RECONNECT_TIMEOUT: Duration = Duration::from_secs(15);
 
         while self.running {
             let now = Instant::now();
@@ -269,17 +273,36 @@ impl NetworkLoop {
             }
 
             client.update(tick);
-            transport
-                .update(tick, &mut client)
-                .map_err(|e| format!("传输层更新失败: {e:?}"))?;
+            if let Err(e) = transport.update(tick, &mut client) {
+                log::warn!("传输层更新失败: {:?}", e);
+            }
 
             if client.is_connected() && !was_connected {
                 was_connected = true;
+                disconnected_at = None;
+                reconnect_attempts = 0;
                 let _ = self.event_tx.send(NetworkEvent::Connected);
             }
             if !client.is_connected() && was_connected {
                 was_connected = false;
+                disconnected_at = Some(Instant::now());
+                reconnect_attempts += 1;
                 let _ = self.event_tx.send(NetworkEvent::ClientDisconnected);
+            }
+
+            // 断线重连：超时或超过最大尝试次数则放弃
+            if !client.is_connected() && !was_connected {
+                if let Some(disco_time) = disconnected_at {
+                    if disco_time.elapsed() >= RECONNECT_TIMEOUT
+                        || reconnect_attempts > MAX_RECONNECT_ATTEMPTS
+                    {
+                        self.running = false;
+                        let _ = self
+                            .event_tx
+                            .send(NetworkEvent::Error("连接超时，已断开".to_string()));
+                        break;
+                    }
+                }
             }
 
             while let Some(data) = client.receive_message(0u8) {
