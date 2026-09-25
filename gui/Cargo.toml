@@ -7,14 +7,16 @@ authors.workspace = true
 repository.workspace = true
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build.workspace = true
 
 [dependencies]
-tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+tauri.workspace = true
+tauri-plugin-opener.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 gobang-core = { path = "../core" }
-log = "0.4"
-env_logger = "0.11"
-renet2 = "0.15"
+reqwest.workspace = true
+futures-util.workspace = true
+log.workspace = true
+env_logger.workspace = true
+renet2.workspace = true
