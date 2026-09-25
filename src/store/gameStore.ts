@@ -24,6 +24,7 @@ interface GameState {
   config: GameConfig;
   isSaving: boolean;
   replayStep: number;
+  llmThinking: string;
 
   startGame: (mode: GameModeType, config: GameConfig) => Promise<void>;
   placePiece: (x: number, y: number) => Promise<MoveResult>;
@@ -32,6 +33,8 @@ interface GameState {
   refreshBoard: () => Promise<void>;
   loadReplayBoard: (board: CellState[][], moves: Move[]) => void;
   setReplayStep: (step: number) => void;
+  appendLlmThinking: (chunk: string) => void;
+  clearLlmThinking: () => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -54,6 +57,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
   isSaving: false,
   replayStep: 0,
+  llmThinking: '',
 
   startGame: async (mode, config) => {
     await invoke('new_game', { mode, config });
@@ -66,15 +70,17 @@ export const useGameStore = create<GameState>((set, get) => ({
       winner: null,
       moves: [],
       replayStep: 0,
+      llmThinking: '',
     });
     await get().refreshBoard();
   },
 
   placePiece: async (x, y) => {
+    const { currentColor } = get();
     const result: MoveResult = await invoke('place_piece', { x, y });
     await get().refreshBoard();
     if (result.is_win) {
-      set({ status: 'game_over' });
+      set({ status: 'game_over', winner: currentColor });
     }
     return result;
   },
@@ -85,20 +91,34 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   aiMove: async () => {
-    set({ status: 'ai_thinking' });
-    const pos: [number, number] | null = await invoke('ai_move');
-    if (pos) {
-      const result = await get().placePiece(pos[0], pos[1]);
-      if (!result.is_win) {
+    const { config } = get();
+    if (config.useLlm) {
+      set({ status: 'ai_thinking', llmThinking: '' });
+      const pos: [number, number] | null = await invoke('ai_move_llm');
+      if (pos) {
+        const result = await get().placePiece(pos[0], pos[1]);
+        if (!result.is_win) {
+          set({ status: 'playing' });
+        }
+      } else {
         set({ status: 'playing' });
       }
     } else {
-      set({ status: 'playing' });
+      set({ status: 'ai_thinking' });
+      const pos: [number, number] | null = await invoke('ai_move');
+      if (pos) {
+        const result = await get().placePiece(pos[0], pos[1]);
+        if (!result.is_win) {
+          set({ status: 'playing' });
+        }
+      } else {
+        set({ status: 'playing' });
+      }
     }
   },
 
   refreshBoard: async () => {
-    const state: { board: CellState[][]; current_color: string; game_over: boolean } =
+    const state: { board: CellState[][]; current_color: string; game_over: boolean; winner: string | null } =
       await invoke('get_game_state');
     const newStatus: GameStatus = state.game_over
       ? 'game_over'
@@ -109,6 +129,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       board: state.board,
       currentColor: state.current_color as Color,
       status: newStatus,
+      winner: state.winner as Color | null,
     });
   },
 
@@ -118,5 +139,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setReplayStep: (step) => {
     set({ replayStep: step });
+  },
+
+  appendLlmThinking: (chunk) => {
+    set((s) => ({ llmThinking: s.llmThinking + chunk }));
+  },
+
+  clearLlmThinking: () => {
+    set({ llmThinking: '' });
   },
 }));

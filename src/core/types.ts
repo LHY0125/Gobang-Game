@@ -11,21 +11,30 @@ export type GameStatus = 'waiting' | 'playing' | 'ai_thinking' | 'game_over';
 
 export type GameModeType = 'Local' | 'VsAi' | 'Online' | 'Replay';
 
-export interface GameConfig {
+export interface GameRulesConfig {
   boardSize: number;
   useForbiddenRules: boolean;
   useTimer: boolean;
   timeLimitSecs: number;
+}
+
+export interface AiConfig {
   aiDifficulty: number;
   playerColor: Color;
-  isServer: boolean;
-  remoteAddress: string;
-  hostPort?: number;
   useLlm?: boolean;
   llmEndpoint?: string;
   llmApiKey?: string;
   llmModel?: string;
 }
+
+export interface NetworkConfig {
+  isServer: boolean;
+  remoteAddress: string;
+  hostPort?: number;
+}
+
+/** 游戏总配置（扁平 JSON，与 Rust GameConfig #[serde(flatten)] 对齐） */
+export interface GameConfig extends GameRulesConfig, AiConfig, NetworkConfig {}
 
 export interface MoveResult {
   position: Position;

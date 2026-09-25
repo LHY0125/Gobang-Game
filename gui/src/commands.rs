@@ -6,33 +6,51 @@ use gobang_core::network::{NetworkCmd, NetworkEvent, NetworkLoop};
 use gobang_core::rules;
 use gobang_core::types::*;
 use std::sync::mpsc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex, RwLock};
 use tauri::{Emitter, State};
+
+pub(crate) struct GameSession {
+    board: Option<Board>,
+    mode: GameMode,
+    config: GameConfig,
+    current_color: Color,
+    game_over: bool,
+    winner: Option<Color>,
+}
+
+impl Default for GameSession {
+    fn default() -> Self {
+        Self {
+            board: None,
+            mode: GameMode::Local,
+            config: GameConfig::default(),
+            current_color: Color::Black,
+            game_over: true,
+            winner: None,
+        }
+    }
+}
 
 /// 应用全局状态
 pub struct AppState {
-    pub board: Mutex<Option<Board>>,
-    pub game_mode: Mutex<GameMode>,
-    pub config: Mutex<GameConfig>,
-    pub ai_engine: Mutex<Option<std::sync::Arc<dyn AiEngine + Send + Sync>>>,
-    pub current_color: Mutex<Color>,
-    pub game_over: Mutex<bool>,
+    pub session: RwLock<GameSession>,
+    pub ai_engine: Mutex<Option<Arc<dyn AiEngine + Send + Sync>>>,
+    pub ai_busy: Mutex<bool>,
     pub network_tx: Mutex<Option<mpsc::Sender<NetworkCmd>>>,
 }
 
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            board: Mutex::new(None),
-            game_mode: Mutex::new(GameMode::Local),
-            config: Mutex::new(GameConfig::default()),
+            session: RwLock::new(GameSession::default()),
             ai_engine: Mutex::new(None),
-            current_color: Mutex::new(Color::Black),
-            game_over: Mutex::new(true),
+            ai_busy: Mutex::new(false),
             network_tx: Mutex::new(None),
         }
     }
 }
+
+// ──────────────────────── 命令实现 ────────────────────────
 
 #[tauri::command]
 pub fn new_game(mode: GameMode, config: GameConfig, state: State<AppState>) -> Result<(), String> {
@@ -44,24 +62,32 @@ pub fn new_game(mode: GameMode, config: GameConfig, state: State<AppState>) -> R
     }
 
     let is_vs_ai = mode == GameMode::VsAi;
-    let board = Board::new(config.board_size);
-    log::info!("新游戏: mode={:?}, board_size={}", mode, config.board_size);
-    *state.board.lock().map_err(|e| e.to_string())? = Some(board);
-    *state.game_mode.lock().map_err(|e| e.to_string())? = mode;
-    *state.config.lock().map_err(|e| e.to_string())? = config.clone();
-    *state.current_color.lock().map_err(|e| e.to_string())? = config.player_color;
-    *state.game_over.lock().map_err(|e| e.to_string())? = false;
+    let board = Board::new(config.rules.board_size);
+    log::info!(
+        "新游戏: mode={:?}, board_size={}",
+        mode,
+        config.rules.board_size
+    );
 
-    // 初始化 AI (如果是人机模式)
+    let mut session = state.session.write().map_err(|e| e.to_string())?;
+    session.board = Some(board);
+    session.mode = mode;
+    session.config = config.clone();
+    session.current_color = config.ai.player_color;
+    session.game_over = false;
+    session.winner = None;
+    drop(session);
+
+    // 初始化 AI
     if is_vs_ai {
-        let ai: std::sync::Arc<dyn AiEngine + Send + Sync> = if config.use_llm {
-            std::sync::Arc::new(LlmAi::new(
-                &config.llm_endpoint,
-                &config.llm_api_key,
-                &config.llm_model,
+        let ai: Arc<dyn AiEngine + Send + Sync> = if config.ai.use_llm {
+            Arc::new(LlmAi::new(
+                &config.ai.llm_endpoint,
+                &config.ai.llm_api_key,
+                &config.ai.llm_model,
             ))
         } else {
-            std::sync::Arc::new(AlphaBetaAi::new(config.ai_difficulty as usize))
+            Arc::new(AlphaBetaAi::new(config.ai.ai_difficulty as usize))
         };
         *state.ai_engine.lock().map_err(|e| e.to_string())? = Some(ai);
     }
@@ -71,39 +97,28 @@ pub fn new_game(mode: GameMode, config: GameConfig, state: State<AppState>) -> R
 
 #[tauri::command]
 pub fn place_piece(x: usize, y: usize, state: State<AppState>) -> Result<MoveResult, String> {
-    // 检查游戏是否结束
-    {
-        let game_over = state.game_over.lock().map_err(|e| e.to_string())?;
-        if *game_over {
-            return Err("游戏已结束".into());
-        }
+    let mut session = state.session.write().map_err(|e| e.to_string())?;
+    if session.game_over {
+        return Err("游戏已结束".into());
     }
 
-    let color = *state.current_color.lock().map_err(|e| e.to_string())?;
+    let color = session.current_color;
     let pos = Position::new(x, y);
+    let board = session.board.as_ref().ok_or("游戏未开始")?;
 
-    // 在作用域内验证并落子，确保 board 锁在写入前释放
-    let (new_board, is_win) = {
-        let board_opt = state.board.lock().map_err(|e| e.to_string())?;
-        let board = board_opt.as_ref().ok_or("游戏未开始")?;
-        let config = state.config.lock().map_err(|e| e.to_string())?;
+    // 禁手检查
+    if session.config.rules.use_forbidden_rules && rules::is_forbidden(board, pos, color) {
+        return Err("禁手位置，不能落子".into());
+    }
 
-        // 禁手检查
-        if config.use_forbidden_rules && rules::is_forbidden(board, pos, color) {
-            return Err("禁手位置，不能落子".into());
-        }
+    let new_board = board.place(pos, color).map_err(|e| e.to_string())?;
+    let is_win = new_board.check_win(pos);
 
-        let new_board = board.place(pos, color).map_err(|e| e.to_string())?;
-        let is_win = new_board.check_win(pos);
-        (new_board, is_win)
-    };
-
-    // 更新游戏状态（前面作用域内的锁已全部释放）
-    *state.board.lock().map_err(|e| e.to_string())? = Some(new_board);
-    *state.current_color.lock().map_err(|e| e.to_string())? = color.opponent();
-    *state.game_over.lock().map_err(|e| e.to_string())? = is_win;
-
+    session.board = Some(new_board);
+    session.current_color = color.opponent();
+    session.game_over = is_win;
     if is_win {
+        session.winner = Some(color);
         log::info!("游戏结束: 胜者={:?}", color);
     }
 
@@ -116,8 +131,8 @@ pub fn place_piece(x: usize, y: usize, state: State<AppState>) -> Result<MoveRes
 
 #[tauri::command]
 pub fn undo(steps: u32, state: State<AppState>) -> Result<(), String> {
-    let mut board_opt = state.board.lock().map_err(|e| e.to_string())?;
-    let mut board = board_opt.clone().ok_or("游戏未开始")?;
+    let mut session = state.session.write().map_err(|e| e.to_string())?;
+    let mut board = session.board.clone().ok_or("游戏未开始")?;
 
     let max_undo = board.history().len() as u32;
     let actual_steps = (steps * 2).min(max_undo);
@@ -126,34 +141,34 @@ pub fn undo(steps: u32, state: State<AppState>) -> Result<(), String> {
         board = board.undo().map_err(|e| e.to_string())?;
     }
 
-    // 根据剩余步数修正当前颜色 (偶数 = 黑, 奇数 = 白)
-    let corrected_color = match board.history().last() {
+    session.current_color = match board.history().last() {
         Some(last_move) => last_move.color.opponent(),
-        None => state.config.lock().map_err(|e| e.to_string())?.player_color,
+        None => session.config.ai.player_color,
     };
-    *state.current_color.lock().map_err(|e| e.to_string())? = corrected_color;
-    *state.game_over.lock().map_err(|e| e.to_string())? = false;
-
-    *board_opt = Some(board);
+    session.game_over = false;
+    session.winner = None;
+    session.board = Some(board);
     Ok(())
 }
 
-
 #[tauri::command]
 pub fn ai_move(state: State<AppState>) -> Result<Option<(usize, usize)>, String> {
-    // 在锁内提取 board、color 和 AI Arc，克隆后立即释放所有锁
+    // 去重保护
+    {
+        let mut busy = state.ai_busy.lock().map_err(|e| e.to_string())?;
+        if *busy {
+            return Err("AI 正在计算中".into());
+        }
+        *busy = true;
+    }
+
     let (board_clone, color, ai_arc) = {
-        let board_opt = state.board.lock().map_err(|e| e.to_string())?;
-        let board = board_opt.as_ref().ok_or("游戏未开始")?.clone();
-        let color = *state.current_color.lock().map_err(|e| e.to_string())?;
+        let session = state.session.read().map_err(|e| e.to_string())?;
+        let board = session.board.as_ref().ok_or("游戏未开始")?.clone();
         let ai_guard = state.ai_engine.lock().map_err(|e| e.to_string())?;
-        let ai_arc = ai_guard
-            .as_ref()
-            .ok_or("AI 未初始化")?
-            .clone();
-        (board, color, ai_arc)
+        let ai_arc = ai_guard.as_ref().ok_or("AI 未初始化")?.clone();
+        (board, session.current_color, ai_arc)
     };
-    // 所有锁在此处已释放，避免阻塞 Tauri 命令线程池
 
     let (tx, rx) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
@@ -161,19 +176,68 @@ pub fn ai_move(state: State<AppState>) -> Result<Option<(usize, usize)>, String>
         let _ = tx.send(result);
     });
 
-    rx.recv_timeout(std::time::Duration::from_secs(30))
+    let result = rx
+        .recv_timeout(std::time::Duration::from_secs(30))
         .map_err(|_| "AI 计算超时".to_string())
-        .map(|r| r.map(|p| (p.x, p.y)))
+        .map(|r| r.map(|p| (p.x, p.y)));
+
+    // 解除去重保护
+    *state.ai_busy.lock().map_err(|e| e.to_string())? = false;
+
+    result
+}
+
+#[tauri::command]
+pub async fn ai_move_llm(
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> Result<Option<(usize, usize)>, String> {
+    // 去重保护
+    {
+        let mut busy = state.ai_busy.lock().map_err(|e| e.to_string())?;
+        if *busy {
+            return Err("AI 正在计算中".into());
+        }
+        *busy = true;
+    }
+
+    let (board_clone, color, endpoint, api_key, model) = {
+        let session = state.session.read().map_err(|e| e.to_string())?;
+        let board = session.board.as_ref().ok_or("游戏未开始")?.clone();
+        let config = &session.config;
+        (
+            board,
+            session.current_color,
+            config.ai.llm_endpoint.clone(),
+            config.ai.llm_api_key.clone(),
+            config.ai.llm_model.clone(),
+        )
+    };
+
+    let llm = LlmAi::new(&endpoint, &api_key, &model);
+
+    let full_content = llm
+        .stream_move(&board_clone, color, &|token: &str| {
+            let _ = app.emit("llm-stream", token);
+        })
+        .await?;
+
+    let pos = LlmAi::parse_response(&full_content);
+    if let Some(p) = pos {
+        let _ = app.emit("llm-move", serde_json::json!({"x": p.x, "y": p.y}));
+    }
+
+    *state.ai_busy.lock().map_err(|e| e.to_string())? = false;
+    Ok(pos.map(|p| (p.x, p.y)))
 }
 
 #[tauri::command]
 pub fn get_game_state(state: State<AppState>) -> Result<serde_json::Value, String> {
-    let board_opt = state.board.lock().map_err(|e| e.to_string())?;
-    let color = *state.current_color.lock().map_err(|e| e.to_string())?;
-    let game_over = *state.game_over.lock().map_err(|e| e.to_string())?;
-    let board = board_opt.as_ref();
+    let session = state.session.read().map_err(|e| e.to_string())?;
 
-    let cells: Vec<Vec<i32>> = board
+    let cells: Vec<Vec<i32>> = session
+        .board
+        .as_ref()
         .map(|b| {
             (0..b.size)
                 .map(|x| {
@@ -191,28 +255,59 @@ pub fn get_game_state(state: State<AppState>) -> Result<serde_json::Value, Strin
 
     Ok(serde_json::json!({
         "board": cells,
-        "current_color": match color { Color::Black => "Black", Color::White => "White" },
-        "game_over": game_over,
+        "current_color": match session.current_color { Color::Black => "Black", Color::White => "White" },
+        "game_over": session.game_over,
+        "winner": session.winner.map(|c| match c { Color::Black => "Black", Color::White => "White" }),
     }))
 }
 
 #[tauri::command]
 pub fn resign(state: State<AppState>) -> Result<(), String> {
-    let player_color = *state.current_color.lock().map_err(|e| e.to_string())?;
-    // 当前玩家认输，对手获胜
-    let winner = player_color.opponent();
-    *state.game_over.lock().map_err(|e| e.to_string())? = true;
-    *state.current_color.lock().map_err(|e| e.to_string())? = winner;
+    let mut session = state.session.write().map_err(|e| e.to_string())?;
+    let winner = session.current_color.opponent();
+    session.game_over = true;
+    session.winner = Some(winner);
     Ok(())
 }
 
 #[tauri::command]
 pub fn save_record(state: State<AppState>) -> Result<String, String> {
-    let board_opt = state.board.lock().map_err(|e| e.to_string())?;
-    let board = board_opt.as_ref().ok_or("游戏未开始")?;
-
+    let session = state.session.read().map_err(|e| e.to_string())?;
+    let board = session.board.as_ref().ok_or("游戏未开始")?;
     let record = gobang_core::record::GameRecord::from_board(board, "玩家", "对手", None);
     serde_json::to_string_pretty(&record).map_err(|e| e.to_string())
+}
+
+// ──────────────────────── 网络 ────────────────────────
+
+fn spawn_event_forwarder(event_rx: mpsc::Receiver<NetworkEvent>, app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        for event in event_rx {
+            match event {
+                NetworkEvent::RemoteMove { x, y } => {
+                    let _ = app.emit("remote-move", serde_json::json!({ "x": x, "y": y }));
+                }
+                NetworkEvent::RemoteUndo { steps } => {
+                    let _ = app.emit("remote-undo", steps);
+                }
+                NetworkEvent::RemoteResign => {
+                    let _ = app.emit("remote-resign", ());
+                }
+                NetworkEvent::Connected | NetworkEvent::ClientConnected => {
+                    let _ = app.emit("connection-status", "connected");
+                }
+                NetworkEvent::ClientDisconnected => {
+                    let _ = app.emit("connection-status", "disconnected");
+                }
+                NetworkEvent::Error(msg) => {
+                    let _ = app.emit("network-error", msg);
+                }
+                NetworkEvent::Listening(port) => {
+                    let _ = app.emit("listening-port", port);
+                }
+            }
+        }
+    });
 }
 
 #[tauri::command]
@@ -233,41 +328,16 @@ pub fn host_game(port: u16, state: State<AppState>, app: tauri::AppHandle) -> Re
         let _ = network.run("", protocol_id);
     });
 
-    // event 转发线程
-    let app_clone = app.clone();
-    std::thread::spawn(move || {
-        for event in event_rx {
-            match event {
-                NetworkEvent::RemoteMove { x, y } => {
-                    let _ = app_clone.emit("remote-move", serde_json::json!({ "x": x, "y": y }));
-                }
-                NetworkEvent::RemoteUndo { steps } => {
-                    let _ = app_clone.emit("remote-undo", steps);
-                }
-                NetworkEvent::RemoteResign => {
-                    let _ = app_clone.emit("remote-resign", ());
-                }
-                NetworkEvent::Connected | NetworkEvent::ClientConnected => {
-                    let _ = app_clone.emit("connection-status", "connected");
-                }
-                NetworkEvent::ClientDisconnected => {
-                    let _ = app_clone.emit("connection-status", "disconnected");
-                }
-                NetworkEvent::Error(msg) => {
-                    let _ = app_clone.emit("network-error", msg);
-                }
-                NetworkEvent::Listening(port) => {
-                    let _ = app_clone.emit("listening-port", port);
-                }
-            }
-        }
-    });
-
+    spawn_event_forwarder(event_rx, app.clone());
     Ok(actual_port)
 }
 
 #[tauri::command]
-pub fn join_game(address: String, state: State<AppState>, app: tauri::AppHandle) -> Result<(), String> {
+pub fn join_game(
+    address: String,
+    state: State<AppState>,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
     let (cmd_tx, cmd_rx) = mpsc::channel();
     let (event_tx, event_rx) = mpsc::channel();
 
@@ -281,33 +351,7 @@ pub fn join_game(address: String, state: State<AppState>, app: tauri::AppHandle)
         let _ = network.run(&addr, protocol_id);
     });
 
-    let app_clone = app.clone();
-    std::thread::spawn(move || {
-        for event in event_rx {
-            match event {
-                NetworkEvent::RemoteMove { x, y } => {
-                    let _ = app_clone.emit("remote-move", serde_json::json!({ "x": x, "y": y }));
-                }
-                NetworkEvent::RemoteUndo { steps } => {
-                    let _ = app_clone.emit("remote-undo", steps);
-                }
-                NetworkEvent::RemoteResign => {
-                    let _ = app_clone.emit("remote-resign", ());
-                }
-                NetworkEvent::Connected | NetworkEvent::ClientConnected => {
-                    let _ = app_clone.emit("connection-status", "connected");
-                }
-                NetworkEvent::ClientDisconnected => {
-                    let _ = app_clone.emit("connection-status", "disconnected");
-                }
-                NetworkEvent::Error(msg) => {
-                    let _ = app_clone.emit("network-error", msg);
-                }
-                _ => {}
-            }
-        }
-    });
-
+    spawn_event_forwarder(event_rx, app.clone());
     Ok(())
 }
 
@@ -315,14 +359,16 @@ pub fn join_game(address: String, state: State<AppState>, app: tauri::AppHandle)
 pub fn send_move(x: usize, y: usize, turn: u32, state: State<AppState>) -> Result<(), String> {
     let tx = state.network_tx.lock().map_err(|e| e.to_string())?;
     let tx = tx.as_ref().ok_or("未建立网络连接")?;
-    tx.send(NetworkCmd::SendMove { x, y, turn }).map_err(|e| e.to_string())
+    tx.send(NetworkCmd::SendMove { x, y, turn })
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn send_undo(steps: u32, state: State<AppState>) -> Result<(), String> {
     let tx = state.network_tx.lock().map_err(|e| e.to_string())?;
     let tx = tx.as_ref().ok_or("未建立网络连接")?;
-    tx.send(NetworkCmd::SendUndo { steps }).map_err(|e| e.to_string())
+    tx.send(NetworkCmd::SendUndo { steps })
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

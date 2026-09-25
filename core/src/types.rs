@@ -108,21 +108,26 @@ pub enum GameMode {
     Replay,
 }
 
-/// 游戏配置
+/// 游戏规则配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct GameConfig {
+pub struct GameRulesConfig {
     pub board_size: usize,
+    #[serde(default = "default_true")]
     pub use_forbidden_rules: bool,
+    #[serde(default)]
     pub use_timer: bool,
+    #[serde(default = "default_60")]
     pub time_limit_secs: u32,
+}
+
+/// AI 配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AiConfig {
+    #[serde(default = "default_3")]
     pub ai_difficulty: u32,
     pub player_color: Color,
-    pub is_server: bool,
-    #[serde(default)]
-    pub remote_address: String,
-    #[serde(default)]
-    pub host_port: u16,
     #[serde(default)]
     pub use_llm: bool,
     #[serde(default)]
@@ -133,22 +138,62 @@ pub struct GameConfig {
     pub llm_model: String,
 }
 
+/// 网络配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NetworkConfig {
+    #[serde(default)]
+    pub is_server: bool,
+    #[serde(default)]
+    pub remote_address: String,
+    #[serde(default)]
+    pub host_port: u16,
+}
+
+fn default_true() -> bool {
+    true
+}
+fn default_60() -> u32 {
+    60
+}
+fn default_3() -> u32 {
+    3
+}
+
+/// 游戏配置（向后兼容的扁平 JSON 结构）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GameConfig {
+    #[serde(flatten)]
+    pub rules: GameRulesConfig,
+    #[serde(flatten)]
+    pub ai: AiConfig,
+    #[serde(flatten)]
+    pub network: NetworkConfig,
+}
+
 impl Default for GameConfig {
     fn default() -> Self {
         Self {
-            board_size: 15,
-            use_forbidden_rules: true,
-            use_timer: false,
-            time_limit_secs: 60,
-            ai_difficulty: 3,
-            player_color: Color::Black,
-            is_server: false,
-            remote_address: String::new(),
-            host_port: 0,
-            use_llm: false,
-            llm_endpoint: String::new(),
-            llm_api_key: String::new(),
-            llm_model: String::new(),
+            rules: GameRulesConfig {
+                board_size: 15,
+                use_forbidden_rules: true,
+                use_timer: false,
+                time_limit_secs: 60,
+            },
+            ai: AiConfig {
+                ai_difficulty: 3,
+                player_color: Color::Black,
+                use_llm: false,
+                llm_endpoint: String::new(),
+                llm_api_key: String::new(),
+                llm_model: String::new(),
+            },
+            network: NetworkConfig {
+                is_server: false,
+                remote_address: String::new(),
+                host_port: 0,
+            },
         }
     }
 }

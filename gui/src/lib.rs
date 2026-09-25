@@ -13,6 +13,7 @@ pub fn run() {
             commands::place_piece,
             commands::undo,
             commands::ai_move,
+            commands::ai_move_llm,
             commands::get_game_state,
             commands::resign,
             commands::save_record,
